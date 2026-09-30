@@ -5,12 +5,22 @@ import { UsuarioPerfil } from "@/types/usuario";
 import { PageResponse } from "@/types/common";
 import {
   Viaje,
+  EstadoViaje,
+  CrearViajeRequest,
+  ActualizarViajeRequest,
   CampoFormulario,
   CrearCampoFormularioRequest,
   ActualizarCampoFormularioRequest,
 } from "@/types/viaje";
+import { viajes as viajesIniciales } from "@/data/viajes";
 
-export type { CampoFormulario, CrearCampoFormularioRequest, ActualizarCampoFormularioRequest };
+export type {
+  CampoFormulario,
+  CrearCampoFormularioRequest,
+  ActualizarCampoFormularioRequest,
+  CrearViajeRequest,
+  ActualizarViajeRequest,
+};
 
 /** Comprobante mock: SVG embebido (data URI) para el preview con next/image.
     next/image pasa data:/blob: directo al <img> sin tocar el optimizador. */
@@ -86,6 +96,13 @@ const reservasDemo: ReservaAdmin[] = [
     acompanantes: [],
   },
 ];
+
+/* Store mutable en memoria para viajes (RF2 / C1-C6) */
+let viajesStore: Viaje[] = viajesIniciales.map((v) => ({
+  ...v,
+  estado: v.estado ?? "activo",
+}));
+let siguienteIdViaje = Math.max(0, ...viajesStore.map((v) => v.idViaje)) + 1;
 
 let siguienteIdCampo = 10;
 
@@ -210,34 +227,98 @@ export const adminService = {
     };
   },
 
-  async getViajesAdmin(page = 0, size = 10): Promise<PageResponse<Viaje>> {
+  async getViajesAdmin(page = 0, size = 50): Promise<PageResponse<Viaje>> {
+    const start = page * size;
+    const paginados = viajesStore.slice(start, start + size);
     return {
-      content: [
-        {
-          idViaje: 1,
-          titulo: "Volcán Telica",
-          descripcion: "Aventura volcánica",
-          dificultad: "Media",
-          fechaHoraIda: new Date().toISOString(),
-          puntoEncuentro: "Managua",
-          montoTotal: 1200,
-          montoReserva: 400,
-          cuposMaximos: 20,
-          cuposDisponibles: 5,
-          itinerario: ["Día 1: Salida", "Día 2: Descenso"],
-          equipo: ["Botas", "Linterna"],
-        },
-      ],
+      content: paginados.map((v) => ({ ...v })),
       page,
       size,
-      totalElements: 1,
-      totalPages: 1,
+      totalElements: viajesStore.length,
+      totalPages: Math.max(1, Math.ceil(viajesStore.length / size)),
     };
   },
 
   async getViajeById(id: number): Promise<Viaje> {
-    const viajes = (await this.getViajesAdmin()).content;
-    return viajes.find((viaje) => viaje.idViaje === id) ?? viajes[0];
+    const viaje = viajesStore.find((v) => v.idViaje === id);
+    if (!viaje) {
+      throw new Error(`Viaje con id ${id} no encontrado.`);
+    }
+    return { ...viaje };
+  },
+
+  async crearViaje(input: CrearViajeRequest): Promise<Viaje> {
+    const nuevoViaje: Viaje = {
+      idViaje: siguienteIdViaje++,
+      titulo: input.titulo.trim(),
+      descripcion: input.descripcion.trim(),
+      dificultad: input.dificultad,
+      fechaHoraIda: input.fechaHoraIda,
+      fechaHoraVuelta: input.fechaHoraVuelta,
+      puntoEncuentro: input.puntoEncuentro.trim(),
+      montoTotal: Number(input.montoTotal),
+      montoReserva: Number(input.montoReserva),
+      cuposMaximos: Number(input.cuposMaximos),
+      cuposDisponibles: Number(input.cuposMaximos),
+      estado: "activo",
+      imagen: input.imagen?.trim() || "/Presentaciones/viajes/mombacho/VolcanMombacho.jpg",
+      itinerario:
+        input.itinerario && input.itinerario.length > 0
+          ? input.itinerario
+          : ["Salida desde punto de encuentro", "Recorrido por la ruta", "Retorno"],
+      equipo:
+        input.equipo && input.equipo.length > 0
+          ? input.equipo
+          : ["Botas de montaña", "Agua (2L)", "Ropa cómoda"],
+      inclusiones:
+        input.inclusiones && input.inclusiones.length > 0
+          ? input.inclusiones
+          : ["Transporte ida y vuelta", "Guías certificados", "Coordinación"],
+      enlaceWhatsapp: input.enlaceWhatsapp?.trim(),
+    };
+    viajesStore = [nuevoViaje, ...viajesStore];
+    return { ...nuevoViaje };
+  },
+
+  async actualizarViaje(idViaje: number, input: ActualizarViajeRequest): Promise<Viaje> {
+    const indice = viajesStore.findIndex((v) => v.idViaje === idViaje);
+    if (indice === -1) {
+      throw new Error(`Viaje con id ${idViaje} no encontrado.`);
+    }
+    const actual = viajesStore[indice];
+    const actualizado: Viaje = {
+      ...actual,
+      titulo: input.titulo !== undefined ? input.titulo.trim() : actual.titulo,
+      descripcion: input.descripcion !== undefined ? input.descripcion.trim() : actual.descripcion,
+      dificultad: input.dificultad ?? actual.dificultad,
+      fechaHoraIda: input.fechaHoraIda ?? actual.fechaHoraIda,
+      fechaHoraVuelta: input.fechaHoraVuelta !== undefined ? input.fechaHoraVuelta : actual.fechaHoraVuelta,
+      puntoEncuentro: input.puntoEncuentro !== undefined ? input.puntoEncuentro.trim() : actual.puntoEncuentro,
+      montoTotal: input.montoTotal !== undefined ? Number(input.montoTotal) : actual.montoTotal,
+      montoReserva: input.montoReserva !== undefined ? Number(input.montoReserva) : actual.montoReserva,
+      cuposMaximos: input.cuposMaximos !== undefined ? Number(input.cuposMaximos) : actual.cuposMaximos,
+      cuposDisponibles: input.cuposDisponibles !== undefined ? Number(input.cuposDisponibles) : actual.cuposDisponibles,
+      estado: input.estado ?? actual.estado,
+      imagen: input.imagen !== undefined ? input.imagen : actual.imagen,
+      itinerario: input.itinerario ?? actual.itinerario,
+      equipo: input.equipo ?? actual.equipo,
+      inclusiones: input.inclusiones ?? actual.inclusiones,
+      enlaceWhatsapp: input.enlaceWhatsapp !== undefined ? input.enlaceWhatsapp : actual.enlaceWhatsapp,
+    };
+    viajesStore[indice] = actualizado;
+    return { ...actualizado };
+  },
+
+  async eliminarViaje(idViaje: number): Promise<void> {
+    const indice = viajesStore.findIndex((v) => v.idViaje === idViaje);
+    if (indice === -1) {
+      throw new Error(`Viaje con id ${idViaje} no encontrado.`);
+    }
+    viajesStore = viajesStore.filter((v) => v.idViaje !== idViaje);
+  },
+
+  async cambiarEstadoViaje(idViaje: number, estado: EstadoViaje): Promise<Viaje> {
+    return this.actualizarViaje(idViaje, { estado });
   },
 
   // -------------------------------------------------------------

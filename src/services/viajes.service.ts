@@ -1,4 +1,4 @@
-import { viajes } from "@/data/viajes";
+import { adminService } from "./admin.service";
 import type { Viaje } from "@/types/viaje";
 
 /** Resumen para el catálogo público: por ahora el viaje completo (mock). */
@@ -32,20 +32,28 @@ const FECHAS_VUELTA: Record<number, string> = {
 function conDetalle(viaje: Viaje): ViajeDetalle {
   return {
     ...viaje,
-    fechaHoraVuelta: FECHAS_VUELTA[viaje.idViaje],
-    inclusiones: INCLUSIONES_BASE,
+    fechaHoraVuelta: viaje.fechaHoraVuelta || FECHAS_VUELTA[viaje.idViaje],
+    inclusiones:
+      viaje.inclusiones && viaje.inclusiones.length > 0
+        ? viaje.inclusiones
+        : INCLUSIONES_BASE,
   };
 }
 
 export const viajesService = {
   /** Catálogo público de expediciones (mock, sin backend). */
   async listarViajes(): Promise<ViajeResumen[]> {
-    return viajes;
+    const res = await adminService.getViajesAdmin(0, 100);
+    return res.content.filter((item) => item.estado !== "cerrado");
   },
 
   /** Detalle de una expedición; null si no existe. */
   async obtenerViaje(idViaje: number): Promise<ViajeDetalle | null> {
-    const viaje = viajes.find((item) => item.idViaje === idViaje);
-    return viaje ? conDetalle(viaje) : null;
+    try {
+      const viaje = await adminService.getViajeById(idViaje);
+      return conDetalle(viaje);
+    } catch {
+      return null;
+    }
   },
 };

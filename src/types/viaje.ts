@@ -38,6 +38,7 @@ export interface ActualizarCampoFormularioRequest {
 }
 
 export type EstadoInscripcion = "pendiente" | "aprobada" | "rechazada";
+export type EstadoViaje = "activo" | "cerrado";
 
 export interface Viaje {
   idViaje: number;
@@ -45,12 +46,52 @@ export interface Viaje {
   descripcion: string;
   dificultad: Dificultad;
   fechaHoraIda: string;
+  fechaHoraVuelta?: string;
   puntoEncuentro: string;
   montoTotal: number;
   montoReserva: number;
   cuposMaximos: number;
   cuposDisponibles: number;
+  estado?: EstadoViaje;
   imagen?: string;
   itinerario: string[];
   equipo: string[];
+  inclusiones?: string[];
+  enlaceWhatsapp?: string;
+}
+
+export interface CrearViajeRequest {
+  titulo: string;
+  descripcion: string;
+  dificultad: Dificultad;
+  fechaHoraIda: string;
+  fechaHoraVuelta?: string;
+  puntoEncuentro: string;
+  montoTotal: number;
+  montoReserva: number;
+  cuposMaximos: number;
+  imagen?: string;
+  itinerario?: string[];
+  equipo?: string[];
+  inclusiones?: string[];
+  enlaceWhatsapp?: string;
+}
+
+export interface ActualizarViajeRequest {
+  titulo?: string;
+  descripcion?: string;
+  dificultad?: Dificultad;
+  fechaHoraIda?: string;
+  fechaHoraVuelta?: string;
+  puntoEncuentro?: string;
+  montoTotal?: number;
+  montoReserva?: number;
+  cuposMaximos?: number;
+  cuposDisponibles?: number;
+  estado?: EstadoViaje;
+  imagen?: string;
+  itinerario?: string[];
+  equipo?: string[];
+  inclusiones?: string[];
+  enlaceWhatsapp?: string;
 }
