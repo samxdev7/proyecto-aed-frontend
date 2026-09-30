@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  EVENTO_NOTIFICACIONES,
   cambiarNotificacionesActivas,
   marcarNotificacionLeida,
   marcarTodasNotificacionesLeidas,
@@ -33,6 +34,15 @@ export default function NotificacionesDrawer({
     obtenerNotificacionesDemo(),
   );
   const [activas, setActivas] = useState(() => notificacionesActivas());
+
+  useEffect(() => {
+    const alCambiar = () => {
+      setNotificaciones(obtenerNotificacionesDemo());
+      setActivas(notificacionesActivas());
+    };
+    window.addEventListener(EVENTO_NOTIFICACIONES, alCambiar);
+    return () => window.removeEventListener(EVENTO_NOTIFICACIONES, alCambiar);
+  }, []);
 
   const alSeleccionar = (notificacion: NotificacionDemo) => {
     marcarNotificacionLeida(notificacion.id);

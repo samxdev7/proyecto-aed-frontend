@@ -3,6 +3,11 @@ import { Reserva } from "@/types/reserva";
 import { Notificacion } from "@/types/notificacion";
 import { PageResponse } from "@/types/common";
 import { reservaService, type ReservaDetalle } from "@/services/reserva.service";
+import {
+  obtenerNotificacionesDemo,
+  marcarNotificacionLeida as marcarLeidaDemo,
+  marcarTodasNotificacionesLeidas as marcarTodasLeidasDemo,
+} from "@/lib/demo";
 
 function obtenerUsuarioActual(): UsuarioPerfil {
   if (typeof window !== "undefined") {
@@ -114,12 +119,31 @@ export const userService = {
     return reserva;
   },
 
-  async getMyNotifications(page = 0, size = 10): Promise<PageResponse<Notificacion>> {
+  async getMyNotifications(page = 0, size = 20): Promise<PageResponse<Notificacion>> {
+    const demoList = obtenerNotificacionesDemo();
+    const content: Notificacion[] = demoList.map((n) => ({
+      idNotificacion: n.id,
+      idUsuario: 1,
+      tipo: n.tipo,
+      mensaje: `${n.titulo}: ${n.cuerpo}`,
+      fecha: new Date().toISOString(),
+      leida: n.leida,
+    }));
+
     return {
-      content: [
-        { idNotificacion: 1, idUsuario: 1, tipo: "nuevo_viaje", mensaje: "¡Nuevo viaje publicado!", fecha: new Date().toISOString(), leida: true },
-      ],
-      page, size, totalElements: 1, totalPages: 1,
+      content: content.slice(page * size, page * size + size),
+      page,
+      size,
+      totalElements: content.length,
+      totalPages: Math.max(1, Math.ceil(content.length / size)),
     };
+  },
+
+  async marcarNotificacionLeida(id: number): Promise<void> {
+    marcarLeidaDemo(id);
+  },
+
+  async marcarTodasNotificacionesLeidas(): Promise<void> {
+    marcarTodasLeidasDemo();
   },
 };
