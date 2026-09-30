@@ -58,9 +58,9 @@ export default function FlujoInscripcion({ viaje }: { viaje: Viaje }) {
   /** El titular siempre responde; cada acompañante suma la suya. */
   const personas = ["titular", ...acompanantes.map((_, i) => `acomp-${i}`)];
 
-  /** Respuesta guardada de una persona, con la primera opción como default. */
+  /** Respuesta guardada de una persona. */
   function respuestaDe(persona: string, campo: CampoFormulario): string {
-    return respuestas[persona]?.[campo.idCampo] ?? campo.opciones?.[0] ?? "";
+    return respuestas[persona]?.[campo.idCampo] ?? "";
   }
 
   function cambiarCantidad(nueva: number) {
