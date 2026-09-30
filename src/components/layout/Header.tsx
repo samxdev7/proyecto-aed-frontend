@@ -5,12 +5,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Logo from "./Logo";
 import NotificacionesDrawer from "@/components/clientes/NotificacionesDrawer";
+import { useAuth } from "@/hooks/useAuth";
 import {
   EVENTO_NOTIFICACIONES,
-  EVENTO_SESION_DEMO,
   cantidadNotificacionesSinLeer,
-  limpiarRolDemo,
-  obtenerRolDemo,
 } from "@/lib/demo";
 
 const enlaces = [
@@ -20,7 +18,6 @@ const enlaces = [
 
 export default function Header() {
   const [abierto, setAbierto] = useState(false);
-  const [rol, setRol] = useState<"anon" | "client">("anon");
   const [notisAbierta, setNotisAbierta] = useState(false);
   const [perfilAbierto, setPerfilAbierto] = useState(false);
   const [noLeidas, setNoLeidas] = useState(0);
@@ -28,15 +25,13 @@ export default function Header() {
   const refNotis = useRef<HTMLDivElement>(null);
   const refPerfil = useRef<HTMLDivElement>(null);
 
+  const { user, rol, isAuthenticated, logout } = useAuth();
+
   useEffect(() => {
-    const actualizarRol = () => setRol(obtenerRolDemo());
     const actualizarNoLeidas = () => setNoLeidas(cantidadNotificacionesSinLeer());
-    actualizarRol();
     actualizarNoLeidas();
-    window.addEventListener(EVENTO_SESION_DEMO, actualizarRol);
     window.addEventListener(EVENTO_NOTIFICACIONES, actualizarNoLeidas);
     return () => {
-      window.removeEventListener(EVENTO_SESION_DEMO, actualizarRol);
       window.removeEventListener(EVENTO_NOTIFICACIONES, actualizarNoLeidas);
     };
   }, []);
@@ -69,10 +64,15 @@ export default function Header() {
       ? "border-b-2 border-ochre pb-0.5 font-medium text-sand"
       : "transition hover:text-sand";
 
-  const esCliente = rol === "client";
+  const esAdmin = rol === "administrador";
+  const esCliente = rol === "cliente";
 
-  const cerrarSesionDemo = () => {
-    limpiarRolDemo();
+  const iniciales = user
+    ? `${user.primerNombre[0] || ""}${user.primerApellido[0] || ""}`.toUpperCase()
+    : "US";
+
+  const handleCerrarSesion = () => {
+    logout();
     setPerfilAbierto(false);
     setAbierto(false);
   };
@@ -103,6 +103,7 @@ export default function Header() {
                   {enlace.label}
                 </Link>
               ))}
+
               {esCliente ? (
                 <Link
                   href="/user/reservas"
@@ -115,9 +116,25 @@ export default function Header() {
                   Mis Inscripciones y Reservas
                 </Link>
               ) : null}
+
+              {esAdmin ? (
+                <Link
+                  href="/admin"
+                  className={
+                    ruta.startsWith("/admin")
+                      ? "border-b-2 border-ochre pb-0.5 font-medium text-sand flex items-center gap-1.5"
+                      : "transition hover:text-sand flex items-center gap-1.5 text-ochre font-medium"
+                  }
+                >
+                  <span className="px-1.5 py-0.5 text-[10px] uppercase font-bold rounded bg-ochre/20 text-ochre border border-ochre/40">
+                    Admin
+                  </span>
+                  Panel de Control
+                </Link>
+              ) : null}
             </nav>
 
-            {esCliente ? (
+            {isAuthenticated ? (
               <div className="flex items-center gap-1">
                 <div ref={refNotis}>
                   <button
@@ -151,7 +168,7 @@ export default function Header() {
                   </button>
                 </div>
 
-                <div ref={refPerfil}>
+                <div ref={refPerfil} className="relative">
                   <button
                     type="button"
                     onClick={() => {
@@ -163,10 +180,10 @@ export default function Header() {
                     className="flex items-center gap-2 rounded py-1 pl-1 pr-2 text-sand transition hover:bg-white/10"
                   >
                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ochre text-xs font-bold text-navy">
-                      HG
+                      {iniciales}
                     </span>
-                    <span className="hidden text-sm font-medium md:inline">
-                      HikerGuy
+                    <span className="hidden text-sm font-medium md:inline truncate max-w-[140px]">
+                      {user?.primerNombre}
                     </span>
                     <svg
                       viewBox="0 0 24 24"
@@ -185,22 +202,78 @@ export default function Header() {
                   {perfilAbierto ? (
                     <div
                       role="menu"
-                      className="absolute right-4 top-[calc(100%+10px)] w-56 rounded-md bg-navy p-1 shadow-2xl ring-1 ring-sand/15"
+                      className="absolute right-0 top-[calc(100%+10px)] w-60 rounded-md bg-navy p-1 shadow-2xl ring-1 ring-sand/15 z-50"
                     >
                       <div className="border-b border-sand/10 px-3 py-2.5">
-                        <p className="text-sm font-semibold text-sand">HikerGuy</p>
-                        <p className="text-xs text-sand/50">Miembro del club</p>
+                        <p className="text-sm font-semibold text-sand truncate">
+                          {user?.nombreCompleto}
+                        </p>
+                        <p className="text-xs text-sand/50 capitalize">
+                          {esAdmin ? "Administrador del club" : "Miembro del club"}
+                        </p>
                       </div>
-                      <span className="block cursor-default px-3 py-2 text-sm text-sand/70">
-                        Mi Perfil
-                      </span>
-                      <span className="block cursor-default px-3 py-2 text-sm text-sand/70">
-                        Mis Inscripciones
-                      </span>
+
+                      {esAdmin ? (
+                        <>
+                          <Link
+                            href="/admin"
+                            onClick={() => setPerfilAbierto(false)}
+                            className="block px-3 py-2 text-sm text-sand/80 hover:bg-white/10 rounded transition-colors"
+                          >
+                            Panel de Control
+                          </Link>
+                          <Link
+                            href="/admin/reservas"
+                            onClick={() => setPerfilAbierto(false)}
+                            className="block px-3 py-2 text-sm text-sand/80 hover:bg-white/10 rounded transition-colors"
+                          >
+                            Gestión de Reservas
+                          </Link>
+                          <Link
+                            href="/admin/viajes"
+                            onClick={() => setPerfilAbierto(false)}
+                            className="block px-3 py-2 text-sm text-sand/80 hover:bg-white/10 rounded transition-colors"
+                          >
+                            Gestión de Viajes
+                          </Link>
+                          <Link
+                            href="/admin/usuarios"
+                            onClick={() => setPerfilAbierto(false)}
+                            className="block px-3 py-2 text-sm text-sand/80 hover:bg-white/10 rounded transition-colors"
+                          >
+                            Gestión de Usuarios
+                          </Link>
+                        </>
+                      ) : (
+                        <>
+                          <Link
+                            href="/user/perfil"
+                            onClick={() => setPerfilAbierto(false)}
+                            className="block px-3 py-2 text-sm text-sand/80 hover:bg-white/10 rounded transition-colors"
+                          >
+                            Mi Perfil
+                          </Link>
+                          <Link
+                            href="/user/reservas"
+                            onClick={() => setPerfilAbierto(false)}
+                            className="block px-3 py-2 text-sm text-sand/80 hover:bg-white/10 rounded transition-colors"
+                          >
+                            Mis Reservas
+                          </Link>
+                          <Link
+                            href="/user/settings"
+                            onClick={() => setPerfilAbierto(false)}
+                            className="block px-3 py-2 text-sm text-sand/80 hover:bg-white/10 rounded transition-colors"
+                          >
+                            Configuración
+                          </Link>
+                        </>
+                      )}
+
                       <button
                         type="button"
-                        onClick={cerrarSesionDemo}
-                        className="mt-1 w-full rounded-lg bg-clay px-3 py-2 text-left text-sm font-medium text-white transition hover:bg-clay-dark"
+                        onClick={handleCerrarSesion}
+                        className="mt-1 w-full rounded-md bg-clay px-3 py-2 text-left text-sm font-medium text-white transition hover:bg-clay-dark"
                       >
                         Cerrar sesión
                       </button>
@@ -227,7 +300,7 @@ export default function Header() {
           </div>
 
           <div className="flex items-center gap-1 lg:hidden">
-            {esCliente ? (
+            {isAuthenticated ? (
               <button
                 type="button"
                 onClick={() => {
@@ -307,16 +380,66 @@ export default function Header() {
                   >
                     Mis Inscripciones y Reservas
                   </Link>
-                  <div className="mt-2 flex flex-col gap-3">
-                    <button
-                      type="button"
-                      onClick={cerrarSesionDemo}
-                      className="rounded-md bg-clay px-4 py-2 text-center font-medium text-white"
-                    >
-                      Cerrar sesión
-                    </button>
-                  </div>
+                  <Link
+                    href="/user/perfil"
+                    onClick={() => setAbierto(false)}
+                    className={claseEnlace("/user/perfil")}
+                  >
+                    Mi Perfil
+                  </Link>
+                  <Link
+                    href="/user/settings"
+                    onClick={() => setAbierto(false)}
+                    className={claseEnlace("/user/settings")}
+                  >
+                    Configuración
+                  </Link>
                 </>
+              ) : null}
+
+              {esAdmin ? (
+                <>
+                  <Link
+                    href="/admin"
+                    onClick={() => setAbierto(false)}
+                    className={claseEnlace("/admin")}
+                  >
+                    Panel de Control (Admin)
+                  </Link>
+                  <Link
+                    href="/admin/reservas"
+                    onClick={() => setAbierto(false)}
+                    className={claseEnlace("/admin/reservas")}
+                  >
+                    Gestión de Reservas
+                  </Link>
+                  <Link
+                    href="/admin/viajes"
+                    onClick={() => setAbierto(false)}
+                    className={claseEnlace("/admin/viajes")}
+                  >
+                    Gestión de Viajes
+                  </Link>
+                  <Link
+                    href="/admin/usuarios"
+                    onClick={() => setAbierto(false)}
+                    className={claseEnlace("/admin/usuarios")}
+                  >
+                    Gestión de Usuarios
+                  </Link>
+                </>
+              ) : null}
+
+              {isAuthenticated ? (
+                <div className="mt-2 flex flex-col gap-3">
+                  <button
+                    type="button"
+                    onClick={handleCerrarSesion}
+                    className="rounded-md bg-clay px-4 py-2 text-center font-medium text-white"
+                  >
+                    Cerrar sesión ({user?.primerNombre})
+                  </button>
+                </div>
               ) : (
                 <div className="mt-2 flex flex-col gap-3">
                   <Link
