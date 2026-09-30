@@ -173,45 +173,95 @@ export const adminService = {
     };
   },
 
-  async listarUsuarios(page = 0, size = 10): Promise<PageResponse<UsuarioPerfil>> {
+  async listarUsuarios(page = 0, size = 50): Promise<PageResponse<UsuarioPerfil>> {
+    const base: UsuarioPerfil[] = [
+      {
+        idUsuario: 100,
+        primerNombre: "Administrador",
+        primerApellido: "CNM",
+        nombreCompleto: "Administrador CNM",
+        correo: "admin@cnm.org.ni",
+        rol: "administrador",
+        telefono: "+505 8888-0000",
+        sexo: "M",
+        nacionalidad: "Nicaragüense",
+        tipoIdentificacion: "cedula",
+        numeroIdentificacion: "001-010180-0001A",
+        notificacionesHabilitadas: true,
+        fechaRegistro: "2026-01-01T08:00:00Z",
+      },
+      {
+        idUsuario: 1,
+        primerNombre: "Carlos",
+        primerApellido: "González",
+        nombreCompleto: "Carlos González",
+        correo: "carlos@example.com",
+        rol: "cliente",
+        telefono: "+505 8888-9999",
+        sexo: "M",
+        nacionalidad: "Nicaragüense",
+        tipoIdentificacion: "cedula",
+        numeroIdentificacion: "001-150890-0001A",
+        notificacionesHabilitadas: true,
+        fechaRegistro: "2026-05-10T10:00:00Z",
+      },
+      {
+        idUsuario: 2,
+        primerNombre: "Ana",
+        primerApellido: "Pérez",
+        nombreCompleto: "Ana Pérez",
+        correo: "ana@example.com",
+        rol: "cliente",
+        telefono: "+505 8777-6655",
+        sexo: "F",
+        nacionalidad: "Nicaragüense",
+        tipoIdentificacion: "cedula",
+        numeroIdentificacion: "001-200195-0003B",
+        notificacionesHabilitadas: true,
+        fechaRegistro: "2026-06-15T14:30:00Z",
+      },
+      {
+        idUsuario: 3,
+        primerNombre: "Luis",
+        primerApellido: "Martínez",
+        nombreCompleto: "Luis Martínez",
+        correo: "luis@example.com",
+        rol: "cliente",
+        telefono: "+505 8666-4433",
+        sexo: "M",
+        nacionalidad: "Nicaragüense",
+        tipoIdentificacion: "cedula",
+        numeroIdentificacion: "001-120488-0005C",
+        notificacionesHabilitadas: true,
+        fechaRegistro: "2026-07-20T09:15:00Z",
+      },
+    ];
+
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("cnm_registered_users");
+        if (stored) {
+          const parsed: Array<{ usuario: UsuarioPerfil }> = JSON.parse(stored);
+          parsed.forEach((entry) => {
+            if (!base.some((b) => b.idUsuario === entry.usuario.idUsuario)) {
+              base.push(entry.usuario);
+            }
+          });
+        }
+      } catch {}
+    }
+
     return {
-      content: [
-        {
-          idUsuario: 1,
-          primerNombre: "Carlos",
-          primerApellido: "González",
-          nombreCompleto: "Carlos González",
-          correo: "carlos@example.com",
-          rol: "cliente",
-          telefono: "+505 8888-9999",
-          sexo: "M",
-          nacionalidad: "Nicaragüense",
-          tipoIdentificacion: "cedula",
-          numeroIdentificacion: "001-150890-0001A",
-          notificacionesHabilitadas: true,
-          fechaRegistro: new Date().toISOString(),
-        },
-        {
-          idUsuario: 2,
-          primerNombre: "Ana",
-          primerApellido: "Pérez",
-          nombreCompleto: "Ana Pérez",
-          correo: "ana@example.com",
-          rol: "cliente",
-          telefono: "+505 8777-6655",
-          sexo: "F",
-          nacionalidad: "Nicaragüense",
-          tipoIdentificacion: "cedula",
-          numeroIdentificacion: "001-200195-0003B",
-          notificacionesHabilitadas: true,
-          fechaRegistro: new Date().toISOString(),
-        },
-      ],
+      content: base.slice(page * size, page * size + size),
       page,
       size,
-      totalElements: 2,
-      totalPages: 1,
+      totalElements: base.length,
+      totalPages: Math.max(1, Math.ceil(base.length / size)),
     };
+  },
+
+  async getHistorialUsuario(idUsuario: number): Promise<ReservaAdmin[]> {
+    return reservasDemo.filter((r) => r.idUsuario === idUsuario).map((r) => ({ ...r }));
   },
 
   async listarReservas(page = 0, size = 50, estado?: EstadoReserva): Promise<PageResponse<ReservaAdmin>> {
