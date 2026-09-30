@@ -80,10 +80,30 @@ function getCookie(name: string): string | null {
   return matches ? decodeURIComponent(matches[1]) : null;
 }
 
+function obtenerSesionInicial(): { user: UsuarioPerfil | null; token: string | null } {
+  if (typeof window === "undefined") return { user: null, token: null };
+  try {
+    const cookieToken = getCookie("cnm_token");
+    const cookieUser = getCookie("cnm_user");
+    if (cookieToken && cookieUser) {
+      return { user: JSON.parse(cookieUser) as UsuarioPerfil, token: cookieToken };
+    }
+    const stored = localStorage.getItem(CLAVE_STORAGE);
+    if (stored) {
+      const { user: u, token: t } = JSON.parse(stored);
+      if (u && t) return { user: u, token: t };
+    }
+  } catch (e) {
+    console.error("Error al restaurar sesión inicial:", e);
+  }
+  return { user: null, token: null };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<UsuarioPerfil | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [sesion, setSesion] = useState<{ user: UsuarioPerfil | null; token: string | null }>(
+    () => obtenerSesionInicial()
+  );
+  const [isLoading, setIsLoading] = useState(false);
 
   // Inicializar almacén local de usuarios registrados si no existe
   const obtenerBaseUsuarios = useCallback((): Array<{ usuario: UsuarioPerfil; passwordHash: string }> => {
@@ -101,8 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const persistirUsuarioEnSesion = (u: UsuarioPerfil, t: string) => {
-    setUser(u);
-    setToken(t);
+    setSesion({ user: u, token: t });
     setCookie("cnm_token", t, 7);
     setCookie("cnm_rol", u.rol, 7);
     setCookie("cnm_user", JSON.stringify(u), 7);
@@ -114,8 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const limpiarSesion = () => {
-    setUser(null);
-    setToken(null);
+    setSesion({ user: null, token: null });
     deleteCookie("cnm_token");
     deleteCookie("cnm_rol");
     deleteCookie("cnm_user");
@@ -126,32 +144,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Cargar sesión inicial al montar
+  // Sincronizar cookies si la sesión venía de localStorage en el primer render
   useEffect(() => {
-    try {
-      const cookieToken = getCookie("cnm_token");
-      const cookieUser = getCookie("cnm_user");
-
-      if (cookieToken && cookieUser) {
-        const parsedUser = JSON.parse(cookieUser) as UsuarioPerfil;
-        setUser(parsedUser);
-        setToken(cookieToken);
-      } else if (typeof window !== "undefined") {
-        const stored = localStorage.getItem(CLAVE_STORAGE);
-        if (stored) {
-          const { user: u, token: t } = JSON.parse(stored);
-          if (u && t) {
-            persistirUsuarioEnSesion(u, t);
-          }
-        }
+    if (sesion.user && sesion.token) {
+      if (!getCookie("cnm_token")) {
+        setCookie("cnm_token", sesion.token, 7);
+        setCookie("cnm_rol", sesion.user.rol, 7);
+        setCookie("cnm_user", JSON.stringify(sesion.user), 7);
       }
-    } catch (e) {
-      console.error("Error al restaurar sesión:", e);
-      limpiarSesion();
-    } finally {
-      setIsLoading(false);
     }
-  }, []);
+  }, [sesion]);
 
   const login = async (correo: string, contrasena: string): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
@@ -239,10 +241,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
-        user,
-        token,
-        rol: user ? user.rol : null,
-        isAuthenticated: !!user && !!token,
+        user: sesion.user,
+        token: sesion.token,
+        rol: sesion.user ? sesion.user.rol : null,
+        isAuthenticated: !!sesion.user && !!sesion.token,
         isLoading,
         login,
         registro,
