@@ -3,12 +3,14 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Bell, ChevronRight, Mail, ShieldCheck } from "lucide-react";
 import { userService } from "@/services/user.service";
+import { useAuth } from "@/context/AuthContext";
 import { UsuarioPerfil } from "@/types/usuario";
 import Skeleton from "@/components/ui/Skeleton";
 import EmptyState from "@/components/ui/EmptyState";
 
 export default function UserSettings() {
-  const [profile, setProfile] = useState<UsuarioPerfil | null>(null);
+  const { user: authUser, actualizarUsuario } = useAuth();
+  const [profile, setProfile] = useState<UsuarioPerfil | null>(authUser);
   const [error, setError] = useState(false);
   const [guardando, setGuardando] = useState(false);
 
@@ -17,17 +19,35 @@ export default function UserSettings() {
       .getMyProfile()
       .then(setProfile)
       .catch(() => setError(true));
-  }, []);
+  }, [authUser]);
 
-  function alternarNotificaciones() {
+  async function alternarNotificaciones() {
     if (!profile || guardando) return;
+    const nuevoEstado = !profile.notificacionesHabilitadas;
+
+    if (
+      nuevoEstado &&
+      typeof window !== "undefined" &&
+      "Notification" in window &&
+      Notification.permission === "default"
+    ) {
+      try {
+        await Notification.requestPermission();
+      } catch {}
+    }
+
     setGuardando(true);
-    userService
-      .actualizarNotificaciones({
-        notificacionesHabilitadas: !profile.notificacionesHabilitadas,
-      })
-      .then((actualizado) => setProfile(actualizado))
-      .finally(() => setGuardando(false));
+    try {
+      const actualizado = await userService.actualizarNotificaciones({
+        notificacionesHabilitadas: nuevoEstado,
+      });
+      setProfile(actualizado);
+      actualizarUsuario(actualizado);
+    } catch {
+      setError(true);
+    } finally {
+      setGuardando(false);
+    }
   }
 
   if (error) {

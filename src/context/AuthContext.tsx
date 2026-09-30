@@ -14,6 +14,7 @@ export interface AuthContextType {
   login: (correo: string, contrasena: string) => Promise<{ success: boolean; error?: string }>;
   registro: (datos: RegistroRequest) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
+  actualizarUsuario: (u: UsuarioPerfil) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -238,6 +239,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     limpiarSesion();
   };
 
+  const actualizarUsuario = (usuarioActualizado: UsuarioPerfil) => {
+    setSesion((prev) => ({ ...prev, user: usuarioActualizado }));
+    setCookie("cnm_user", JSON.stringify(usuarioActualizado), 7);
+    if (typeof window !== "undefined") {
+      const current = localStorage.getItem(CLAVE_STORAGE);
+      const token = current ? JSON.parse(current).token : (sesion.token || "cnm-demo-token");
+      localStorage.setItem(CLAVE_STORAGE, JSON.stringify({ user: usuarioActualizado, token }));
+
+      const usuarios = obtenerBaseUsuarios();
+      const index = usuarios.findIndex(
+        (entry) => entry.usuario.idUsuario === usuarioActualizado.idUsuario
+      );
+      if (index !== -1) {
+        usuarios[index].usuario = usuarioActualizado;
+        localStorage.setItem(CLAVE_USERS_DB, JSON.stringify(usuarios));
+      }
+      window.dispatchEvent(new Event(EVENTO_SESION_DEMO));
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -249,6 +270,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login,
         registro,
         logout,
+        actualizarUsuario,
       }}
     >
       {children}
