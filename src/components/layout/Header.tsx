@@ -92,7 +92,7 @@ export default function Header() {
             </span>
           </Link>
 
-          <div className="hidden items-center gap-7 md:flex">
+          <div className="hidden items-center gap-7 lg:flex">
             <nav className="flex items-center gap-8 text-sm text-sand/80">
               {enlaces.map((enlace) => (
                 <Link
@@ -104,9 +104,16 @@ export default function Header() {
                 </Link>
               ))}
               {esCliente ? (
-                <span className="cursor-default text-sand/60">
+                <Link
+                  href="/user/reservas"
+                  className={
+                    ruta.startsWith("/user/reservas")
+                      ? "border-b-2 border-ochre pb-0.5 font-medium text-sand"
+                      : "transition hover:text-sand"
+                  }
+                >
                   Mis Inscripciones y Reservas
-                </span>
+                </Link>
               ) : null}
             </nav>
 
@@ -121,7 +128,7 @@ export default function Header() {
                     }}
                     aria-label={`Notificaciones${noLeidas > 0 ? `, ${noLeidas} sin leer` : ""}`}
                     aria-expanded={notisAbierta}
-                    className="relative rounded-full p-2 text-sand transition hover:bg-white/10"
+                    className="relative rounded p-2 text-sand transition hover:bg-white/10"
                   >
                     <svg
                       viewBox="0 0 24 24"
@@ -137,7 +144,7 @@ export default function Header() {
                       <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
                     </svg>
                     {noLeidas > 0 ? (
-                      <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-clay px-1 text-[10px] font-bold text-white">
+                      <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-sm bg-clay px-1 text-[10px] font-bold text-white">
                         {noLeidas > 9 ? "9+" : noLeidas}
                       </span>
                     ) : null}
@@ -153,7 +160,7 @@ export default function Header() {
                     }}
                     aria-haspopup="menu"
                     aria-expanded={perfilAbierto}
-                    className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 text-sand transition hover:bg-white/10"
+                    className="flex items-center gap-2 rounded py-1 pl-1 pr-2 text-sand transition hover:bg-white/10"
                   >
                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ochre text-xs font-bold text-navy">
                       HG
@@ -178,7 +185,7 @@ export default function Header() {
                   {perfilAbierto ? (
                     <div
                       role="menu"
-                      className="absolute right-4 top-[calc(100%+10px)] w-56 rounded-xl bg-navy p-1 shadow-2xl ring-1 ring-sand/15"
+                      className="absolute right-4 top-[calc(100%+10px)] w-56 rounded-md bg-navy p-1 shadow-2xl ring-1 ring-sand/15"
                     >
                       <div className="border-b border-sand/10 px-3 py-2.5">
                         <p className="text-sm font-semibold text-sand">HikerGuy</p>
@@ -193,7 +200,7 @@ export default function Header() {
                       <button
                         type="button"
                         onClick={cerrarSesionDemo}
-                        className="mt-1 w-full rounded-lg bg-clay px-3 py-2 text-left text-sm font-medium text-white transition hover:bg-[#a9582f]"
+                        className="mt-1 w-full rounded-lg bg-clay px-3 py-2 text-left text-sm font-medium text-white transition hover:bg-clay-dark"
                       >
                         Cerrar sesión
                       </button>
@@ -211,7 +218,7 @@ export default function Header() {
                 </Link>
                 <Link
                   href="/registro"
-                  className="rounded-md bg-clay px-4 py-2 text-sm font-medium text-white transition hover:bg-[#a9582f]"
+                  className="rounded-md bg-clay px-4 py-2 text-sm font-medium text-white transition hover:bg-clay-dark"
                 >
                   Registrarse
                 </Link>
@@ -219,7 +226,7 @@ export default function Header() {
             )}
           </div>
 
-          <div className="flex items-center gap-1 md:hidden">
+          <div className="flex items-center gap-1 lg:hidden">
             {esCliente ? (
               <button
                 type="button"
@@ -229,7 +236,7 @@ export default function Header() {
                 }}
                 aria-label={`Notificaciones${noLeidas > 0 ? `, ${noLeidas} sin leer` : ""}`}
                 aria-expanded={notisAbierta}
-                className="relative rounded-full p-2 text-sand transition hover:bg-white/10"
+                className="relative rounded p-2 text-sand transition hover:bg-white/10"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -245,7 +252,7 @@ export default function Header() {
                   <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
                 </svg>
                 {noLeidas > 0 ? (
-                  <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-clay px-1 text-[10px] font-bold text-white">
+                  <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-sm bg-clay px-1 text-[10px] font-bold text-white">
                     {noLeidas > 9 ? "9+" : noLeidas}
                   </span>
                 ) : null}
@@ -278,7 +285,7 @@ export default function Header() {
         </div>
 
         {abierto ? (
-          <div className="border-t border-sand/15 bg-navy px-5 py-4 md:hidden">
+          <div className="border-t border-sand/15 bg-navy px-5 py-4 lg:hidden">
             <nav className="flex flex-col gap-4 text-sm text-sand/90">
               {enlaces.map((enlace) => (
                 <Link
@@ -293,9 +300,13 @@ export default function Header() {
 
               {esCliente ? (
                 <>
-                  <span className="cursor-default text-sand/60">
+                  <Link
+                    href="/user/reservas"
+                    onClick={() => setAbierto(false)}
+                    className={claseEnlace("/user/reservas")}
+                  >
                     Mis Inscripciones y Reservas
-                  </span>
+                  </Link>
                   <div className="mt-2 flex flex-col gap-3">
                     <button
                       type="button"

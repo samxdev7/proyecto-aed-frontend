@@ -5,7 +5,7 @@ export default function Contacto() {
     <section id="contact" className="bg-sand px-6 py-20 md:py-28">
       <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-10 md:flex-row">
         <div className="max-w-md">
-          <div aria-hidden="true" className="h-1 w-12 rounded-full bg-clay" />
+          <div aria-hidden="true" className="h-1 w-12 rounded bg-clay" />
           <h2 className="mt-4 font-serif text-3xl font-bold text-navy md:text-4xl">
             Contáctanos
           </h2>
@@ -15,7 +15,7 @@ export default function Contacto() {
           </p>
           <ul className="mt-8 space-y-4 text-sm text-ink/75">
             <li className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-navy text-sand">
+              <span className="flex h-10 w-10 items-center justify-center rounded bg-navy text-sand">
                 <svg
                   viewBox="0 0 24 24"
                   className="h-5 w-5"
@@ -33,7 +33,7 @@ export default function Contacto() {
               Managua, Nicaragua
             </li>
             <li className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-navy text-sand">
+              <span className="flex h-10 w-10 items-center justify-center rounded bg-navy text-sand">
                 <svg
                   viewBox="0 0 24 24"
                   className="h-5 w-5"
@@ -56,7 +56,7 @@ export default function Contacto() {
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 transition hover:text-navy"
                 >
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-navy text-sand">
+                  <span className="flex h-10 w-10 items-center justify-center rounded bg-navy text-sand">
                     <svg
                       viewBox="0 0 24 24"
                       className="h-5 w-5"
@@ -77,7 +77,7 @@ export default function Contacto() {
           </ul>
         </div>
 
-        <div className="w-full max-w-lg rounded-xl bg-white p-8 shadow-sm ring-1 ring-ink/5">
+        <div className="w-full max-w-lg rounded-lg bg-surface p-8 shadow-sm ring-1 ring-ink/5">
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <Campo label="Nombre" placeholder="Tu nombre" />
             <Campo
@@ -91,7 +91,7 @@ export default function Contacto() {
           </div>
           <button
             type="button"
-            className="mt-6 w-full rounded-md bg-clay px-6 py-3 text-sm font-medium text-white transition hover:bg-[#a9582f]"
+            className="mt-6 w-full rounded-md bg-clay px-6 py-3 text-sm font-medium text-white transition hover:bg-clay-dark"
           >
             Enviar mensaje
           </button>

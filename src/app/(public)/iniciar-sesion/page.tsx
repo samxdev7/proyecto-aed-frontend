@@ -1,111 +1,74 @@
 "use client";
-
-import { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Logo from "@/components/layout/Logo";
-import Campo from "@/components/ui/Campo";
+import { LogIn, Mail, Lock } from "lucide-react";
 import { establecerRolDemo } from "@/lib/demo";
 
-export default function IniciarSesionPage() {
+export default function LoginPage() {
   const router = useRouter();
-  const [correo, setCorreo] = useState("");
-  const [contraseña, setContraseña] = useState("");
 
-  const entrarComoHikerGuy = () => {
+  // Demo: sin backend, cualquier envío entra como cliente y respeta ?redir=.
+  function entrarDemo() {
     establecerRolDemo("client");
-    router.push("/");
-  };
+    const destino = new URLSearchParams(window.location.search).get("redir");
+    router.push(destino?.startsWith("/") ? destino : "/");
+  }
 
   return (
-    <div className="flex items-start justify-center bg-sand px-4 py-12 md:py-20">
-      <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-sm ring-1 ring-ink/5">
-        <Link
-          href="/"
-          className="mx-auto flex w-fit"
-          aria-label="Volver al inicio"
-        >
-          <Logo className="h-12 w-12" />
-        </Link>
+    <div className="min-h-screen flex items-center justify-center bg-bg-main px-4">
+      <div className="max-w-md w-full bg-surface rounded-lg shadow-xl border p-8 space-y-8">
+        <div className="text-center space-y-2">
+          <div className="inline-flex p-3 bg-primary text-white rounded-md mb-4">
+            <LogIn size={32} />
+          </div>
+          <h1 className="text-3xl font-bold text-primary">Bienvenido de vuelta</h1>
+          <p className="text-text-muted">Ingresa tus credenciales para acceder</p>
+        </div>
 
-        <h1 className="mt-5 text-center font-serif text-2xl font-bold text-navy">
-          Inicia sesión
-        </h1>
-        <p className="mt-2 text-center text-sm text-ink/60">
-          Accede para reservar tu lugar en la próxima expedición.
-        </p>
+        <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); entrarDemo(); }}>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-text-muted">Correo Electrónico</label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
+              <input 
+                type="email" 
+                className="w-full pl-10 pr-4 py-3 border border-neutral-border rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all" 
+                placeholder="correo@ejemplo.com"
+              />
+            </div>
+          </div>
 
-        <form
-          className="mt-6 space-y-4"
-          onSubmit={(evento) => {
-            evento.preventDefault();
-            entrarComoHikerGuy();
-          }}
-        >
-          <Campo
-            label="Correo electrónico"
-            tipo="email"
-            placeholder="correo@ejemplo.com"
-            valor={correo}
-            alCambiar={setCorreo}
-          />
-          <Campo
-            label="Contraseña"
-            tipo="password"
-            placeholder="Ingresa tu contraseña"
-            valor={contraseña}
-            alCambiar={setContraseña}
-          />
-          <button
-            type="submit"
-            className="w-full rounded-md bg-clay px-6 py-3 text-sm font-medium text-white transition hover:bg-[#a9582f]"
-          >
-            Iniciar sesión
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <label className="text-sm font-medium text-text-muted">Contraseña</label>
+              <Link href="/recuperar-password" className="text-xs text-primary hover:underline">¿Olvidaste tu contraseña?</Link>
+            </div>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
+              <input 
+                type="password" 
+                className="w-full pl-10 pr-4 py-3 border border-neutral-border rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all" 
+                placeholder="••••••••"
+              />
+            </div>
+          </div>
+
+          <button type="submit" className="w-full py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark transition-all shadow-lg shadow-primary/20">
+            Iniciar Sesión
           </button>
         </form>
 
-        <div className="my-6 flex items-center gap-3">
-          <span className="h-px flex-1 bg-ink/10" />
-          <span className="text-xs text-ink/45">o</span>
-          <span className="h-px flex-1 bg-ink/10" />
-        </div>
+        <p className="text-center text-xs text-text-muted">
+          Demo: cualquier credencial inicia sesión como cliente.
+        </p>
 
-        <button
-          type="button"
-          onClick={entrarComoHikerGuy}
-          className="flex w-full items-center justify-center gap-2 rounded-md bg-navy px-6 py-3 text-sm font-medium text-sand transition hover:bg-steel"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
-          Entrar como HikerGuy
-        </button>
-
-        <div className="mt-6 flex flex-col items-center gap-2 text-center text-sm">
-          <p className="text-ink/60">
-            ¿Aún no tienes cuenta?{" "}
-            <Link
-              href="/registro"
-              className="font-medium text-clay transition hover:text-[#a9582f]"
-            >
-              Regístrate
-            </Link>
+        <div className="text-center">
+          <p className="text-sm text-text-muted">
+            ¿No tienes una cuenta? <Link href="/registro" className="text-primary font-bold hover:underline">Regístrate aquí</Link>
           </p>
-          <Link
-            href="/"
-            className="text-xs font-medium text-ink/60 transition hover:text-navy"
-          >
-            ← Volver al Inicio
+          <Link href="/viajes" className="mt-2 inline-block text-xs text-primary hover:underline">
+            Continuar sin cuenta →
           </Link>
         </div>
       </div>

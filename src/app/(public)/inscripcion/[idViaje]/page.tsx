@@ -8,17 +8,18 @@ import { viajes } from "@/data/viajes";
 import type { Dificultad } from "@/types/viaje";
 import {
   EVENTO_SESION_DEMO,
-  estadoInscripcionesDemo,
-  etiquetasEstado,
   obtenerRolDemo,
   type RolDemo,
 } from "@/lib/demo";
 import {
-  formatoCordobas,
-  formatoFecha,
-  formatoPrecio,
-  formatoUSDAproximado,
-} from "@/lib/format";
+  reservaService,
+  type ReservaDetalle,
+} from "@/services/reserva.service";
+import { formatoFecha, formatoPrecio } from "@/lib/format";
+import Boton from "@/components/ui/Boton";
+import Chip from "@/components/ui/Chip";
+import Skeleton from "@/components/ui/Skeleton";
+import FlujoInscripcion from "@/components/inscripcion/FlujoInscripcion";
 
 const estiloDificultad: Record<Dificultad, string> = {
   Baja: "bg-ochre text-navy",
@@ -28,8 +29,13 @@ const estiloDificultad: Record<Dificultad, string> = {
 
 export default function InscripcionPage() {
   const { idViaje } = useParams<{ idViaje: string }>();
-  const viaje = viajes.find((item) => item.idViaje === Number(idViaje));
+  const idViajeNumero = Number(idViaje);
+  const viaje = viajes.find((item) => item.idViaje === idViajeNumero);
   const [rol, setRol] = useState<RolDemo>("anon");
+  // undefined = verificando; null = sin reserva previa para este viaje.
+  const [reservaExistente, setReservaExistente] = useState<
+    ReservaDetalle | null | undefined
+  >(undefined);
 
   useEffect(() => {
     const actualizarRol = () => setRol(obtenerRolDemo());
@@ -37,6 +43,26 @@ export default function InscripcionPage() {
     window.addEventListener(EVENTO_SESION_DEMO, actualizarRol);
     return () => window.removeEventListener(EVENTO_SESION_DEMO, actualizarRol);
   }, []);
+
+  useEffect(() => {
+    if (rol !== "client" || Number.isNaN(idViajeNumero)) return;
+    let activo = true;
+    reservaService
+      .listarMisReservas()
+      .then((lista) => {
+        if (activo) {
+          setReservaExistente(
+            lista.find((reserva) => reserva.idViaje === idViajeNumero) ?? null,
+          );
+        }
+      })
+      .catch(() => {
+        if (activo) setReservaExistente(null);
+      });
+    return () => {
+      activo = false;
+    };
+  }, [rol, idViajeNumero]);
 
   if (!viaje) {
     return (
@@ -47,7 +73,7 @@ export default function InscripcionPage() {
           </h1>
           <Link
             href="/viajes"
-            className="mt-6 inline-block rounded-md bg-sand px-6 py-3 text-sm font-medium text-navy transition hover:bg-white"
+            className="mt-6 inline-block rounded-md bg-sand px-6 py-3 text-sm font-medium text-navy transition hover:bg-surface"
           >
             Volver al catálogo
           </Link>
@@ -67,8 +93,8 @@ export default function InscripcionPage() {
             Necesitas una cuenta de cliente para inscribirte a un viaje.
           </p>
           <Link
-            href="/iniciar-sesion"
-            className="mt-6 inline-block rounded-md bg-clay px-6 py-3 text-sm font-medium text-white transition hover:bg-[#a9582f]"
+            href={`/iniciar-sesion?redir=/inscripcion/${viaje.idViaje}`}
+            className="mt-6 inline-block rounded-md bg-clay px-6 py-3 text-sm font-medium text-white transition hover:bg-clay-dark"
           >
             Iniciar sesión
           </Link>
@@ -76,8 +102,6 @@ export default function InscripcionPage() {
       </section>
     );
   }
-
-  const estado = estadoInscripcionesDemo[viaje.idViaje];
 
   return (
     <section className="bg-deep px-6 py-12 md:py-16">
@@ -94,7 +118,7 @@ export default function InscripcionPage() {
 
         <div className="mt-6 grid gap-8 md:grid-cols-5">
           <div className="md:col-span-2">
-            <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-sand/10">
+            <div className="overflow-hidden rounded-lg bg-surface shadow-sm ring-1 ring-sand/10">
               <div className="relative h-44 overflow-hidden bg-steel md:h-52">
                 {viaje.imagen ? (
                   <Image
@@ -116,7 +140,7 @@ export default function InscripcionPage() {
                   </svg>
                 )}
                 <span
-                  className={`absolute left-4 top-4 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${estiloDificultad[viaje.dificultad]}`}
+                  className={`absolute left-4 top-4 rounded-sm px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${estiloDificultad[viaje.dificultad]}`}
                 >
                   {viaje.dificultad}
                 </span>
@@ -141,8 +165,14 @@ export default function InscripcionPage() {
                   <div className="flex items-start justify-between gap-4">
                     <dt className="text-ink/50">Cupos</dt>
                     <dd className="font-medium text-ink">
-                      {viaje.cuposDisponibles} de {viaje.cuposMaximos}
+                      {viaje.cuposDisponibles} de {viaje.cuposMaximos}{" "}
                       disponibles
+                    </dd>
+                  </div>
+                  <div className="flex items-start justify-between gap-4">
+                    <dt className="text-ink/50">Abono por cupo</dt>
+                    <dd className="font-medium text-ink">
+                      {formatoPrecio(viaje.montoReserva)}
                     </dd>
                   </div>
                 </dl>
@@ -151,72 +181,38 @@ export default function InscripcionPage() {
           </div>
 
           <div className="md:col-span-3">
-            <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-sand/10 md:p-8">
-              <h2 className="font-serif text-xl font-bold text-navy">
-                Reserva tu lugar
-              </h2>
-
-              {estado ? (
-                <div className="mt-4 rounded-md border border-ink/10 bg-sand/70 px-4 py-3 text-sm text-ink/75">
-                  Ya tienes una solicitud con estado{" "}
-                  <strong>{etiquetasEstado[estado]}</strong> para este viaje.
-                  Revisa el detalle desde el catálogo.
+            <div className="rounded-lg bg-surface p-6 shadow-sm ring-1 ring-sand/10 md:p-8">
+              {reservaExistente === undefined ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-5 w-2/3" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              ) : reservaExistente ? (
+                <div className="space-y-4">
+                  <h2 className="font-serif text-xl font-bold text-navy">
+                    Ya tienes una reserva para este viaje
+                  </h2>
+                  <Chip estado={reservaExistente.estado} />
+                  <p className="text-sm text-text-muted">
+                    Registramos la reserva #{reservaExistente.idReserva} a tu
+                    nombre. Puedes seguir su estado desde tu área de cliente.
+                  </p>
+                  <Boton
+                    href={`/user/reservas/${reservaExistente.idReserva}`}
+                    tamano="sm"
+                  >
+                    Ver estado de mi reserva
+                  </Boton>
                 </div>
               ) : (
-                <>
-                  <div className="mt-4 rounded-lg bg-sand p-5">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-ink/70">
-                        Abono para apartar tu cupo
-                      </span>
-                      <span className="font-semibold text-navy">
-                        {formatoCordobas(viaje.montoReserva)}
-                        <span className="ml-1 text-xs font-normal text-ink/50">
-                          ({formatoUSDAproximado(viaje.montoReserva)})
-                        </span>
-                      </span>
-                    </div>
-                    <div className="mt-2 flex items-center justify-between text-sm">
-                      <span className="text-ink/70">Monto total del viaje</span>
-                      <span className="font-semibold text-navy">
-                        {formatoPrecio(viaje.montoTotal)}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 rounded-lg border-2 border-dashed border-ink/15 px-5 py-10 text-center">
-                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-sand text-navy">
-                      <svg
-                        viewBox="0 0 24 24"
-                        className="h-6 w-6"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
-                        <path d="M14 2v6h6" />
-                        <path d="M9 15l2 2 4-4" />
-                      </svg>
-                    </div>
-                    <h3 className="mt-4 font-serif text-lg font-bold text-navy">
-                      Formulario de inscripción
-                    </h3>
-                    <p className="mt-2 text-sm leading-relaxed text-ink/60">
-                      El formulario para completar tus datos y adjuntar tu
-                      comprobante de pago está en construcción. Pronto podrás
-                      inscribirte en línea.
-                    </p>
-                  </div>
-                </>
+                <FlujoInscripcion viaje={viaje} />
               )}
 
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-6">
                 <Link
                   href="/viajes"
-                  className="inline-flex items-center justify-center rounded-md bg-navy px-6 py-3 text-sm font-medium text-sand transition hover:bg-steel"
+                  className="text-sm font-medium text-primary transition hover:text-primary-light"
                 >
                   ← Volver al catálogo
                 </Link>

@@ -2,6 +2,7 @@
 
 import { useState, type KeyboardEvent } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import EncabezadoSeccion from "@/components/ui/EncabezadoSeccion";
 import { experienciasPasadas } from "@/data/experiencias";
 
@@ -31,7 +32,7 @@ export default function Experiencias() {
           descripcion="Momentos de nuestras salidas anteriores"
         />
 
-        <div className="relative mt-12 h-[420px] overflow-hidden rounded-2xl bg-steel outline-none focus:ring-2 focus:ring-ochre/70 md:h-[580px]" role="region" aria-roledescription="carrusel" aria-label="Experiencias del club" tabIndex={0} onKeyDown={manejarTeclado}>
+        <div className="relative mt-12 h-[420px] overflow-hidden rounded-lg bg-steel outline-none focus:ring-2 focus:ring-ochre/70 md:h-[580px]" role="region" aria-roledescription="carrusel" aria-label="Experiencias del club" tabIndex={0} onKeyDown={manejarTeclado}>
           <div aria-hidden="true" className="absolute inset-0">
             <Image
               src={experiencia.imagen}
@@ -55,7 +56,7 @@ export default function Experiencias() {
             type="button"
             onClick={anterior}
             aria-label="Ver experiencia anterior"
-            className="absolute left-5 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-sand/50 bg-navy/40 text-sand backdrop-blur transition hover:bg-navy/70 md:left-8 md:h-14 md:w-14"
+            className="absolute left-5 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded border border-sand/50 bg-navy/40 text-sand backdrop-blur transition hover:bg-navy/70 md:left-8 md:h-14 md:w-14"
           >
             <svg
               viewBox="0 0 24 24"
@@ -75,7 +76,7 @@ export default function Experiencias() {
             type="button"
             onClick={siguiente}
             aria-label="Ver siguiente experiencia"
-            className="absolute right-5 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-sand/50 bg-navy/40 text-sand backdrop-blur transition hover:bg-navy/70 md:right-8 md:h-14 md:w-14"
+            className="absolute right-5 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded border border-sand/50 bg-navy/40 text-sand backdrop-blur transition hover:bg-navy/70 md:right-8 md:h-14 md:w-14"
           >
             <svg
               viewBox="0 0 24 24"
@@ -104,7 +105,7 @@ export default function Experiencias() {
             <p className="mt-0.5 text-xs text-ink/60">{experiencia.detalle}</p>
           </div>
 
-          <div className="absolute bottom-4 right-5 z-10 rounded-full bg-navy/50 px-3 py-1 text-xs font-medium text-sand backdrop-blur md:right-8">
+          <div className="absolute bottom-4 right-5 z-10 rounded-sm bg-navy/50 px-3 py-1 text-xs font-medium text-sand backdrop-blur md:right-8">
             {indice + 1} / {total}
           </div>
 
@@ -126,12 +127,12 @@ export default function Experiencias() {
         </div>
 
         <div className="mt-10 flex justify-center">
-          <a
+          <Link
             href="/viajes"
             className="rounded-md bg-navy px-7 py-3 text-sm font-medium text-sand transition hover:bg-steel"
           >
             Ver próximas expediciones
-          </a>
+          </Link>
         </div>
       </div>
     </section>

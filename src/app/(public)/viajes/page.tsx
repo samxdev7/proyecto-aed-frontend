@@ -1,180 +1,138 @@
 "use client";
-
-import { Suspense, useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { viajes } from "@/data/viajes";
-import type { Dificultad } from "@/types/viaje";
-import ViajeCard from "@/components/viajes/ViajeCard";
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight, Calendar, Eye, MapPin, Mountain } from "lucide-react";
+import { viajesService, type ViajeResumen } from "@/services/viajes.service";
+import { formatoFechaCorta } from "@/lib/format";
+import { TarjetaViajeSkeleton } from "@/components/ui/Skeleton";
+import EmptyState from "@/components/ui/EmptyState";
+import { ChipDificultad } from "@/components/ui/Chip";
 import ModalFicha from "@/components/viajes/ModalFicha";
-import {
-  EVENTO_SESION_DEMO,
-  estadoInscripcionesDemo,
-  idViajesNuevosDemo,
-  obtenerRolDemo,
-  type RolDemo,
-} from "@/lib/demo";
 
-const filtros: Array<{ valor: Dificultad | "Todas"; etiqueta: string }> = [
-  { valor: "Todas", etiqueta: "Todas" },
-  { valor: "Baja", etiqueta: "Baja" },
-  { valor: "Media", etiqueta: "Media" },
-  { valor: "Alta", etiqueta: "Alta" },
-];
-
-function normalizar(texto: string): string {
-  return texto
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-function CatalogoContenido() {
-  const [dificultad, setDificultad] = useState<Dificultad | "Todas">("Todas");
-  const [busqueda, setBusqueda] = useState("");
-  const [rol, setRol] = useState<RolDemo>("anon");
-  const parametros = useSearchParams();
-  const router = useRouter();
-
-  const idDetalle = Number(parametros.get("detalle"));
-  const viajeSeleccionado = idDetalle
-    ? viajes.find((viaje) => viaje.idViaje === idDetalle) ?? null
-    : null;
+export default function TripCatalog() {
+  const [viajes, setViajes] = useState<ViajeResumen[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [seleccionado, setSeleccionado] = useState<ViajeResumen | null>(null);
 
   useEffect(() => {
-    const actualizarRol = () => setRol(obtenerRolDemo());
-    actualizarRol();
-    window.addEventListener(EVENTO_SESION_DEMO, actualizarRol);
-    return () => window.removeEventListener(EVENTO_SESION_DEMO, actualizarRol);
+    let activo = true;
+    viajesService.listarViajes().then((res) => {
+      if (activo) {
+        setViajes(res);
+        setLoading(false);
+      }
+    });
+    return () => {
+      activo = false;
+    };
   }, []);
 
-  const viajesFiltrados = useMemo(() => {
-    const consulta = normalizar(busqueda.trim());
-    return viajes.filter(
-      (viaje) =>
-        (dificultad === "Todas" || viaje.dificultad === dificultad) &&
-        (consulta === "" ||
-          normalizar(`${viaje.titulo} ${viaje.descripcion}`).includes(
-            consulta,
-          )),
-    );
-  }, [dificultad, busqueda]);
-
-  const esCliente = rol === "client";
-
-  return (
-    <section className="bg-deep px-6 py-16 md:py-24">
-      <div className="mx-auto max-w-6xl">
-        <div className="mx-auto max-w-2xl text-center">
-          <div
-            aria-hidden="true"
-            className="mx-auto h-1 w-12 rounded-full bg-ochre"
-          />
-          <h1 className="mt-4 font-serif text-3xl font-bold text-sand md:text-4xl">
-            Nuestras Expediciones
-          </h1>
-          <p className="mt-4 leading-relaxed text-sand/65">
-            Explora las montañas y volcanes de la región. Cada viaje incluye
-            guía experta, transporte y el equipo organizativo del club.
-          </p>
-        </div>
-
-        <div className="mt-10 flex flex-col items-center justify-between gap-5 md:flex-row md:items-start">
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-sand/60">
-              Filtrar por dificultad
-            </p>
-            <div
-              role="group"
-              aria-label="Filtrar por dificultad"
-              className="inline-flex rounded-md bg-white/10 p-1 ring-1 ring-sand/15"
-            >
-              {filtros.map((filtro) => (
-                <button
-                  key={filtro.valor}
-                  type="button"
-                  onClick={() => setDificultad(filtro.valor)}
-                  className={
-                    dificultad === filtro.valor
-                      ? "rounded bg-sand px-4 py-2 text-sm font-medium text-navy"
-                      : "rounded px-4 py-2 text-sm font-medium text-sand/60 transition hover:text-sand"
-                  }
-                >
-                  {filtro.etiqueta}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="relative w-full max-w-xs">
-            <svg
-              viewBox="0 0 24 24"
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-sand/50"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              aria-hidden="true"
-            >
-              <circle cx="11" cy="11" r="7" />
-              <path d="m20 20-3.5-3.5" />
-            </svg>
-            <input
-              type="search"
-              value={busqueda}
-              onChange={(evento) => setBusqueda(evento.target.value)}
-              placeholder="Buscar destino..."
-              className="w-full rounded-md border border-sand/20 bg-white/10 py-3 pl-9 pr-4 text-sm text-sand outline-none transition placeholder:text-sand/40 focus:border-clay focus:ring-1 focus:ring-clay"
-            />
-          </div>
-        </div>
-
-        <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {viajesFiltrados.map((viaje) => (
-            <ViajeCard
-              key={viaje.idViaje}
-              viaje={viaje}
-              onVerDetalle={() =>
-                router.replace(`/viajes?detalle=${viaje.idViaje}`, {
-                  scroll: false,
-                })
-              }
-              estadoInscripcion={
-                esCliente ? estadoInscripcionesDemo[viaje.idViaje] : undefined
-              }
-              esNuevo={esCliente && idViajesNuevosDemo.has(viaje.idViaje)}
-            />
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-lg py-lg">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg">
+          {Array.from({ length: 6 }, (_, i) => (
+            <TarjetaViajeSkeleton key={i} />
           ))}
         </div>
+      </div>
+    );
+  }
 
-        {viajesFiltrados.length === 0 ? (
-          <p className="mt-12 text-center text-sand/60">
-            No hay viajes que coincidan con tu búsqueda.
-          </p>
-        ) : null}
+  return (
+    <div className="max-w-7xl mx-auto px-lg py-lg space-y-lg">
+      <div className="text-center space-y-sm mb-xl">
+        <h1 className="text-3xl font-bold text-primary tracking-tight">Expediciones Disponibles</h1>
+        <p className="text-sm text-text-muted max-w-lg mx-auto">
+          Descubre rutas diseñadas para conectar con la naturaleza y la cultura de Nicaragua.
+        </p>
       </div>
 
-      <ModalFicha
-        viaje={viajeSeleccionado}
-        onCerrar={() => router.replace("/viajes", { scroll: false })}
-        estadoInscripcion={
-          esCliente && viajeSeleccionado
-            ? estadoInscripcionesDemo[viajeSeleccionado.idViaje]
-            : undefined
-        }
-        puedeReservar={
-          esCliente &&
-          viajeSeleccionado != null &&
-          estadoInscripcionesDemo[viajeSeleccionado.idViaje] === undefined
-        }
-      />
-    </section>
-  );
-}
+      {viajes.length === 0 ? (
+        <EmptyState
+          icono={Mountain}
+          titulo="No hay expediciones disponibles"
+          descripcion="Aún no hay viajes publicados. Vuelve pronto para descubrir la próxima ruta."
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg">
+          {viajes.map((viaje) => (
+            <div key={viaje.idViaje} className="group bg-surface rounded-md border border-neutral-border overflow-hidden hover:shadow-md transition-all duration-300 relative">
+              <Link href={`/viajes/${viaje.idViaje}`} aria-label={`Ver detalles de ${viaje.titulo}`} className="absolute inset-0 z-10" />
+              <div className="aspect-[4/3] bg-surface-alt relative overflow-hidden">
+                {viaje.imagen ? (
+                  <Image
+                    src={viaje.imagen}
+                    alt={viaje.titulo}
+                    fill
+                    sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-text-muted">
+                    <Mountain size={40} aria-hidden="true" />
+                  </div>
+                )}
+                <div className="absolute top-sm left-sm flex items-center gap-1.5">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                    Dificultad:
+                  </span>
+                  <ChipDificultad dificultad={viaje.dificultad} />
+                </div>
+              </div>
 
-export default function CatalogoPage() {
-  return (
-    <Suspense fallback={null}>
-      <CatalogoContenido />
-    </Suspense>
+              <div className="p-md space-y-md">
+                <div className="space-y-xs">
+                  <h3 className="text-lg font-bold text-primary group-hover:text-primary-dark transition-colors">
+                    {viaje.titulo}
+                  </h3>
+                  <p className="text-sm text-text-muted line-clamp-2 leading-relaxed">
+                    {viaje.descripcion}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-xs py-sm">
+                  <div className="flex items-center gap-xs text-xs text-text-muted">
+                    <Calendar size={14} className="text-primary" />
+                    <span>{formatoFechaCorta(viaje.fechaHoraIda)}</span>
+                  </div>
+                  <div className="flex items-center gap-xs text-xs text-text-muted">
+                    <MapPin size={14} className="text-primary" />
+                    <span className="line-clamp-2 leading-snug">{viaje.puntoEncuentro}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-xs">
+                  <div className="flex flex-col">
+                    <span className="text-xs text-text-muted uppercase font-bold">Costo Total</span>
+                    <span className="text-xl font-bold text-text-main">${viaje.montoTotal}</span>
+                  </div>
+                  <div className="flex items-center gap-xs">
+                    <button
+                      type="button"
+                      onClick={() => setSeleccionado(viaje)}
+                      aria-label={`Vista rápida de ${viaje.titulo}`}
+                      title="Vista rápida"
+                      className="p-xs rounded-sm border border-neutral-border text-text-muted hover:bg-surface-alt hover:text-primary transition-colors relative z-20"
+                    >
+                      <Eye size={18} />
+                    </button>
+                    <Link
+                      href={`/viajes/${viaje.idViaje}`}
+                      className="bg-primary text-white px-md py-xs rounded-sm text-sm font-medium hover:bg-primary-dark transition-all flex items-center gap-xs relative z-20"
+                    >
+                      Explorar <ArrowRight size={16} />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <ModalFicha viaje={seleccionado} onCerrar={() => setSeleccionado(null)} />
+    </div>
   );
 }

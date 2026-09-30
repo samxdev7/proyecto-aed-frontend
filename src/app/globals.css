@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @theme inline {
+  /* Brand Colors */
   --color-navy: #1e3a5f;
   --color-steel: #2f5c88;
   --color-deep: #182f4d;
@@ -9,12 +10,96 @@
   --color-sand: #f2ebe0;
   --color-ink: #1b2430;
 
+  /* Semantic Colors */
+  --color-primary: var(--color-navy);
+  --color-primary-dark: var(--color-deep);
+  --color-primary-light: var(--color-steel);
+  --color-secondary: var(--color-clay);
+  --color-accent: var(--color-ochre);
+  --color-bg-main: var(--color-sand);
+  --color-text-main: var(--color-ink);
+  --color-surface: #ffffff;
+  --color-error: #dc2626;
+  --color-success: #16a34a;
+
+  /* Semánticos complementarios (PRD) */
+  --color-clay-dark: #a9582f; /* clay oscurecido: hover de botones CTA */
+  --color-neutral-border: #e5e7eb; /* borde por defecto de superficies (tarjetas, paneles, inputs) */
+  --color-text-muted: #6b7280; /* texto secundario / ayuda / metadatos */
+  --color-warning: #d97706; /* alerta intermedia (ámbar) */
+  --color-warning-bg: #fef3c7; /* fondo de avisos warning */
+  --color-warning-text: #b45309; /* texto sobre fondo warning */
+  --color-surface-alt: #f9fafb; /* fondo alterno de tablas y listas (gray-50) */
+
+  /* Estado de reserva: parejas bg/text centralizadas (base success/warning/error) */
+  --color-estado-pendiente-bg: #fef3c7;
+  --color-estado-pendiente-text: #b45309;
+  --color-estado-aprobada-bg: #dcfce7;
+  --color-estado-aprobada-text: #15803d;
+  --color-estado-rechazada-bg: #fee2e2;
+  --color-estado-rechazada-text: #b91c1c;
+
+  /* Paleta admin: panel de gestión (legibilidad de datos, alto contraste,
+     neutros slate en vez del navy público, acento teal — sin rojo/amarillo de alerta) */
+  --color-admin-bg: #f1f5f9;
+  --color-admin-surface: #ffffff;
+  --color-admin-sidebar: #0f172a;
+  --color-admin-border: #e2e8f0;
+  --color-admin-text: #0f172a;
+  --color-admin-muted: #64748b;
+  --color-admin-accent: #0f766e;
+  --color-admin-accent-hover: #115e59; /* teal-800: hover del acento admin, sin inventar tono fuera de slate/teal */
+
+  /* Border Radius - estándar PRD: sm 2 / base 4 / md 6 / lg 8.
+     xl, 2xl y 3xl se capan a 8px para que ninguna clase residual rompa el look. */
+  --radius: 0.25rem;
+  --radius-sm: 2px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 8px;
+  --radius-2xl: 8px;
+  --radius-3xl: 8px;
+
+  /* Spacing Tokens.
+     --space-* alimenta space-x/space-y; --spacing-* es el namespace que Tailwind v4
+     usa para p-*, px-*, gap-*, m-*, pt-*, inset-… — sin él esas clases no compilan
+     y todo el contenido queda pegado (bug E18: 31 de 35 clases de espaciado ausentes
+     del CSS compilado). */
+  --space-xs: 0.5rem;
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2.5rem;
+  --space-xl: 4rem;
+
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 1rem;
+  --spacing-md: 1.5rem;
+  --spacing-lg: 2.5rem;
+  --spacing-xl: 4rem;
+
+  /* max-w-* resuelve --max-width antes que --spacing y --container; sin estos
+     valores explícitos, --spacing-lg (2.5rem) secuestra max-w-lg y rompe las
+     medidas de contenedor (subtítulos, modales, error pages). */
+  --max-width-sm: 24rem;
+  --max-width-md: 28rem;
+  --max-width-lg: 32rem;
+  --max-width-xl: 36rem;
+
+  /* Typography Scale */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+
   --font-sans: var(--font-inter);
   --font-serif: var(--font-merriweather);
 }
 
 @layer base {
   body {
-    @apply bg-sand font-sans text-ink antialiased;
+    @apply bg-bg-main font-sans text-text-main antialiased;
   }
 }

@@ -44,7 +44,7 @@ const servicios = [
 
 export default function PorQueNosotros() {
   return (
-    <section id="services" className="bg-white px-6 py-20 md:py-28">
+    <section id="services" className="bg-surface px-6 py-20 md:py-28">
       <div className="mx-auto max-w-6xl">
         <EncabezadoSeccion
           titulo="¿Por qué viajar con nosotros?"
@@ -55,9 +55,9 @@ export default function PorQueNosotros() {
           {servicios.map((servicio) => (
             <div
               key={servicio.titulo}
-              className="rounded-xl bg-sand/60 p-7 text-center ring-1 ring-ink/5"
+              className="rounded-lg bg-sand/60 p-7 text-center ring-1 ring-ink/5"
             >
-              <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-navy text-sand">
+              <span className="mx-auto flex h-12 w-12 items-center justify-center rounded bg-navy text-sand">
                 <svg
                   viewBox="0 0 24 24"
                   className="h-6 w-6"

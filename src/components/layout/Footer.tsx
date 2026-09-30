@@ -36,7 +36,9 @@ export default function Footer() {
       <div className="flex max-w-6xl flex-col items-center justify-between gap-6 md:flex-row">
         <div className="flex min-w-0 items-center gap-2.5 text-sand">
           <Logo className="h-8 w-8 shrink-0" />
-          <span className="truncate text-sm font-semibold md:text-base">
+          {/* Sin `truncate`: en tablet el texto se partía en "Club Nicaragüense de M…".
+              Mejor a 2 líneas que cortado. */}
+          <span className="text-sm font-semibold md:text-base">
             Club Nicaragüense de Montañismo
           </span>
         </div>
@@ -44,7 +46,7 @@ export default function Footer() {
         <div className="flex items-center gap-3">
           {redes.map((red) => {
             const clases =
-              "flex h-9 w-9 items-center justify-center rounded-full border border-sand/30 text-sand/80 transition hover:bg-sand/10 hover:text-sand";
+              "flex h-9 w-9 items-center justify-center rounded border border-sand/30 text-sand/80 transition hover:bg-sand/10 hover:text-sand";
             const icono = (
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
                 {red.icono}

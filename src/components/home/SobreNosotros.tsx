@@ -51,7 +51,7 @@ export default function SobreNosotros() {
         />
 
         <div className="mt-14 grid items-stretch gap-10 md:grid-cols-2">
-          <div className="relative min-h-[260px] overflow-hidden rounded-xl bg-steel">
+          <div className="relative min-h-[260px] overflow-hidden rounded-lg bg-steel">
             <Image
               src="/Presentaciones/historia/SanCristobalGrupalDron.jpg"
               alt="Expedición del club al volcán San Cristóbal"
@@ -61,7 +61,7 @@ export default function SobreNosotros() {
             />
           </div>
 
-          <div className="rounded-xl bg-white p-8 shadow-sm ring-1 ring-ink/5">
+          <div className="rounded-lg bg-surface p-8 shadow-sm ring-1 ring-ink/5">
             <h3 className="font-serif text-xl font-bold text-navy">
               Nuestra Historia
             </h3>
@@ -91,7 +91,7 @@ export default function SobreNosotros() {
           {estadisticas.map((estadistica) => (
             <div
               key={estadistica.etiqueta}
-              className="rounded-xl bg-white py-8 text-center ring-1 ring-ink/5"
+              className="rounded-lg bg-surface py-8 text-center ring-1 ring-ink/5"
             >
               <p className="font-serif text-3xl font-black text-navy">
                 {estadistica.valor}
@@ -107,7 +107,7 @@ export default function SobreNosotros() {
           {pilares.map((pilar) => (
             <div
               key={pilar.titulo}
-              className="rounded-xl bg-white p-7 ring-1 ring-ink/5"
+              className="rounded-lg bg-surface p-7 ring-1 ring-ink/5"
             >
               <svg
                 viewBox="0 0 24 24"

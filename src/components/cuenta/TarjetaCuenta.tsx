@@ -22,7 +22,7 @@ export default function TarjetaCuenta({
 }: TarjetaCuentaProps) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-sand px-4 py-12">
-      <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-sm ring-1 ring-ink/5">
+      <div className="w-full max-w-md rounded-lg bg-surface p-8 shadow-sm ring-1 ring-ink/5">
         <Link
           href="/"
           className="mx-auto flex w-fit"
@@ -63,7 +63,7 @@ export default function TarjetaCuenta({
 
         <button
           type="button"
-          className="mt-6 w-full rounded-md bg-clay px-6 py-3 text-sm font-medium text-white transition hover:bg-[#a9582f]"
+          className="mt-6 w-full rounded-md bg-clay px-6 py-3 text-sm font-medium text-white transition hover:bg-clay-dark"
         >
           {tipo === "registro" ? "Crear cuenta" : "Iniciar sesión"}
         </button>
@@ -79,7 +79,7 @@ export default function TarjetaCuenta({
             {textoNavegacion}{" "}
             <Link
               href={enlaceNavegacion}
-              className="font-medium text-clay transition hover:text-[#a9582f]"
+              className="font-medium text-clay transition hover:text-clay-dark"
             >
               {textoEnlace}
             </Link>

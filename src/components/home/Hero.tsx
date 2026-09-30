@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Hero() {
   return (
@@ -25,7 +26,7 @@ export default function Hero() {
       <div className="relative z-10 max-w-3xl">
         <div
           aria-hidden="true"
-          className="mx-auto h-1 w-12 rounded-full bg-ochre"
+          className="mx-auto h-1 w-12 rounded bg-ochre"
         />
         <h1 className="mt-5 font-serif text-4xl font-black uppercase leading-tight tracking-tight text-sand sm:text-5xl md:text-6xl">
           Club Nicaragüense de Montañismo
@@ -34,9 +35,9 @@ export default function Hero() {
           Exploramos, cuidamos y disfrutamos las montañas y volcanes. Únete a
           la próxima expedición.
         </p>
-        <a
+        <Link
           href="/viajes"
-          className="mt-9 inline-flex items-center gap-2 rounded-md bg-clay px-7 py-3 text-sm font-medium text-white transition hover:bg-[#a9582f]"
+          className="mt-9 inline-flex items-center gap-2 rounded-md bg-clay px-7 py-3 text-sm font-medium text-white transition hover:bg-clay-dark"
         >
           Explorar viajes
           <svg
@@ -51,7 +52,7 @@ export default function Hero() {
           >
             <path d="M5 12h14m-6-6 6 6-6 6" />
           </svg>
-        </a>
+        </Link>
       </div>
     </section>
   );

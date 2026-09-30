@@ -10,6 +10,7 @@ import {
   formatoUSDAproximado,
 } from "@/lib/format";
 import { etiquetasEstado } from "@/lib/demo";
+import Modal from "@/components/ui/Modal";
 
 interface ModalFichaProps {
   viaje: Viaje | null;
@@ -54,18 +55,14 @@ export default function ModalFicha({
   if (!viaje) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-navy/60 p-4 backdrop-blur-sm md:items-center md:p-8"
-      onClick={onCerrar}
-      role="dialog"
-      aria-modal="true"
-      aria-label={`Detalle de ${viaje.titulo}`}
+    <Modal
+      abierto
+      onCerrar={onCerrar}
+      titulo={`Detalle de ${viaje.titulo}`}
+      className="max-w-2xl"
     >
-      <div
-        className="w-full max-w-2xl rounded-xl bg-white shadow-2xl"
-        onClick={(evento) => evento.stopPropagation()}
-      >
-        <div className="relative h-44 overflow-hidden rounded-t-xl bg-steel md:h-52">
+      <div>
+        <div className="relative h-44 overflow-hidden rounded-t-lg bg-steel md:h-52">
           {viaje.imagen ? (
             <Image
               src={viaje.imagen}
@@ -86,7 +83,7 @@ export default function ModalFicha({
             </svg>
           )}
           <span
-            className={`absolute left-5 top-5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${estiloDificultad[viaje.dificultad]}`}
+            className={`absolute left-5 top-5 rounded-sm px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${estiloDificultad[viaje.dificultad]}`}
           >
             {viaje.dificultad}
           </span>
@@ -94,7 +91,7 @@ export default function ModalFicha({
             type="button"
             onClick={onCerrar}
             aria-label="Cerrar detalles"
-            className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-full border border-sand/50 bg-navy/40 text-sand transition hover:bg-navy/70"
+            className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded border border-sand/50 bg-navy/40 text-sand transition hover:bg-navy/70"
           >
             <svg
               viewBox="0 0 24 24"
@@ -171,7 +168,7 @@ export default function ModalFicha({
               <ol className="mt-3 space-y-2 text-sm text-ink/75">
                 {viaje.itinerario.map((paso, indice) => (
                   <li key={paso} className="flex items-start gap-2">
-                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-navy text-[10px] font-semibold text-sand">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-navy text-[10px] font-semibold text-sand">
                       {indice + 1}
                     </span>
                     {paso}
@@ -214,14 +211,14 @@ export default function ModalFicha({
               <button
                 type="button"
                 onClick={() => router.push(`/inscripcion/${viaje.idViaje}`)}
-                className="inline-flex flex-1 items-center justify-center rounded-md bg-clay px-6 py-3 text-sm font-medium text-white transition hover:bg-[#a9582f]"
+                className="inline-flex flex-1 items-center justify-center rounded-md bg-clay px-6 py-3 text-sm font-medium text-white transition hover:bg-clay-dark"
               >
                 Reservar
               </button>
             ) : (
               <a
                 href="/iniciar-sesion"
-                className="inline-flex items-center justify-center rounded-md bg-clay px-6 py-3 text-sm font-medium text-white transition hover:bg-[#a9582f]"
+                className="inline-flex items-center justify-center rounded-md bg-clay px-6 py-3 text-sm font-medium text-white transition hover:bg-clay-dark"
               >
                 Iniciar Sesión para Reservar
               </a>
@@ -236,7 +233,7 @@ export default function ModalFicha({
           </div>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 

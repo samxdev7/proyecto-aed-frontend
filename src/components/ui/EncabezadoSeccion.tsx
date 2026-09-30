@@ -15,7 +15,7 @@ export default function EncabezadoSeccion({
     <div className="mx-auto max-w-2xl text-center">
       <div
         aria-hidden="true"
-        className="mx-auto h-1 w-12 rounded-full bg-clay"
+        className="mx-auto h-1 w-12 rounded bg-clay"
       />
       <h2
         className={`mt-4 font-serif text-3xl font-bold md:text-4xl ${tituloClase}`}

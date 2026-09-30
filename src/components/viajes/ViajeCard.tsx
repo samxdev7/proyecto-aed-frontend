@@ -34,7 +34,7 @@ export default function ViajeCard({
   const pocosCupos = viaje.cuposDisponibles <= 5;
 
   return (
-    <article className="flex flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-ink/5 transition hover:shadow-md">
+    <article className="flex flex-col overflow-hidden rounded-lg bg-surface shadow-sm ring-1 ring-ink/5 transition hover:shadow-md">
       {estadoInscripcion ? (
         <p
           className={`px-3 py-1.5 text-center text-[11px] font-semibold uppercase tracking-wide ${estiloEstado[estadoInscripcion]}`}
@@ -63,12 +63,12 @@ export default function ViajeCard({
           </svg>
         )}
         <span
-          className={`absolute left-4 top-4 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${estiloDificultad[viaje.dificultad]}`}
+          className={`absolute left-4 top-4 rounded-sm px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${estiloDificultad[viaje.dificultad]}`}
         >
           {viaje.dificultad}
         </span>
         {esNuevo ? (
-          <span className="absolute right-4 top-4 rounded-full bg-ochre px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-navy">
+          <span className="absolute right-4 top-4 rounded-sm bg-ochre px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-navy">
             Recién añadido
           </span>
         ) : null}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   cambiarNotificacionesActivas,
   marcarNotificacionLeida,
@@ -29,15 +29,10 @@ export default function NotificacionesDrawer({
   abierta,
   onCerrar,
 }: NotificacionesDrawerProps) {
-  const [notificaciones, setNotificaciones] = useState<NotificacionDemo[]>([]);
-  const [activas, setActivas] = useState(true);
-
-  useEffect(() => {
-    if (abierta) {
-      setNotificaciones(obtenerNotificacionesDemo());
-      setActivas(notificacionesActivas());
-    }
-  }, [abierta]);
+  const [notificaciones, setNotificaciones] = useState<NotificacionDemo[]>(() =>
+    obtenerNotificacionesDemo(),
+  );
+  const [activas, setActivas] = useState(() => notificacionesActivas());
 
   const alSeleccionar = (notificacion: NotificacionDemo) => {
     marcarNotificacionLeida(notificacion.id);
@@ -68,7 +63,7 @@ export default function NotificacionesDrawer({
         role="dialog"
         aria-modal="true"
         aria-label="Notificaciones"
-        className={`absolute inset-y-0 right-0 flex w-full max-w-sm flex-col bg-white shadow-2xl transition-transform duration-300 ${
+        className={`absolute inset-y-0 right-0 flex w-full max-w-sm flex-col bg-surface shadow-2xl transition-transform duration-300 ${
           abierta ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -83,7 +78,7 @@ export default function NotificacionesDrawer({
             type="button"
             onClick={onCerrar}
             aria-label="Cerrar notificaciones"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-ink/50 transition hover:bg-ink/5 hover:text-ink"
+            className="flex h-8 w-8 items-center justify-center rounded text-ink/50 transition hover:bg-ink/5 hover:text-ink"
           >
             <svg
               viewBox="0 0 24 24"

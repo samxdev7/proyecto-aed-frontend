@@ -42,3 +42,12 @@ next-env.d.ts
 
 # wireframes
 /Wireframes
+
+# agent
+AGENTS.md
+/.opencode
+/docs
+CLAUDE.md
+INFORME-E12-2026-09-27.md
+INFORME-UI-2026-09-28.md
+PLAN.md
