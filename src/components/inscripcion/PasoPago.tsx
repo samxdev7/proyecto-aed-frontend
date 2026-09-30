@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import TemporizadorRetencion from "@/components/inscripcion/TemporizadorRetencion";
@@ -36,27 +36,21 @@ export default function PasoPago({
   const [comprobante, setComprobante] = useState<string | null>(null);
   const [nombreArchivo, setNombreArchivo] = useState("");
   const [errores, setErrores] = useState<ErroresPago>({});
-  const refComprobante = useRef<string | null>(null);
-
-  // El objectURL local se libera al salir del paso; la reserva guarda el URL como mock.
-  useEffect(
-    () => () => {
-      if (refComprobante.current) URL.revokeObjectURL(refComprobante.current);
-    },
-    [],
-  );
 
   const monto = viaje.montoReserva * cantidad;
 
   function alElegirArchivo(evento: React.ChangeEvent<HTMLInputElement>) {
     const archivo = evento.target.files?.[0];
     if (!archivo) return;
-    if (refComprobante.current) URL.revokeObjectURL(refComprobante.current);
-    const url = URL.createObjectURL(archivo);
-    refComprobante.current = url;
-    setComprobante(url);
+
     setNombreArchivo(archivo.name);
-    setErrores((previas) => ({ ...previas, comprobante: undefined }));
+    const lector = new FileReader();
+    lector.onload = (e) => {
+      const dataUri = e.target?.result as string;
+      setComprobante(dataUri);
+      setErrores((previas) => ({ ...previas, comprobante: undefined }));
+    };
+    lector.readAsDataURL(archivo);
   }
 
   function confirmar() {
