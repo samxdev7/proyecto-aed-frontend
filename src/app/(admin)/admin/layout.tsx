@@ -62,8 +62,15 @@ export default function AdminLayout({
     <div className="flex flex-col md:flex-row min-h-screen bg-admin-bg text-admin-text">
       {/* Sidebar */}
       <aside className="w-full shrink-0 md:w-64 bg-admin-sidebar text-white flex flex-col">
-        <div className="p-6 text-2xl font-bold border-b border-white/10">
-          CNM Admin
+        <div className="p-6 border-b border-white/10 flex items-center justify-between">
+          <span className="text-2xl font-bold">CNM Admin</span>
+          <Link
+            href="/"
+            title="Volver al catálogo y sitio web"
+            className="text-xs text-white/70 hover:text-white transition-colors underline underline-offset-4"
+          >
+            Sitio web &rarr;
+          </Link>
         </div>
         <nav className="flex-1 p-4 space-y-2">
           {menuItems.map((item) => (
@@ -96,10 +103,19 @@ export default function AdminLayout({
       <main className="flex-1 min-w-0 flex flex-col">
         <header className="h-16 bg-admin-surface border-b border-admin-border flex items-center justify-between px-8 shadow-sm">
           <h1 className="text-xl font-semibold">Panel de Administración</h1>
-          <div className="flex items-center gap-sm">
-            <span className="text-sm text-admin-muted">{sesion.nombreCompleto}</span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-admin-accent text-xs font-bold text-white">
-              {iniciales(sesion.nombreCompleto)}
+          <div className="flex items-center gap-md">
+            <Link
+              href="/"
+              className="text-xs font-medium text-admin-muted hover:text-admin-text transition-colors flex items-center gap-1"
+            >
+              <span>Ver sitio web</span>
+              <span aria-hidden="true">&rarr;</span>
+            </Link>
+            <div className="flex items-center gap-sm border-l border-admin-border pl-md">
+              <span className="text-sm text-admin-muted">{sesion.nombreCompleto}</span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-admin-accent text-xs font-bold text-white">
+                {iniciales(sesion.nombreCompleto)}
+              </div>
             </div>
           </div>
         </header>

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LogIn } from "lucide-react";
 import { authService } from "@/services/auth.service";
-import { EVENTO_SESION, guardarSesion, obtenerSesion } from "@/lib/auth";
+import { EVENTO_SESION, esAdministrador, guardarSesion, obtenerSesion } from "@/lib/auth";
 import type { Sesion } from "@/types/auth";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
@@ -36,7 +36,13 @@ export default function LoginPage() {
       });
       guardarSesion(nueva);
       const destino = new URLSearchParams(window.location.search).get("redir");
-      router.push(destino?.startsWith("/") ? destino : "/");
+      if (destino?.startsWith("/")) {
+        router.push(destino);
+      } else if (esAdministrador(nueva)) {
+        router.push("/admin");
+      } else {
+        router.push("/");
+      }
     } catch (excepcion) {
       setError(
         excepcion instanceof Error
@@ -48,6 +54,7 @@ export default function LoginPage() {
   }
 
   if (sesion) {
+    const esAdmin = esAdministrador(sesion);
     return (
       <div className="flex min-h-dvh items-center justify-center bg-bg-main px-md">
         <div className="w-full max-w-md space-y-md rounded-lg border border-neutral-border bg-surface p-lg text-center shadow-sm">
@@ -56,10 +63,15 @@ export default function LoginPage() {
           </h1>
           <p className="text-sm text-text-muted">
             Hola, {sesion.nombreCompleto.split(" ")[0]}. Puedes ir a tu cuenta
-            o volver al inicio.
+            {esAdmin ? ", al panel de administración" : ""} o volver al inicio.
           </p>
-          <div className="flex justify-center gap-sm">
-            <Boton href="/user/perfil">Ir a mi cuenta</Boton>
+          <div className="flex flex-wrap justify-center gap-sm">
+            {esAdmin ? (
+              <Boton href="/admin">Panel de Administración</Boton>
+            ) : null}
+            <Boton href="/user/perfil" variante={esAdmin ? "contorno" : "primario"}>
+              Ir a mi cuenta
+            </Boton>
             <Boton href="/" variante="contorno">
               Ir al inicio
             </Boton>

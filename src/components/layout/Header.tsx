@@ -5,8 +5,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Logo from "./Logo";
 import NotificacionesDrawer from "@/components/clientes/NotificacionesDrawer";
-import { EVENTO_SESION, cerrarSesion, obtenerSesion } from "@/lib/auth";
+import { EVENTO_SESION, cerrarSesion, esAdministrador, obtenerSesion } from "@/lib/auth";
 import { userService } from "@/services/user.service";
+import {
+  Shield,
+  LayoutDashboard,
+  Map,
+  CalendarCheck,
+  Users,
+} from "lucide-react";
 import type { Sesion } from "@/types/auth";
 
 const enlaces = [
@@ -99,6 +106,7 @@ export default function Header() {
       : "transition hover:text-sand";
 
   const conSesion = sesionLista && sesion !== null;
+  const esAdmin = conSesion && esAdministrador(sesion);
 
   const cerrarSesionHeader = () => {
     cerrarSesion();
@@ -173,6 +181,19 @@ export default function Header() {
                   Mis Inscripciones y Reservas
                 </Link>
               ) : null}
+              {esAdmin ? (
+                <Link
+                  href="/admin"
+                  className={
+                    ruta.startsWith("/admin")
+                      ? "inline-flex items-center gap-1.5 rounded-md bg-ochre/25 px-2.5 py-1 text-xs font-semibold text-ochre ring-1 ring-ochre/50"
+                      : "inline-flex items-center gap-1.5 rounded-md bg-white/5 px-2.5 py-1 text-xs font-medium text-sand/90 transition hover:bg-ochre/15 hover:text-ochre ring-1 ring-white/10"
+                  }
+                >
+                  <Shield className="h-3.5 w-3.5 text-ochre" aria-hidden="true" />
+                  <span>Panel Admin</span>
+                </Link>
+              ) : null}
             </nav>
 
             {conSesion && sesion ? (
@@ -204,6 +225,11 @@ export default function Header() {
                     <span className="hidden max-w-32 truncate text-sm font-medium md:inline">
                       {sesion.nombreCompleto.split(" ")[0]}
                     </span>
+                    {esAdmin ? (
+                      <span className="hidden rounded bg-ochre/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-ochre md:inline">
+                        Admin
+                      </span>
+                    ) : null}
                     <svg
                       viewBox="0 0 24 24"
                       className="hidden h-4 w-4 text-sand/60 md:block"
@@ -221,27 +247,82 @@ export default function Header() {
                   {perfilAbierto ? (
                     <div
                       role="menu"
-                      className="absolute right-4 top-[calc(100%+10px)] w-56 rounded-md bg-navy p-1 shadow-2xl ring-1 ring-sand/15"
+                      className="absolute right-4 top-[calc(100%+10px)] w-60 rounded-md bg-navy p-1 shadow-2xl ring-1 ring-sand/15"
                     >
                       <div className="border-b border-sand/10 px-3 py-2.5">
-                        <p className="truncate text-sm font-semibold text-sand">
-                          {sesion.nombreCompleto}
-                        </p>
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="truncate text-sm font-semibold text-sand">
+                            {sesion.nombreCompleto}
+                          </p>
+                          {esAdmin ? (
+                            <span className="shrink-0 rounded bg-ochre/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-ochre">
+                              Admin
+                            </span>
+                          ) : null}
+                        </div>
                         <p className="truncate text-xs text-sand/50">
                           {sesion.correo}
                         </p>
                       </div>
-                      {enlacesCuenta.map((enlace) => (
-                        <Link
-                          key={enlace.href}
-                          role="menuitem"
-                          href={enlace.href}
-                          onClick={() => setPerfilAbierto(false)}
-                          className="block rounded-sm px-3 py-2 text-sm text-sand/90 transition hover:bg-white/10"
-                        >
-                          {enlace.label}
-                        </Link>
-                      ))}
+
+                      {esAdmin ? (
+                        <div className="border-b border-sand/10 py-1">
+                          <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-ochre">
+                            Administración
+                          </div>
+                          <Link
+                            role="menuitem"
+                            href="/admin"
+                            onClick={() => setPerfilAbierto(false)}
+                            className="flex items-center gap-2.5 rounded-sm px-3 py-1.5 text-sm text-sand/90 transition hover:bg-white/10"
+                          >
+                            <LayoutDashboard className="h-4 w-4 text-ochre shrink-0" aria-hidden="true" />
+                            <span>Panel de Control</span>
+                          </Link>
+                          <Link
+                            role="menuitem"
+                            href="/admin/viajes"
+                            onClick={() => setPerfilAbierto(false)}
+                            className="flex items-center gap-2.5 rounded-sm px-3 py-1.5 text-sm text-sand/90 transition hover:bg-white/10"
+                          >
+                            <Map className="h-4 w-4 text-ochre shrink-0" aria-hidden="true" />
+                            <span>Gestión de Viajes</span>
+                          </Link>
+                          <Link
+                            role="menuitem"
+                            href="/admin/reservas"
+                            onClick={() => setPerfilAbierto(false)}
+                            className="flex items-center gap-2.5 rounded-sm px-3 py-1.5 text-sm text-sand/90 transition hover:bg-white/10"
+                          >
+                            <CalendarCheck className="h-4 w-4 text-ochre shrink-0" aria-hidden="true" />
+                            <span>Gestión de Reservas</span>
+                          </Link>
+                          <Link
+                            role="menuitem"
+                            href="/admin/usuarios"
+                            onClick={() => setPerfilAbierto(false)}
+                            className="flex items-center gap-2.5 rounded-sm px-3 py-1.5 text-sm text-sand/90 transition hover:bg-white/10"
+                          >
+                            <Users className="h-4 w-4 text-ochre shrink-0" aria-hidden="true" />
+                            <span>Gestión de Usuarios</span>
+                          </Link>
+                        </div>
+                      ) : null}
+
+                      <div className="py-1">
+                        {enlacesCuenta.map((enlace) => (
+                          <Link
+                            key={enlace.href}
+                            role="menuitem"
+                            href={enlace.href}
+                            onClick={() => setPerfilAbierto(false)}
+                            className="block rounded-sm px-3 py-2 text-sm text-sand/90 transition hover:bg-white/10"
+                          >
+                            {enlace.label}
+                          </Link>
+                        ))}
+                      </div>
+
                       <button
                         type="button"
                         role="menuitem"
@@ -324,6 +405,45 @@ export default function Header() {
 
               {conSesion && sesion ? (
                 <>
+                  {esAdmin ? (
+                    <div className="rounded-md border border-ochre/30 bg-ochre/10 p-3">
+                      <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-ochre">
+                        <Shield className="h-4 w-4" />
+                        Administración
+                      </p>
+                      <div className="flex flex-col gap-2 pl-1">
+                        <Link
+                          href="/admin"
+                          onClick={() => setAbierto(false)}
+                          className={claseEnlace("/admin")}
+                        >
+                          Panel de Control
+                        </Link>
+                        <Link
+                          href="/admin/viajes"
+                          onClick={() => setAbierto(false)}
+                          className={claseEnlace("/admin/viajes")}
+                        >
+                          Gestión de Viajes
+                        </Link>
+                        <Link
+                          href="/admin/reservas"
+                          onClick={() => setAbierto(false)}
+                          className={claseEnlace("/admin/reservas")}
+                        >
+                          Gestión de Reservas
+                        </Link>
+                        <Link
+                          href="/admin/usuarios"
+                          onClick={() => setAbierto(false)}
+                          className={claseEnlace("/admin/usuarios")}
+                        >
+                          Gestión de Usuarios
+                        </Link>
+                      </div>
+                    </div>
+                  ) : null}
+
                   {enlacesCuenta.map((enlace) => (
                     <Link
                       key={enlace.href}
