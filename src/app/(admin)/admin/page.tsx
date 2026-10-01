@@ -22,15 +22,18 @@ export default function AdminDashboard() {
   const [reintentos, setReintentos] = useState(0);
 
   useEffect(() => {
+    let activo = true;
     Promise.all([
       adminService.getDashboardStats(),
       adminService.listarReservas({ estado: "pendiente" }, 0, 1),
     ])
       .then(([panel, resPendientes]) => {
+        if (!activo) return;
         setStats(panel);
         setPendientes(resPendientes.totalElements);
       })
       .catch((e) => {
+        if (!activo) return;
         setMensaje(
           e instanceof ApiError && e.message
             ? e.message
@@ -38,6 +41,9 @@ export default function AdminDashboard() {
         );
         setError(true);
       });
+    return () => {
+      activo = false;
+    };
   }, [reintentos]);
 
   function reintentar() {
@@ -85,19 +91,19 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-md">
         <StatCard
           title="Cupos Ofrecidos"
-          value={stats.cuposReservados.totalCuposOfrecidos}
+          value={stats.cuposReservados?.totalCuposOfrecidos ?? 0}
           icon={<Users className="text-admin-accent" />}
           color="bg-admin-bg"
         />
         <StatCard
           title="Cupos Reservados"
-          value={stats.cuposReservados.totalCuposReservados}
+          value={stats.cuposReservados?.totalCuposReservados ?? 0}
           icon={<CalendarCheck className="text-warning-text" />}
           color="bg-warning-bg"
         />
         <StatCard
           title="Cupos Disponibles"
-          value={stats.cuposReservados.totalCuposDisponibles}
+          value={stats.cuposReservados?.totalCuposDisponibles ?? 0}
           icon={<TrendingUp className="text-estado-aprobada-text" />}
           color="bg-estado-aprobada-bg"
         />
@@ -124,7 +130,7 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-lg">
         <div className="bg-admin-surface p-md rounded-md shadow-sm border border-admin-border">
           <h3 className="text-lg font-bold mb-sm">Inscritos por Viaje</h3>
-          {stats.inscritosPorViaje.length === 0 ? (
+          {!stats.inscritosPorViaje || stats.inscritosPorViaje.length === 0 ? (
             <p className="text-sm text-admin-muted italic">Aún no hay viajes con inscritos.</p>
           ) : (
             <div className="space-y-sm">
@@ -150,7 +156,7 @@ export default function AdminDashboard() {
 
         <div className="bg-admin-surface p-md rounded-md shadow-sm border border-admin-border">
           <h3 className="text-lg font-bold mb-sm">Rutas más Populares</h3>
-          {stats.rutasMasPopulares.length === 0 ? (
+          {!stats.rutasMasPopulares || stats.rutasMasPopulares.length === 0 ? (
             <p className="text-sm text-admin-muted italic">Aún no hay reservas aprobadas.</p>
           ) : (
             <div className="overflow-x-auto">

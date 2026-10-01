@@ -14,7 +14,7 @@ export class ApiError extends Error {
 export class ApiClient {
   private static baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-  private static headers(body?: unknown): Record<string, string> {
+  private static headers(): Record<string, string> {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     const token = typeof window === "undefined" ? null : obtenerToken();
     if (token) headers.Authorization = `Bearer ${token}`;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
@@ -50,14 +50,12 @@ export default function PasoPago({
   const [comprobante, setComprobante] = useState<string | null>(null);
   const [nombreArchivo, setNombreArchivo] = useState("");
   const [procesando, setProcesando] = useState(false);
-  const [expirado, setExpirado] = useState(false);
+  const [tiempoAgotado, setTiempoAgotado] = useState(
+    () => new Date(borrador.fechaLimitePago).getTime() <= Date.now(),
+  );
   const [errores, setErrores] = useState<ErroresPago>({});
 
-  // El backend re-fija su propia ventana al crear la reserva; esto solo
-  // retiene el cupo en UX y deshabilita el envío al agotarse.
-  useEffect(() => {
-    setExpirado(new Date(borrador.fechaLimitePago).getTime() <= Date.now());
-  }, [borrador.fechaLimitePago]);
+  const expirado = tiempoAgotado;
 
   const monto = viaje.montoReserva * cantidad;
   const bloqueado = enviando || procesando || expirado;
@@ -102,7 +100,7 @@ export default function PasoPago({
     <div className="space-y-md">
       <TemporizadorRetencion
         fechaLimite={borrador.fechaLimitePago}
-        alExpirar={() => setExpirado(true)}
+        alExpirar={() => setTiempoAgotado(true)}
       />
 
       <div>

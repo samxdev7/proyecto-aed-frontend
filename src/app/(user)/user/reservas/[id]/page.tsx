@@ -16,18 +16,15 @@ import Image from "next/image";
 export default function ReservaDetallePage() {
   const params = useParams<{ id: string }>();
   const idReserva = Number(params.id);
+  const esIdInvalido = Number.isNaN(idReserva);
   const [reserva, setReserva] = useState<ReservaDetalle | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!esIdInvalido);
   const [error, setError] = useState(false);
   const [reintentos, setReintentos] = useState(0);
   const [referenciaVisible, setReferenciaVisible] = useState(false);
 
   useEffect(() => {
-    if (Number.isNaN(idReserva)) {
-      setError(true);
-      setLoading(false);
-      return;
-    }
+    if (Number.isNaN(idReserva)) return;
     let activo = true;
     reservaService
       .obtenerReserva(idReserva)

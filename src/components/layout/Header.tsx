@@ -73,9 +73,22 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
-    if (!sesionLista) return;
-    cargarNoLeidas();
-  }, [sesionLista, sesion, cargarNoLeidas]);
+    if (!sesionLista || !sesion) return;
+    let activo = true;
+    userService
+      .getMyNotifications(0, 20)
+      .then((pagina) => {
+        if (activo) {
+          setNoLeidas(pagina.content.filter((notificacion) => !notificacion.leida).length);
+        }
+      })
+      .catch(() => {
+        if (activo) setNoLeidas(0);
+      });
+    return () => {
+      activo = false;
+    };
+  }, [sesionLista, sesion]);
 
   useEffect(() => {
     const alClicFuera = (evento: MouseEvent) => {

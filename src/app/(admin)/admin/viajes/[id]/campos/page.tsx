@@ -82,8 +82,23 @@ export default function AdminCampoFormulario() {
 
   useEffect(() => {
     if (!Number.isFinite(idViaje)) return;
-    void cargarCampos();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    let activo = true;
+    viajesService
+      .listarCampos(idViaje)
+      .then((data) => {
+        if (!activo) return;
+        setCampos([...data].sort((a, b) => a.orden - b.orden));
+        setLoading(false);
+      })
+      .catch((e) => {
+        if (!activo) return;
+        setMensaje(mensajeDeError(e, "Ocurrió un error al obtener el formulario. Inténtalo de nuevo."));
+        setError(true);
+        setLoading(false);
+      });
+    return () => {
+      activo = false;
+    };
   }, [idViaje, reintentos]);
 
   function abrirCrear() {

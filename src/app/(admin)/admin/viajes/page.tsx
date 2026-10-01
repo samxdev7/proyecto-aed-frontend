@@ -103,7 +103,23 @@ export default function AdminViajes() {
   }
 
   useEffect(() => {
-    void cargarViajes();
+    let activo = true;
+    viajesService
+      .listarViajes()
+      .then((respuesta) => {
+        if (!activo) return;
+        setViajes(respuesta.content);
+        setLoading(false);
+      })
+      .catch((e) => {
+        if (!activo) return;
+        setMensaje(mensajeDeError(e, "Ocurrió un error al obtener la lista. Inténtalo de nuevo."));
+        setError(true);
+        setLoading(false);
+      });
+    return () => {
+      activo = false;
+    };
   }, [reintentos]);
 
   function abrirCrear() {
@@ -317,6 +333,7 @@ export default function AdminViajes() {
                         alt=""
                         width={48}
                         height={36}
+                        unoptimized
                         className="h-9 w-12 rounded-sm object-cover"
                       />
                     ) : (

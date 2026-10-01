@@ -27,8 +27,11 @@ const ESTADOS_BLOQUEANTES: HistorialReservaResumen["estado"][] = [
 export default function InscripcionPage() {
   const { idViaje } = useParams<{ idViaje: string }>();
   const idViajeNumero = Number(idViaje);
+  const esIdInvalido = Number.isNaN(idViajeNumero);
   // undefined = cargando; null = el viaje no existe.
-  const [viaje, setViaje] = useState<ViajeDetalle | null | undefined>(undefined);
+  const [viaje, setViaje] = useState<ViajeDetalle | null | undefined>(
+    esIdInvalido ? null : undefined,
+  );
   const [sesion, setSesion] = useState<Sesion | null>(null);
   const [sesionLista, setSesionLista] = useState(false);
   // undefined = verificando; null = sin reserva previa para este viaje.
@@ -37,10 +40,7 @@ export default function InscripcionPage() {
   >(undefined);
 
   useEffect(() => {
-    if (Number.isNaN(idViajeNumero)) {
-      setViaje(null);
-      return;
-    }
+    if (Number.isNaN(idViajeNumero)) return;
     let activo = true;
     viajesService
       .obtenerViaje(idViajeNumero)

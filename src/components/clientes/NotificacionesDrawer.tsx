@@ -53,8 +53,24 @@ export default function NotificacionesDrawer({
   }
 
   useEffect(() => {
-    if (abierta) cargar();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- recargar cada vez que se abre
+    if (!abierta) return;
+    let activo = true;
+    userService
+      .getMyNotifications(0, 20)
+      .then((pagina) => {
+        if (!activo) return;
+        setNotificaciones(pagina.content);
+        setError(false);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!activo) return;
+        setError(true);
+        setLoading(false);
+      });
+    return () => {
+      activo = false;
+    };
   }, [abierta]);
 
   function marcarLeida(notificacion: Notificacion) {

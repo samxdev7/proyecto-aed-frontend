@@ -121,12 +121,32 @@ function AdminReservas() {
   }
 
   useEffect(() => {
-    setAviso(null);
-    void cargarReservas();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    let activo = true;
+    adminService
+      .listarReservas(
+        { estado: estadoFiltro || undefined },
+        0,
+        50,
+      )
+      .then((respuesta) => {
+        if (!activo) return;
+        setReservas(respuesta.content);
+        setLoading(false);
+      })
+      .catch((e) => {
+        if (!activo) return;
+        setMensaje(mensajeDeError(e, "Ocurrió un error al obtener la bandeja. Inténtalo de nuevo."));
+        setError(true);
+        setLoading(false);
+      });
+    return () => {
+      activo = false;
+    };
   }, [estadoFiltro, reintentos]);
 
   function cambiarFiltro(estado: "" | EstadoReserva) {
+    setAviso(null);
+    setLoading(true);
     router.replace(estado ? `/admin/reservas?estado=${estado}` : "/admin/reservas", { scroll: false });
   }
 
@@ -408,6 +428,7 @@ function AdminReservas() {
                         src={detalle.capturaComprobanteUrl}
                         alt={`Comprobante de la reserva #${detalle.idReserva}`}
                         fill
+                        unoptimized
                         sizes="(max-width: 768px) 100vw, 33vw"
                         className="object-contain"
                       />
