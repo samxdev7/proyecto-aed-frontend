@@ -1,26 +1,40 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Logo from "./Logo";
 import NotificacionesDrawer from "@/components/clientes/NotificacionesDrawer";
-import {
-  EVENTO_NOTIFICACIONES,
-  EVENTO_SESION_DEMO,
-  cantidadNotificacionesSinLeer,
-  limpiarRolDemo,
-  obtenerRolDemo,
-} from "@/lib/demo";
+import { EVENTO_SESION, cerrarSesion, obtenerSesion } from "@/lib/auth";
+import { userService } from "@/services/user.service";
+import type { Sesion } from "@/types/auth";
 
 const enlaces = [
   { href: "/", label: "Inicio" },
   { href: "/viajes", label: "Catálogo de viajes" },
 ];
 
+/** Menú del avatar: solo "Mi cuenta" (más "Cerrar sesión" en el dropdown).
+ * "Mis Inscripciones y Reservas" vive como ítem propio del nav, no aquí.
+ * Las notificaciones viven solo en el drawer de la campana. */
+const enlacesCuenta = [{ href: "/user/perfil", label: "Mi Cuenta" }];
+
+function iniciales(nombreCompleto: string): string {
+  return (
+    nombreCompleto
+      .split(" ")
+      .filter(Boolean)
+      .map((parte) => parte[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "·"
+  );
+}
+
 export default function Header() {
   const [abierto, setAbierto] = useState(false);
-  const [rol, setRol] = useState<"anon" | "client">("anon");
+  const [sesion, setSesion] = useState<Sesion | null>(null);
+  const [sesionLista, setSesionLista] = useState(false);
   const [notisAbierta, setNotisAbierta] = useState(false);
   const [perfilAbierto, setPerfilAbierto] = useState(false);
   const [noLeidas, setNoLeidas] = useState(0);
@@ -29,17 +43,32 @@ export default function Header() {
   const refPerfil = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const actualizarRol = () => setRol(obtenerRolDemo());
-    const actualizarNoLeidas = () => setNoLeidas(cantidadNotificacionesSinLeer());
-    actualizarRol();
-    actualizarNoLeidas();
-    window.addEventListener(EVENTO_SESION_DEMO, actualizarRol);
-    window.addEventListener(EVENTO_NOTIFICACIONES, actualizarNoLeidas);
-    return () => {
-      window.removeEventListener(EVENTO_SESION_DEMO, actualizarRol);
-      window.removeEventListener(EVENTO_NOTIFICACIONES, actualizarNoLeidas);
+    const actualizar = () => {
+      setSesion(obtenerSesion());
+      setSesionLista(true);
     };
+    actualizar();
+    window.addEventListener(EVENTO_SESION, actualizar);
+    return () => window.removeEventListener(EVENTO_SESION, actualizar);
   }, []);
+
+  const cargarNoLeidas = useCallback(() => {
+    if (!obtenerSesion()) {
+      setNoLeidas(0);
+      return;
+    }
+    userService
+      .getMyNotifications(0, 20)
+      .then((pagina) =>
+        setNoLeidas(pagina.content.filter((notificacion) => !notificacion.leida).length),
+      )
+      .catch(() => setNoLeidas(0));
+  }, []);
+
+  useEffect(() => {
+    if (!sesionLista) return;
+    cargarNoLeidas();
+  }, [sesionLista, sesion, cargarNoLeidas]);
 
   useEffect(() => {
     const alClicFuera = (evento: MouseEvent) => {
@@ -69,13 +98,42 @@ export default function Header() {
       ? "border-b-2 border-ochre pb-0.5 font-medium text-sand"
       : "transition hover:text-sand";
 
-  const esCliente = rol === "client";
+  const conSesion = sesionLista && sesion !== null;
 
-  const cerrarSesionDemo = () => {
-    limpiarRolDemo();
+  const cerrarSesionHeader = () => {
+    cerrarSesion();
     setPerfilAbierto(false);
     setAbierto(false);
   };
+
+  const botonCampana = (onclick: () => void, ariaExpanded: boolean) => (
+    <button
+      type="button"
+      onClick={onclick}
+      aria-label={`Notificaciones${noLeidas > 0 ? `, ${noLeidas} sin leer` : ""}`}
+      aria-expanded={ariaExpanded}
+      className="relative rounded p-2 text-sand transition hover:bg-white/10"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        className="h-6 w-6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+        <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+      </svg>
+      {noLeidas > 0 ? (
+        <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-sm bg-clay px-1 text-[10px] font-bold text-white">
+          {noLeidas > 9 ? "9+" : noLeidas}
+        </span>
+      ) : null}
+    </button>
+  );
 
   return (
     <>
@@ -103,7 +161,7 @@ export default function Header() {
                   {enlace.label}
                 </Link>
               ))}
-              {esCliente ? (
+              {conSesion ? (
                 <Link
                   href="/user/reservas"
                   className={
@@ -117,38 +175,16 @@ export default function Header() {
               ) : null}
             </nav>
 
-            {esCliente ? (
+            {conSesion && sesion ? (
               <div className="flex items-center gap-1">
                 <div ref={refNotis}>
-                  <button
-                    type="button"
-                    onClick={() => {
+                  {botonCampana(
+                    () => {
                       setNotisAbierta((valor) => !valor);
                       setPerfilAbierto(false);
-                    }}
-                    aria-label={`Notificaciones${noLeidas > 0 ? `, ${noLeidas} sin leer` : ""}`}
-                    aria-expanded={notisAbierta}
-                    className="relative rounded p-2 text-sand transition hover:bg-white/10"
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      className="h-6 w-6"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-                      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
-                    </svg>
-                    {noLeidas > 0 ? (
-                      <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-sm bg-clay px-1 text-[10px] font-bold text-white">
-                        {noLeidas > 9 ? "9+" : noLeidas}
-                      </span>
-                    ) : null}
-                  </button>
+                    },
+                    notisAbierta,
+                  )}
                 </div>
 
                 <div ref={refPerfil}>
@@ -163,10 +199,10 @@ export default function Header() {
                     className="flex items-center gap-2 rounded py-1 pl-1 pr-2 text-sand transition hover:bg-white/10"
                   >
                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ochre text-xs font-bold text-navy">
-                      HG
+                      {iniciales(sesion.nombreCompleto)}
                     </span>
-                    <span className="hidden text-sm font-medium md:inline">
-                      HikerGuy
+                    <span className="hidden max-w-32 truncate text-sm font-medium md:inline">
+                      {sesion.nombreCompleto.split(" ")[0]}
                     </span>
                     <svg
                       viewBox="0 0 24 24"
@@ -188,19 +224,29 @@ export default function Header() {
                       className="absolute right-4 top-[calc(100%+10px)] w-56 rounded-md bg-navy p-1 shadow-2xl ring-1 ring-sand/15"
                     >
                       <div className="border-b border-sand/10 px-3 py-2.5">
-                        <p className="text-sm font-semibold text-sand">HikerGuy</p>
-                        <p className="text-xs text-sand/50">Miembro del club</p>
+                        <p className="truncate text-sm font-semibold text-sand">
+                          {sesion.nombreCompleto}
+                        </p>
+                        <p className="truncate text-xs text-sand/50">
+                          {sesion.correo}
+                        </p>
                       </div>
-                      <span className="block cursor-default px-3 py-2 text-sm text-sand/70">
-                        Mi Perfil
-                      </span>
-                      <span className="block cursor-default px-3 py-2 text-sm text-sand/70">
-                        Mis Inscripciones
-                      </span>
+                      {enlacesCuenta.map((enlace) => (
+                        <Link
+                          key={enlace.href}
+                          role="menuitem"
+                          href={enlace.href}
+                          onClick={() => setPerfilAbierto(false)}
+                          className="block rounded-sm px-3 py-2 text-sm text-sand/90 transition hover:bg-white/10"
+                        >
+                          {enlace.label}
+                        </Link>
+                      ))}
                       <button
                         type="button"
-                        onClick={cerrarSesionDemo}
-                        className="mt-1 w-full rounded-lg bg-clay px-3 py-2 text-left text-sm font-medium text-white transition hover:bg-clay-dark"
+                        role="menuitem"
+                        onClick={cerrarSesionHeader}
+                        className="mt-1 w-full rounded-md bg-clay px-3 py-2 text-left text-sm font-medium text-white transition hover:bg-clay-dark"
                       >
                         Cerrar sesión
                       </button>
@@ -227,37 +273,15 @@ export default function Header() {
           </div>
 
           <div className="flex items-center gap-1 lg:hidden">
-            {esCliente ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setNotisAbierta((valor) => !valor);
-                  setPerfilAbierto(false);
-                }}
-                aria-label={`Notificaciones${noLeidas > 0 ? `, ${noLeidas} sin leer` : ""}`}
-                aria-expanded={notisAbierta}
-                className="relative rounded p-2 text-sand transition hover:bg-white/10"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-6 w-6"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-                  <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
-                </svg>
-                {noLeidas > 0 ? (
-                  <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-sm bg-clay px-1 text-[10px] font-bold text-white">
-                    {noLeidas > 9 ? "9+" : noLeidas}
-                  </span>
-                ) : null}
-              </button>
-            ) : null}
+            {conSesion
+              ? botonCampana(
+                  () => {
+                    setNotisAbierta((valor) => !valor);
+                    setPerfilAbierto(false);
+                  },
+                  notisAbierta,
+                )
+              : null}
 
             <button
               type="button"
@@ -298,8 +322,18 @@ export default function Header() {
                 </Link>
               ))}
 
-              {esCliente ? (
+              {conSesion && sesion ? (
                 <>
+                  {enlacesCuenta.map((enlace) => (
+                    <Link
+                      key={enlace.href}
+                      href={enlace.href}
+                      onClick={() => setAbierto(false)}
+                      className={claseEnlace(enlace.href)}
+                    >
+                      {enlace.label}
+                    </Link>
+                  ))}
                   <Link
                     href="/user/reservas"
                     onClick={() => setAbierto(false)}
@@ -310,8 +344,8 @@ export default function Header() {
                   <div className="mt-2 flex flex-col gap-3">
                     <button
                       type="button"
-                      onClick={cerrarSesionDemo}
-                      className="rounded-md bg-clay px-4 py-2 text-center font-medium text-white"
+                      onClick={cerrarSesionHeader}
+                      className="rounded-md bg-clay px-md py-sm text-center font-medium text-white"
                     >
                       Cerrar sesión
                     </button>
@@ -322,14 +356,14 @@ export default function Header() {
                   <Link
                     href="/iniciar-sesion"
                     onClick={() => setAbierto(false)}
-                    className="rounded-md border border-sand/40 px-4 py-2 text-center text-sand"
+                    className="rounded-md border border-sand/40 px-md py-sm text-center text-sand"
                   >
                     Iniciar sesión
                   </Link>
                   <Link
                     href="/registro"
                     onClick={() => setAbierto(false)}
-                    className="rounded-md bg-clay px-4 py-2 text-center font-medium text-white"
+                    className="rounded-md bg-clay px-md py-sm text-center font-medium text-white"
                   >
                     Registrarse
                   </Link>
@@ -343,6 +377,7 @@ export default function Header() {
       <NotificacionesDrawer
         abierta={notisAbierta}
         onCerrar={() => setNotisAbierta(false)}
+        onCambio={cargarNoLeidas}
       />
     </>
   );

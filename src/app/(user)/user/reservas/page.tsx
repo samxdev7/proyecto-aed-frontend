@@ -1,44 +1,49 @@
 "use client";
-import React, { useEffect, useState } from "react";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { userService } from "@/services/user.service";
-import { Reserva } from "@/types/reserva";
-import {
-  Calendar,
-  CheckCircle,
-  Clock,
-  XCircle,
-  ArrowRight,
-  CalendarX
-} from "lucide-react";
-import Skeleton from "@/components/ui/Skeleton";
+import { Calendar, CalendarX, CheckCircle, Clock, XCircle } from "lucide-react";
+import { reservaService } from "@/services/reserva.service";
+import type { HistorialReservaResumen } from "@/types/reserva";
+import type { Dificultad } from "@/types/viaje";
+import { formatoFechaCorta, formatoPrecio } from "@/lib/format";
+import Boton from "@/components/ui/Boton";
+import Chip, { ChipDificultad } from "@/components/ui/Chip";
 import EmptyState from "@/components/ui/EmptyState";
-import Chip from "@/components/ui/Chip";
-import { formatoPrecio } from "@/lib/format";
+import Skeleton from "@/components/ui/Skeleton";
 
 const iconosEstado = {
   aprobada: CheckCircle,
   pendiente: Clock,
   rechazada: XCircle,
+  expirada: CalendarX,
 } as const;
 
 export default function UserReservas() {
-  const [reservas, setReservas] = useState<Reserva[]>([]);
+  const [reservas, setReservas] = useState<HistorialReservaResumen[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [reintentos, setReintentos] = useState(0);
 
   useEffect(() => {
-    userService
-      .getMyHistorial()
-      .then((res) => {
-        setReservas(res.content);
-        setLoading(false);
+    let activo = true;
+    reservaService
+      .listarMisReservas()
+      .then((pagina) => {
+        if (activo) {
+          setReservas(pagina.content);
+          setLoading(false);
+        }
       })
       .catch(() => {
-        setError(true);
-        setLoading(false);
+        if (activo) {
+          setError(true);
+          setLoading(false);
+        }
       });
+    return () => {
+      activo = false;
+    };
   }, [reintentos]);
 
   function reintentar() {
@@ -49,9 +54,9 @@ export default function UserReservas() {
 
   if (loading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-md">
         {Array.from({ length: 3 }, (_, i) => (
-          <Skeleton key={i} className="h-28 w-full rounded-lg" />
+          <Skeleton key={i} className="h-28 w-full rounded-md" />
         ))}
       </div>
     );
@@ -68,18 +73,17 @@ export default function UserReservas() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-md">
+      <div className="flex items-center justify-between gap-sm">
         <div>
           <h2 className="text-2xl font-bold text-primary">Mis Reservas</h2>
-          <p className="text-text-muted">Gestiona tus inscripciones a los viajes.</p>
+          <p className="text-text-muted">
+            Gestiona tus inscripciones a los viajes.
+          </p>
         </div>
-        <Link
-          href="/viajes"
-          className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition-colors flex items-center gap-2"
-        >
+        <Boton href="/viajes" tamano="sm">
           <Calendar size={18} /> Nueva Reserva
-        </Link>
+        </Boton>
       </div>
 
       {reservas.length === 0 ? (
@@ -90,37 +94,51 @@ export default function UserReservas() {
           accion={{ etiqueta: "Explorar viajes", href: "/viajes" }}
         />
       ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {reservas.map((res) => {
-            const IconoEstado = iconosEstado[res.estado];
+        <div className="grid grid-cols-1 gap-md">
+          {reservas.map((reserva) => {
+            const IconoEstado = iconosEstado[reserva.estado];
             return (
-              <div key={res.idReserva} className="bg-surface p-6 rounded-lg shadow-sm border border-neutral-border flex flex-col md:flex-row justify-between items-center gap-6">
-                <div className="flex gap-6 items-center w-full md:w-auto">
-                  <div className="w-16 h-16 bg-sand rounded-md flex items-center justify-center text-primary font-bold text-xl">
-                    {res.tituloViaje[0]}
+              <div
+                key={reserva.idReserva}
+                className="flex flex-col items-center justify-between gap-md rounded-md border border-neutral-border bg-surface p-md shadow-sm md:flex-row"
+              >
+                <div className="flex w-full items-center gap-md md:w-auto">
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md bg-sand text-xl font-bold text-primary">
+                    {reserva.viaje.titulo[0]}
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg text-primary">{res.tituloViaje}</h3>
-                    <div className="flex gap-3 text-sm text-text-muted">
+                    <h3 className="text-lg font-bold text-primary">
+                      {reserva.viaje.titulo}
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-sm text-sm text-text-muted">
                       <span className="flex items-center gap-1">
-                        <Calendar size={14} /> {new Date(res.fechaCreacion).toLocaleDateString()}
+                        <Calendar size={14} aria-hidden="true" />{" "}
+                        {formatoFechaCorta(reserva.viaje.fechaHoraIda)}
                       </span>
-                      <span className="flex items-center gap-1">
-                        <ArrowRight size={14} /> {formatoPrecio(res.montoTotal)}
+                      <ChipDificultad
+                        dificultad={reserva.viaje.dificultad as Dificultad}
+                      />
+                      <span>
+                        Abono: {formatoPrecio(reserva.montoReserva)}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
-                  <Chip
-                    estado={res.estado}
-                    icono={IconoEstado}
-                    className="px-3 py-1 font-bold uppercase"
-                  />
+                <div className="flex w-full items-center justify-between gap-md md:w-auto md:justify-end">
+                  <div className="flex flex-col items-end gap-xs">
+                    <Chip
+                      estado={reserva.estado}
+                      icono={IconoEstado}
+                      className="px-sm py-xs font-bold uppercase"
+                    />
+                    <span className="text-xs text-text-muted">
+                      Reservada el {formatoFechaCorta(reserva.fechaReserva)}
+                    </span>
+                  </div>
                   <Link
-                    href={`/user/reservas/${res.idReserva}`}
-                    className="px-4 py-2 text-sm border border-neutral-border rounded-lg hover:bg-surface-alt transition-colors font-medium"
+                    href={`/user/reservas/${reserva.idReserva}`}
+                    className="rounded-md border border-neutral-border px-md py-sm text-sm font-medium transition-colors hover:bg-surface-alt"
                   >
                     Ver Detalle
                   </Link>

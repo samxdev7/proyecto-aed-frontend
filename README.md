@@ -14,6 +14,20 @@ pnpm dev
 bun dev
 ```
 
+## Configuración y puesta en marcha
+
+**Requisito:** backend `cnm-backend` corriendo (por defecto `http://localhost:8080`) con la
+base de datos PostgreSQL `cnm` sembrada (`cnm-backend/seed-dev.sql` tiene las instrucciones).
+
+- El frontend no necesita `.env`: usa `NEXT_PUBLIC_API_URL` con fallback
+  `http://localhost:8080`. Si tu backend corre en otro host/puerto, crea `.env.local`:
+  `NEXT_PUBLIC_API_URL=http://localhost:9090`.
+- CORS: el backend acepta cualquier origen por defecto (funciona con cualquier puerto
+  que asigne `next dev`: 3000, 3001, 3002…). Para producción, define `CORS_ORIGINS`
+  en el `.env` del backend (ver `.env.example` de `cnm-backend`).
+- Cuentas demo del seed: `admin@cnmontanismo.com` / `Admin1234` ·
+  `carlos.gonzalez@example.com` / `Cliente1234`.
+
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.

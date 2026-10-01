@@ -1,18 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CalendarX } from "lucide-react";
-import { adminService } from "@/services/admin.service";
-import {
-  reservaService,
-  type BorradorReserva,
-  type ReservaDetalle,
-} from "@/services/reserva.service";
+import { ApiError } from "@/lib/api-client";
+import { reservaService, type BorradorReserva } from "@/services/reserva.service";
 import { userService } from "@/services/user.service";
-import type { Acompanante } from "@/types/reserva";
+import { opcionesDeCampo, viajesService } from "@/services/viajes.service";
+import type { Acompanante, ReservaDetalle } from "@/types/reserva";
 import type { UsuarioPerfil } from "@/types/usuario";
 import type { CampoFormulario, Viaje } from "@/types/viaje";
-import EmptyState from "@/components/ui/EmptyState";
 import IndicadorPasos from "@/components/inscripcion/IndicadorPasos";
 import PasoConfirmacion from "@/components/inscripcion/PasoConfirmacion";
 import PasoCupos from "@/components/inscripcion/PasoCupos";
@@ -30,37 +25,44 @@ const acompananteVacio = (): Acompanante => ({
 
 export default function FlujoInscripcion({ viaje }: { viaje: Viaje }) {
   const [paso, setPaso] = useState<Paso>(1);
-  const [expirado, setExpirado] = useState(false);
   const [cantidad, setCantidad] = useState(1);
   const [acompanantes, setAcompanantes] = useState<Acompanante[]>([]);
   const [campos, setCampos] = useState<CampoFormulario[]>([]);
-  /** Respuestas por persona: clave "titular" o "acomp-<índice>". */
-  const [respuestas, setRespuestas] = useState<
-    Record<string, Record<number, string>>
-  >({});
+  /** Respuestas del formulario: una por campo, para toda la reserva. */
+  const [respuestas, setRespuestas] = useState<Record<number, string>>({});
   const [perfil, setPerfil] = useState<UsuarioPerfil | null>(null);
   const [borrador, setBorrador] = useState<BorradorReserva | null>(null);
   const [reserva, setReserva] = useState<ReservaDetalle | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
   const [errores, setErrores] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    adminService
+    let activo = true;
+    viajesService
       .listarCampos(viaje.idViaje)
-      .then(setCampos)
-      .catch(() => setCampos([]));
+      .then((data) => {
+        if (activo) setCampos(data);
+      })
+      .catch(() => {
+        if (activo) setCampos([]);
+      });
     userService
       .getMyProfile()
-      .then(setPerfil)
-      .catch(() => setPerfil(null));
+      .then((data) => {
+        if (activo) setPerfil(data);
+      })
+      .catch(() => {
+        if (activo) setPerfil(null);
+      });
+    return () => {
+      activo = false;
+    };
   }, [viaje.idViaje]);
 
-  /** El titular siempre responde; cada acompañante suma la suya. */
-  const personas = ["titular", ...acompanantes.map((_, i) => `acomp-${i}`)];
-
-  /** Respuesta guardada de una persona, con la primera opción como default. */
-  function respuestaDe(persona: string, campo: CampoFormulario): string {
-    return respuestas[persona]?.[campo.idCampo] ?? campo.opciones?.[0] ?? "";
+  /** Respuesta guardada de un campo, con la primera opción como default. */
+  function respuestaDe(campo: CampoFormulario): string {
+    return respuestas[campo.idCampo] ?? opcionesDeCampo(campo)[0] ?? "";
   }
 
   function cambiarCantidad(nueva: number) {
@@ -101,12 +103,9 @@ export default function FlujoInscripcion({ viaje }: { viaje: Viaje }) {
     campos
       .filter((campo) => campo.obligatorio)
       .forEach((campo) => {
-        personas.forEach((persona) => {
-          if (!respuestaDe(persona, campo).trim()) {
-            nuevos[`resp-${persona}-${campo.idCampo}`] =
-              "Respuesta obligatoria";
-          }
-        });
+        if (!respuestaDe(campo).trim()) {
+          nuevos[`resp-${campo.idCampo}`] = "Respuesta obligatoria";
+        }
       });
     setErrores(nuevos);
     return Object.keys(nuevos).length === 0;
@@ -123,54 +122,36 @@ export default function FlujoInscripcion({ viaje }: { viaje: Viaje }) {
     numeroReferenciaPago: string,
     capturaComprobanteUrl: string,
   ) {
-    if (!borrador) return;
     setEnviando(true);
+    setErrorEnvio(null);
+    const respuestasFormulario = campos
+      .map((campo) => ({
+        idCampo: campo.idCampo,
+        valorRespuesta: respuestaDe(campo),
+      }))
+      .filter((respuesta) => respuesta.valorRespuesta.trim());
     reservaService
-      .crearReserva(
-        {
-          idViaje: viaje.idViaje,
-          numeroReferenciaPago,
-          capturaComprobanteUrl,
-          acompanantes,
-          respuestasFormulario: personas
-            .flatMap((persona) =>
-              campos.map((campo) => ({
-                idCampo: campo.idCampo,
-                respuesta: respuestaDe(persona, campo),
-                persona,
-              })),
-            )
-            .filter((entrada) => entrada.respuesta.trim()),
-        },
-        borrador,
-      )
+      .crearReserva({
+        idViaje: viaje.idViaje,
+        numeroReferenciaPago,
+        capturaComprobanteUrl,
+        ...(acompanantes.length > 0 ? { acompanantes } : {}),
+        ...(respuestasFormulario.length > 0 ? { respuestasFormulario } : {}),
+      })
       .then((creada) => {
         setReserva(creada);
-        setEnviando(false);
         setPaso(4);
-      })
-      .catch(() => {
         setEnviando(false);
-        setExpirado(true);
+      })
+      .catch((error) => {
+        // p.ej. 409 "cupos insuficientes": el message del backend en español.
+        setErrorEnvio(
+          error instanceof ApiError
+            ? error.message
+            : "No pudimos crear tu reserva. Inténtalo de nuevo.",
+        );
+        setEnviando(false);
       });
-  }
-
-  function reiniciar() {
-    setExpirado(false);
-    setBorrador(null);
-    setReserva(null);
-    setPaso(1);
-  }
-
-  if (expirado) {
-    return (
-      <EmptyState
-        icono={CalendarX}
-        titulo="Se agotó el tiempo de retención"
-        descripcion="Los cupos reservados fueron liberados. Si aún hay disponibilidad, puedes iniciar la reserva de nuevo."
-        accion={{ etiqueta: "Reintentar", onClick: reiniciar }}
-      />
-    );
   }
 
   if (paso === 4 && reserva) {
@@ -178,7 +159,7 @@ export default function FlujoInscripcion({ viaje }: { viaje: Viaje }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-md">
       <IndicadorPasos actual={paso} />
       {paso === 1 ? (
         <PasoCupos
@@ -196,11 +177,8 @@ export default function FlujoInscripcion({ viaje }: { viaje: Viaje }) {
           respuestas={respuestas}
           errores={errores}
           alCambiarAcompanante={cambiarAcompanante}
-          alCambiarRespuesta={(persona, idCampo, respuesta) =>
-            setRespuestas((previas) => ({
-              ...previas,
-              [persona]: { ...previas[persona], [idCampo]: respuesta },
-            }))
+          alCambiarRespuesta={(idCampo, valor) =>
+            setRespuestas((previas) => ({ ...previas, [idCampo]: valor }))
           }
           alAtras={() => setPaso(1)}
           alContinuar={continuarAPago}
@@ -212,9 +190,9 @@ export default function FlujoInscripcion({ viaje }: { viaje: Viaje }) {
           cantidad={cantidad}
           borrador={borrador}
           enviando={enviando}
+          errorEnvio={errorEnvio}
           alConfirmar={confirmarPago}
           alAtras={() => setPaso(2)}
-          alExpirar={() => setExpirado(true)}
         />
       ) : null}
     </div>

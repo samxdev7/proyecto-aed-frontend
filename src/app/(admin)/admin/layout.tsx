@@ -10,11 +10,31 @@ import {
   CalendarCheck,
   LogOut
 } from "lucide-react";
-import { limpiarRolDemo } from "@/lib/demo";
+import {
+  EVENTO_SESION,
+  cerrarSesion,
+  esAdministrador,
+  obtenerSesion
+} from "@/lib/auth";
 
-/* demo.ts solo modela "anon" | "client" y no exporta su clave; para el mock E6
-   el rol admin se siembra a mano: localStorage.setItem("cnm_demo_rol", "admin"). */
-const CLAVE_ROL_DEMO = "cnm_demo_rol";
+/* localStorage es un store externo: serverSnapshot=null evita mismatch de
+   hidratación y el valor real se resuelve en el primer render del cliente. */
+function suscribirSesion(callback: () => void) {
+  window.addEventListener(EVENTO_SESION, callback);
+  return () => window.removeEventListener(EVENTO_SESION, callback);
+}
+
+function iniciales(nombreCompleto: string): string {
+  const partes = nombreCompleto.trim().split(/\s+/);
+  return ((partes[0]?.[0] ?? "") + (partes[1]?.[0] ?? "")).toUpperCase();
+}
+
+const menuItems = [
+  { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
+  { name: "Viajes", href: "/admin/viajes", icon: Map },
+  { name: "Reservas", href: "/admin/reservas", icon: CalendarCheck },
+  { name: "Usuarios", href: "/admin/usuarios", icon: Users },
+];
 
 export default function AdminLayout({
   children,
@@ -22,37 +42,21 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  /* Guard de rol (mock E6): localStorage es store externo; serverSnapshot=false
-     evita mismatch de hidratación y el valor real se resuelve en el cliente. */
-  const esAdmin = useSyncExternalStore(
-    () => () => {},
-    () => localStorage.getItem(CLAVE_ROL_DEMO) === "admin",
-    () => false,
-  );
+  const sesion = useSyncExternalStore(suscribirSesion, obtenerSesion, () => null);
+  const esAdmin = esAdministrador(sesion);
 
-  /* El redirect decide leyendo localStorage EN el efecto (post-hidratación):
-     condicionar sobre esAdmin dispara router.replace desde el render de
-     hidratación (server snapshot=false) antes de aplicar el snapshot cliente
-     y manda a login aunque la sesión admin sea válida. */
+  /* El redirect se decide en el efecto (post-hidratación); mientras no haya
+     sesión admin válida no se renderiza nada de /admin. */
   useEffect(() => {
-    if (localStorage.getItem(CLAVE_ROL_DEMO) !== "admin") {
-      router.replace("/iniciar-sesion");
-    }
-  }, [router]);
+    if (!esAdmin) router.replace("/iniciar-sesion?redir=/admin");
+  }, [esAdmin, router]);
 
-  function cerrarSesion() {
-    limpiarRolDemo();
+  function salir() {
+    cerrarSesion();
     router.push("/");
   }
 
   if (!esAdmin) return null;
-
-  const menuItems = [
-    { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-    { name: "Viajes", href: "/admin/viajes", icon: Map },
-    { name: "Reservas", href: "/admin/reservas", icon: CalendarCheck },
-    { name: "Usuarios", href: "/admin/usuarios", icon: Users },
-  ];
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-admin-bg text-admin-text">
@@ -74,8 +78,12 @@ export default function AdminLayout({
           ))}
         </nav>
         <div className="p-4 border-t border-white/10">
+          <p className="px-3 pb-1 text-sm font-semibold truncate" title={sesion.nombreCompleto}>
+            {sesion.nombreCompleto}
+          </p>
+          <p className="px-3 pb-3 text-xs text-white/60">Administrador</p>
           <button
-            onClick={cerrarSesion}
+            onClick={salir}
             className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-error transition-colors"
           >
             <LogOut size={20} />
@@ -88,9 +96,11 @@ export default function AdminLayout({
       <main className="flex-1 min-w-0 flex flex-col">
         <header className="h-16 bg-admin-surface border-b border-admin-border flex items-center justify-between px-8 shadow-sm">
           <h1 className="text-xl font-semibold">Panel de Administración</h1>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-admin-muted">Administrador</span>
-            <div className="w-8 h-8 bg-admin-accent rounded-full" />
+          <div className="flex items-center gap-sm">
+            <span className="text-sm text-admin-muted">{sesion.nombreCompleto}</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-admin-accent text-xs font-bold text-white">
+              {iniciales(sesion.nombreCompleto)}
+            </div>
           </div>
         </header>
         <div className="p-8 overflow-auto">

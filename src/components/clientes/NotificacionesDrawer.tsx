@@ -1,48 +1,86 @@
 "use client";
 
-import { useState } from "react";
-import {
-  cambiarNotificacionesActivas,
-  marcarNotificacionLeida,
-  marcarTodasNotificacionesLeidas,
-  notificacionesActivas,
-  obtenerNotificacionesDemo,
-  type NotificacionDemo,
-} from "@/lib/demo";
+import { useEffect, useState } from "react";
+import type { LucideIcon } from "lucide-react";
+import { CheckCircle, Flame, Mountain, XCircle } from "lucide-react";
+import { userService } from "@/services/user.service";
+import type { Notificacion } from "@/types/notificacion";
+import { formatoFechaCorta } from "@/lib/format";
 
 interface NotificacionesDrawerProps {
   abierta: boolean;
   onCerrar: () => void;
+  /** Avisa al Header para refrescar el badge de no leídas. */
+  onCambio?: () => void;
 }
 
-const estiloBordePorTipo: Record<NotificacionDemo["tipo"], string> = {
-  aprobada: "border-l-clay",
-  revision: "border-l-ochre",
-  solicitud: "border-l-ochre",
-  "pocos-cupos": "border-l-clay",
-  nuevo: "border-l-steel",
-  recordatorio: "border-l-sand",
-  rechazada: "border-l-navy",
+const iconoPorTipo: Record<string, LucideIcon> = {
+  nuevo_viaje: Mountain,
+  pocos_cupos: Flame,
+  reserva_aprobada: CheckCircle,
+  reserva_rechazada: XCircle,
+};
+
+const tituloPorTipo: Record<string, string> = {
+  nuevo_viaje: "Nuevo viaje",
+  pocos_cupos: "Pocos cupos",
+  reserva_aprobada: "Reserva aprobada",
+  reserva_rechazada: "Reserva rechazada",
 };
 
 export default function NotificacionesDrawer({
   abierta,
   onCerrar,
+  onCambio,
 }: NotificacionesDrawerProps) {
-  const [notificaciones, setNotificaciones] = useState<NotificacionDemo[]>(() =>
-    obtenerNotificacionesDemo(),
-  );
-  const [activas, setActivas] = useState(() => notificacionesActivas());
+  const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
 
-  const alSeleccionar = (notificacion: NotificacionDemo) => {
-    marcarNotificacionLeida(notificacion.id);
-    setNotificaciones(obtenerNotificacionesDemo());
-  };
+  function cargar() {
+    setLoading(true);
+    userService
+      .getMyNotifications(0, 20)
+      .then((pagina) => {
+        setNotificaciones(pagina.content);
+        setError(false);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError(true);
+        setLoading(false);
+      });
+  }
 
-  const leerTodas = () => {
-    marcarTodasNotificacionesLeidas();
-    setNotificaciones(obtenerNotificacionesDemo());
-  };
+  useEffect(() => {
+    if (abierta) cargar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- recargar cada vez que se abre
+  }, [abierta]);
+
+  function marcarLeida(notificacion: Notificacion) {
+    if (notificacion.leida) return;
+    userService
+      .marcarNotificacionLeida(notificacion.idNotificacion)
+      .then(() => {
+        cargar();
+        onCambio?.();
+      })
+      .catch(() => {
+        /* si falla, la lista queda como estaba */
+      });
+  }
+
+  function leerTodas() {
+    userService
+      .marcarTodasLeidas(notificaciones)
+      .then(() => {
+        cargar();
+        onCambio?.();
+      })
+      .catch(() => {
+        /* si falla, la lista queda como estaba */
+      });
+  }
 
   const restantes = notificaciones.filter(
     (notificacion) => !notificacion.leida,
@@ -67,9 +105,9 @@ export default function NotificacionesDrawer({
           abierta ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <div className="flex items-center justify-between gap-4 border-b border-ink/10 px-5 py-4">
+        <div className="flex items-center justify-between gap-md border-b border-ink/10 px-md py-sm">
           <div>
-            <p className="font-serif text-lg font-bold text-navy">Notificaciones</p>
+            <p className="text-lg font-bold text-navy">Notificaciones</p>
             <p className="text-xs text-ink/50" suppressHydrationWarning>
               {restantes > 0 ? `${restantes} sin leer` : "Todo leído"}
             </p>
@@ -93,78 +131,76 @@ export default function NotificacionesDrawer({
           </button>
         </div>
 
-        <div className="flex items-center justify-between gap-3 border-b border-ink/10 px-5 py-3">
-          <div>
-            <p className="text-sm font-medium text-ink">Notificaciones del navegador</p>
-            <p className="text-xs text-ink/50">Avisos de nuevos viajes y pocos cupos</p>
+        {loading ? (
+          <div className="flex-1 px-md py-md text-sm text-ink/50">
+            Cargando notificaciones…
           </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={activas}
-            onClick={() => {
-              const nuevoValor = !activas;
-              setActivas(nuevoValor);
-              cambiarNotificacionesActivas(nuevoValor);
-            }}
-            className={`relative h-6 w-11 shrink-0 rounded-full transition ${
-              activas ? "bg-steel" : "bg-ink/20"
-            }`}
-          >
-            <span
-              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${
-                activas ? "left-[1.375rem]" : "left-0.5"
-              }`}
-            />
-          </button>
-        </div>
-
-        {activas ? (
-          <ul className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
-            {notificaciones.map((notificacion) => (
-              <li key={notificacion.id}>
-                <button
-                  type="button"
-                  onClick={() => alSeleccionar(notificacion)}
-                  className={`w-full rounded-lg border-l-4 bg-sand/60 px-4 py-3 text-left ring-1 ring-ink/5 transition hover:bg-sand ${
-                    notificacion.leida ? "opacity-70" : ""
-                  } ${estiloBordePorTipo[notificacion.tipo]}`}
-                >
-                  <p className="flex items-center gap-2 text-sm font-semibold text-navy">
-                    {!notificacion.leida ? (
-                      <span
-                        className="h-2 w-2 shrink-0 rounded-full bg-clay"
-                        aria-label="Sin leer"
-                      />
-                    ) : null}
-                    <span className="flex-1">{notificacion.titulo}</span>
-                  </p>
-                  <p className="mt-1 text-xs leading-relaxed text-ink/65">
-                    {notificacion.cuerpo}
-                  </p>
-                </button>
-              </li>
-            ))}
-          </ul>
+        ) : error ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-sm px-md text-center text-sm text-ink/50">
+            No pudimos cargar tus notificaciones.
+            <button
+              type="button"
+              onClick={cargar}
+              className="rounded-md bg-navy px-md py-xs text-sm font-medium text-sand"
+            >
+              Reintentar
+            </button>
+          </div>
+        ) : notificaciones.length === 0 ? (
+          <div className="flex flex-1 items-center justify-center px-md text-center text-sm text-ink/50">
+            No tienes notificaciones por ahora. Aquí verás nuevos viajes y el
+            estado de tus reservas.
+          </div>
         ) : (
-          <div className="flex flex-1 items-center justify-center px-8 text-center text-sm text-ink/50">
-            Las notificaciones del navegador están desactivadas. Revisa el
-            catálogo para conocer los próximos viajes.
-          </div>
+          <ul className="flex-1 space-y-sm overflow-y-auto px-md py-sm">
+            {notificaciones.map((notificacion) => {
+              const Icono = iconoPorTipo[notificacion.tipo] ?? Mountain;
+              return (
+                <li key={notificacion.idNotificacion}>
+                  <button
+                    type="button"
+                    onClick={() => marcarLeida(notificacion)}
+                    className={`w-full rounded-md bg-sand/60 px-md py-sm text-left ring-1 ring-ink/5 transition hover:bg-sand ${
+                      notificacion.leida ? "opacity-70" : ""
+                    }`}
+                  >
+                    <p className="flex items-center gap-xs text-sm font-semibold text-navy">
+                      {!notificacion.leida ? (
+                        <span
+                          className="h-2 w-2 shrink-0 rounded-full bg-clay"
+                          aria-label="Sin leer"
+                        />
+                      ) : null}
+                      <Icono size={16} className="shrink-0 text-ink/50" aria-hidden="true" />
+                      <span className="flex-1">
+                        {tituloPorTipo[notificacion.tipo] ?? notificacion.tipo}
+                      </span>
+                      <span className="text-xs font-normal text-ink/50">
+                        {formatoFechaCorta(notificacion.fechaEnvio)}
+                      </span>
+                    </p>
+                    <p className="mt-xs text-xs leading-relaxed text-ink/65">
+                      {notificacion.mensaje}
+                    </p>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
         )}
 
-        <div className="border-t border-ink/10 px-5 py-4">
+        <div className="border-t border-ink/10 px-md py-sm">
           <button
             type="button"
             onClick={leerTodas}
             disabled={restantes === 0}
-            className={`w-full rounded-md px-4 py-2.5 text-sm font-medium transition ${
+            className={`w-full rounded-md px-md py-sm text-sm font-medium transition ${
               restantes === 0
                 ? "cursor-not-allowed bg-ink/5 text-ink/35"
                 : "bg-navy text-sand hover:bg-steel"
             }`}
           >
-            Ver todas las notificaciones
+            Marcar todas como leídas
           </button>
         </div>
       </aside>

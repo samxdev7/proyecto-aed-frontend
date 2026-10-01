@@ -7,19 +7,22 @@ export const etiquetasEstadoReserva: Record<EstadoReserva, string> = {
   pendiente: "Pendiente",
   aprobada: "Aprobada",
   rechazada: "Rechazada",
+  expirada: "Expirada",
 };
 
 const estilosEstado: Record<EstadoReserva, string> = {
   pendiente: "bg-estado-pendiente-bg text-estado-pendiente-text",
   aprobada: "bg-estado-aprobada-bg text-estado-aprobada-text",
   rechazada: "bg-estado-rechazada-bg text-estado-rechazada-text",
+  expirada: "bg-surface-alt text-text-muted",
 };
 
 const estilosDificultad: Record<Dificultad, string> = {
   Baja: "bg-ochre text-navy",
   Media: "bg-steel text-sand",
   Alta: "bg-clay text-white",
-};
+  Extrema: "bg-navy text-white",
+};;
 
 export default function Chip({
   estado,

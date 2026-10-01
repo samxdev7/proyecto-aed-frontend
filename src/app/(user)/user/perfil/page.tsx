@@ -1,27 +1,150 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import Link from "next/link";
+
+import { useEffect, useState } from "react";
+import { Bell, Mail, MapPin, Phone, User } from "lucide-react";
 import { userService } from "@/services/user.service";
-import { UsuarioPerfil } from "@/types/usuario";
-import { User, Mail, Phone, MapPin, CreditCard } from "lucide-react";
-import Skeleton from "@/components/ui/Skeleton";
+import type { UsuarioPerfil } from "@/types/usuario";
+import Boton from "@/components/ui/Boton";
+import Campo from "@/components/ui/Campo";
 import EmptyState from "@/components/ui/EmptyState";
+import Skeleton from "@/components/ui/Skeleton";
+
+const clasesSelect =
+  "w-full rounded-sm border border-neutral-border bg-surface px-4 py-3 text-sm text-text-main outline-none transition focus:border-primary focus:ring-1 focus:ring-primary";
+
+interface FormularioPerfil {
+  primerNombre: string;
+  segundoNombre: string;
+  primerApellido: string;
+  segundoApellido: string;
+  telefono: string;
+  sexo: string;
+  nacionalidad: string;
+  tipoIdentificacion: string;
+  numeroIdentificacion: string;
+}
+
+function aFormulario(perfil: UsuarioPerfil): FormularioPerfil {
+  return {
+    primerNombre: perfil.primerNombre,
+    segundoNombre: perfil.segundoNombre ?? "",
+    primerApellido: perfil.primerApellido,
+    segundoApellido: perfil.segundoApellido ?? "",
+    telefono: perfil.telefono,
+    sexo: perfil.sexo,
+    nacionalidad: perfil.nacionalidad,
+    tipoIdentificacion: perfil.tipoIdentificacion,
+    numeroIdentificacion: perfil.numeroIdentificacion,
+  };
+}
 
 export default function UserProfile() {
-  const [profile, setProfile] = useState<UsuarioPerfil | null>(null);
+  const [perfil, setPerfil] = useState<UsuarioPerfil | null>(null);
   const [error, setError] = useState(false);
   const [reintentos, setReintentos] = useState(0);
+  const [editando, setEditando] = useState(false);
+  const [form, setForm] = useState<FormularioPerfil | null>(null);
+  const [guardando, setGuardando] = useState(false);
+  const [errorGuardado, setErrorGuardado] = useState<string | null>(null);
+  const [mensajeNotis, setMensajeNotis] = useState<string | null>(null);
 
   useEffect(() => {
+    let activo = true;
     userService
       .getMyProfile()
-      .then(setProfile)
-      .catch(() => setError(true));
+      .then((data) => {
+        if (activo) {
+          setPerfil(data);
+          setError(false);
+        }
+      })
+      .catch(() => {
+        if (activo) setError(true);
+      });
+    return () => {
+      activo = false;
+    };
   }, [reintentos]);
 
   function reintentar() {
     setError(false);
     setReintentos((n) => n + 1);
+  }
+
+  function actualizar<K extends keyof FormularioPerfil>(
+    campo: K,
+    valor: FormularioPerfil[K],
+  ) {
+    setForm((previo) => (previo ? { ...previo, [campo]: valor } : previo));
+  }
+
+  function comenzarEdicion() {
+    if (!perfil) return;
+    setForm(aFormulario(perfil));
+    setErrorGuardado(null);
+    setEditando(true);
+  }
+
+  function guardarCambios(evento: React.FormEvent) {
+    evento.preventDefault();
+    if (!perfil || !form) return;
+    if (
+      !form.primerNombre.trim() ||
+      !form.primerApellido.trim() ||
+      !form.numeroIdentificacion.trim()
+    ) {
+      setErrorGuardado("Nombre, apellido e identificación son obligatorios.");
+      return;
+    }
+    setGuardando(true);
+    setErrorGuardado(null);
+    const request = {
+      primerNombre: form.primerNombre.trim(),
+      primerApellido: form.primerApellido.trim(),
+      telefono: form.telefono.trim(),
+      sexo: form.sexo,
+      nacionalidad: form.nacionalidad.trim(),
+      tipoIdentificacion: form.tipoIdentificacion,
+      numeroIdentificacion: form.numeroIdentificacion.trim(),
+      // Opcionales solo viajan si el usuario los llenó.
+      ...(form.segundoNombre.trim()
+        ? { segundoNombre: form.segundoNombre.trim() }
+        : {}),
+      ...(form.segundoApellido.trim()
+        ? { segundoApellido: form.segundoApellido.trim() }
+        : {}),
+    };
+    userService
+      .actualizarPerfil(request)
+      .then((actualizado) => {
+        setPerfil(actualizado);
+        setEditando(false);
+        setGuardando(false);
+      })
+      .catch((excepcion) => {
+        setErrorGuardado(
+          excepcion instanceof Error
+            ? excepcion.message
+            : "No pudimos guardar tus datos.",
+        );
+        setGuardando(false);
+      });
+  }
+
+  function alternarNotificaciones() {
+    if (!perfil) return;
+    const anterior = perfil;
+    const nuevoValor = !perfil.notificacionesHabilitadas;
+    // Optimista: refleja el cambio y revierte si el backend falla.
+    setPerfil({ ...perfil, notificacionesHabilitadas: nuevoValor });
+    setMensajeNotis(null);
+    userService
+      .actualizarNotificaciones({ notificacionesHabilitadas: nuevoValor })
+      .then((actualizado) => setPerfil(actualizado))
+      .catch(() => {
+        setPerfil(anterior);
+        setMensajeNotis("No pudimos guardar el cambio. Inténtalo de nuevo.");
+      });
   }
 
   if (error) {
@@ -34,93 +157,240 @@ export default function UserProfile() {
     );
   }
 
-  if (!profile) {
+  if (!perfil) {
     return (
-      <div className="max-w-4xl mx-auto space-y-8">
-        <Skeleton className="h-40 w-full rounded-lg" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Skeleton className="h-64 w-full rounded-lg" />
-          <Skeleton className="h-64 w-full rounded-lg" />
+      <div className="mx-auto max-w-4xl space-y-lg">
+        <Skeleton className="h-40 w-full rounded-md" />
+        <div className="grid grid-cols-1 gap-md md:grid-cols-2">
+          <Skeleton className="h-64 w-full rounded-md" />
+          <Skeleton className="h-64 w-full rounded-md" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <div className="bg-surface p-8 rounded-lg shadow-sm border border-neutral-border flex flex-col md:flex-row gap-8 items-center">
-        <div className="w-32 h-32 bg-primary text-white rounded-full flex items-center justify-center text-4xl font-bold">
-          {profile.primerNombre[0]}
+    <div className="mx-auto max-w-4xl space-y-lg">
+      <div className="flex flex-col items-center gap-lg rounded-md border border-neutral-border bg-surface p-lg shadow-sm md:flex-row">
+        <div className="flex h-32 w-32 items-center justify-center rounded-full bg-primary text-4xl font-bold text-white">
+          {perfil.primerNombre[0]?.toUpperCase() ?? "·"}
         </div>
-        <div className="text-center md:text-left space-y-2">
-          <h2 className="text-3xl font-bold text-primary">{profile.nombreCompleto}</h2>
-          <p className="text-text-muted">{profile.correo}</p>
-          <div className="flex gap-2 justify-center md:justify-start">
-            <span className="px-3 py-1 bg-sand text-primary rounded-sm text-xs font-medium capitalize">
-              {profile.rol}
-            </span>
-            <span className="px-3 py-1 bg-surface-alt text-text-muted rounded-sm text-xs font-medium">
-              Miembro desde {new Date(profile.fechaRegistro).getFullYear()}
+        <div className="space-y-xs text-center md:text-left">
+          <h2 className="text-3xl font-bold text-primary">
+            {perfil.nombreCompleto}
+          </h2>
+          <p className="text-text-muted">{perfil.correo}</p>
+          <div className="flex justify-center gap-xs md:justify-start">
+            <span className="rounded-sm bg-surface-alt px-sm py-xs text-xs font-medium text-text-muted">
+              Miembro desde{" "}
+              {new Date(perfil.fechaRegistro).getFullYear()}
             </span>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-surface p-6 rounded-lg shadow-sm border border-neutral-border space-y-6">
-          <h3 className="text-lg font-bold text-primary border-b border-neutral-border pb-2">Información Personal</h3>
-          <div className="space-y-4">
-            <DetailItem icon={<Mail size={18}/>} label="Correo Electrónico" value={profile.correo} />
-            <DetailItem icon={<Phone size={18}/>} label="Teléfono" value={profile.telefono} />
-            <DetailItem icon={<MapPin size={18}/>} label="Nacionalidad" value={profile.nacionalidad} />
-            <DetailItem icon={<User size={18}/>} label="Identificación" value={`${profile.tipoIdentificacion}: ${profile.numeroIdentificacion}`} />
+      <div className="grid grid-cols-1 gap-md md:grid-cols-2">
+        <div className="space-y-md rounded-md border border-neutral-border bg-surface p-md shadow-sm">
+          <div className="flex items-center justify-between border-b border-neutral-border pb-sm">
+            <h3 className="text-lg font-bold text-primary">
+              Información Personal
+            </h3>
+            {editando ? (
+              <button
+                type="button"
+                onClick={() => setEditando(false)}
+                className="text-sm text-text-muted hover:underline"
+              >
+                Cancelar
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={comenzarEdicion}
+                className="text-sm text-primary hover:underline"
+              >
+                Editar
+              </button>
+            )}
           </div>
-        </div>
 
-        <div className="bg-surface p-6 rounded-lg shadow-sm border border-neutral-border space-y-6">
-          <div className="flex justify-between items-center border-b border-neutral-border pb-2">
-            <h3 className="text-lg font-bold text-primary">Preferencias</h3>
-            <Link href="/user/settings" className="text-sm text-primary hover:underline">
-              Editar
-            </Link>
-          </div>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center p-3 bg-surface-alt rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-surface rounded-md shadow-sm"><Bell size={18} className="text-primary"/></div>
-                <span className="text-sm font-medium">Notificaciones Push</span>
+          {editando && form ? (
+            <form className="space-y-md" onSubmit={guardarCambios}>
+              <div className="grid gap-md sm:grid-cols-2">
+                <Campo
+                  label="Primer nombre"
+                  required
+                  valor={form.primerNombre}
+                  alCambiar={(valor) => actualizar("primerNombre", valor)}
+                />
+                <Campo
+                  label="Segundo nombre"
+                  valor={form.segundoNombre}
+                  alCambiar={(valor) => actualizar("segundoNombre", valor)}
+                />
+                <Campo
+                  label="Primer apellido"
+                  required
+                  valor={form.primerApellido}
+                  alCambiar={(valor) => actualizar("primerApellido", valor)}
+                />
+                <Campo
+                  label="Segundo apellido"
+                  valor={form.segundoApellido}
+                  alCambiar={(valor) => actualizar("segundoApellido", valor)}
+                />
+                <Campo
+                  label="Teléfono"
+                  tipo="tel"
+                  placeholder="+505 0000-0000"
+                  valor={form.telefono}
+                  alCambiar={(valor) => actualizar("telefono", valor)}
+                />
+                <div className="flex flex-col gap-1">
+                  <label
+                    htmlFor="perfil-sexo"
+                    className="text-xs font-semibold text-text-muted"
+                  >
+                    Sexo
+                  </label>
+                  <select
+                    id="perfil-sexo"
+                    value={form.sexo}
+                    onChange={(evento) => actualizar("sexo", evento.target.value)}
+                    className={clasesSelect}
+                  >
+                    <option value="">Prefiero no decirlo</option>
+                    <option value="M">Masculino</option>
+                    <option value="F">Femenino</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                </div>
+                <Campo
+                  label="Nacionalidad"
+                  required
+                  valor={form.nacionalidad}
+                  alCambiar={(valor) => actualizar("nacionalidad", valor)}
+                />
+                <div className="flex flex-col gap-1">
+                  <label
+                    htmlFor="perfil-tipo-id"
+                    className="text-xs font-semibold text-text-muted"
+                  >
+                    Tipo de identificación{" "}
+                    <span className="text-error">*</span>
+                  </label>
+                  <select
+                    id="perfil-tipo-id"
+                    value={form.tipoIdentificacion}
+                    onChange={(evento) =>
+                      actualizar("tipoIdentificacion", evento.target.value)
+                    }
+                    required
+                    className={clasesSelect}
+                  >
+                    <option value="cedula">Cédula</option>
+                    <option value="pasaporte">Pasaporte</option>
+                  </select>
+                </div>
+                <Campo
+                  label="Número de identificación"
+                  required
+                  placeholder="001-000000-0000A"
+                  valor={form.numeroIdentificacion}
+                  alCambiar={(valor) =>
+                    actualizar("numeroIdentificacion", valor)
+                  }
+                />
               </div>
-              <input
-                type="checkbox"
-                checked={profile.notificacionesHabilitadas}
-                readOnly
-                className="w-4 h-4 accent-primary"
+
+              {errorGuardado ? (
+                <p
+                  className="rounded-sm bg-estado-rechazada-bg px-md py-sm text-sm text-estado-rechazada-text"
+                  role="alert"
+                >
+                  {errorGuardado}
+                </p>
+              ) : null}
+
+              <Boton type="submit" loading={guardando} fullWidth>
+                Guardar cambios
+              </Boton>
+            </form>
+          ) : (
+            <div className="space-y-md">
+              <DetailItem
+                icono={<Mail size={18} />}
+                label="Correo Electrónico"
+                value={perfil.correo}
+              />
+              <DetailItem
+                icono={<Phone size={18} />}
+                label="Teléfono"
+                value={perfil.telefono || "—"}
+              />
+              <DetailItem
+                icono={<MapPin size={18} />}
+                label="Nacionalidad"
+                value={perfil.nacionalidad}
+              />
+              <DetailItem
+                icono={<User size={18} />}
+                label="Identificación"
+                value={`${perfil.tipoIdentificacion}: ${perfil.numeroIdentificacion}`}
               />
             </div>
-            <div className="p-3 bg-surface-alt rounded-lg flex items-center gap-3">
-              <div className="p-2 bg-surface rounded-md shadow-sm"><CreditCard size={18} className="text-primary"/></div>
-              <span className="text-sm font-medium">Método de pago predeterminado</span>
-              <span className="text-xs text-text-muted ml-auto">No configurado</span>
-            </div>
+          )}
+        </div>
+
+        <div className="space-y-md rounded-md border border-neutral-border bg-surface p-md shadow-sm">
+          <div className="flex items-center justify-between border-b border-neutral-border pb-sm">
+            <h3 className="text-lg font-bold text-primary">Preferencias</h3>
           </div>
+          <div className="flex items-center justify-between rounded-md bg-surface-alt p-sm">
+            <div className="flex items-center gap-sm">
+              <div className="rounded-md bg-surface p-xs shadow-sm">
+                <Bell size={18} className="text-primary" />
+              </div>
+              <span className="text-sm font-medium">
+                Notificaciones de viajes y reservas
+              </span>
+            </div>
+            <input
+              type="checkbox"
+              aria-label="Notificaciones"
+              checked={perfil.notificacionesHabilitadas}
+              onChange={alternarNotificaciones}
+              className="h-4 w-4 accent-primary"
+            />
+          </div>
+          <p className="text-xs text-text-muted" role="status">
+            {mensajeNotis ??
+              (perfil.notificacionesHabilitadas
+                ? "Recibirás avisos de nuevos viajes y del estado de tus reservas."
+                : "No recibirás notificaciones.")}
+          </p>
         </div>
       </div>
     </div>
   );
 }
 
-function DetailItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function DetailItem({
+  icono,
+  label,
+  value,
+}: {
+  icono: React.ReactNode;
+  label: string;
+  value: string;
+}) {
   return (
-    <div className="flex items-center gap-4">
-      <div className="p-2 bg-sand rounded-lg text-primary">{icon}</div>
+    <div className="flex items-center gap-md">
+      <div className="rounded-md bg-sand p-xs text-primary">{icono}</div>
       <div>
-        <p className="text-xs text-text-muted uppercase font-bold">{label}</p>
-        <p className="text-sm font-medium">{value}</p>
+        <p className="text-xs font-bold uppercase text-text-muted">{label}</p>
+        <p className="text-sm font-medium break-words">{value}</p>
       </div>
     </div>
   );
-}
-
-function Bell({ size, className }: { size?: number; className?: string }) {
-  return <svg xmlns="http://www.w3.org/2000/svg" width={size || 24} height={size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M6 8a6 6 0 0 1 12 0v6a6 6 0 0 1-12 0V8Z"/><path d="M12 14v4"/><path d="M10 18h4"/></svg>;
 }

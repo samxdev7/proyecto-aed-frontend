@@ -3,6 +3,7 @@
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import Skeleton from "@/components/ui/Skeleton";
+import { opcionesDeCampo } from "@/services/viajes.service";
 import type { Acompanante } from "@/types/reserva";
 import type { UsuarioPerfil } from "@/types/usuario";
 import type { CampoFormulario } from "@/types/viaje";
@@ -11,19 +12,15 @@ interface PasoViajerosProps {
   perfil: UsuarioPerfil | null;
   acompanantes: Acompanante[];
   campos: CampoFormulario[];
-  /** Respuestas por persona: clave "titular" o "acomp-<índice>". */
-  respuestas: Record<string, Record<number, string>>;
+  /** Respuestas una sola vez por reserva: idCampo → valor. */
+  respuestas: Record<number, string>;
   errores: Record<string, string>;
   alCambiarAcompanante: (
     indice: number,
     campo: keyof Acompanante,
     valor: string,
   ) => void;
-  alCambiarRespuesta: (
-    persona: string,
-    idCampo: number,
-    respuesta: string,
-  ) => void;
+  alCambiarRespuesta: (idCampo: number, valor: string) => void;
   alAtras: () => void;
   alContinuar: () => void;
 }
@@ -41,57 +38,32 @@ export default function PasoViajeros({
   alAtras,
   alContinuar,
 }: PasoViajerosProps) {
-  /** Las preguntas del viaje se responden una vez por persona. */
-  const preguntasDe = (persona: string) =>
-    campos.length > 0 ? (
-      <div className="space-y-4 border-t border-neutral-border pt-4">
-        <h4 className="text-xs font-bold uppercase text-text-muted">
-          Preguntas del viaje
-        </h4>
-        {campos.map((campo) => (
-          <Campo
-            key={campo.idCampo}
-            label={campo.etiquetaPregunta}
-            required={campo.obligatorio}
-            opciones={campo.opciones}
-            valor={
-              respuestas[persona]?.[campo.idCampo] ?? campo.opciones?.[0] ?? ""
-            }
-            alCambiar={(valor) =>
-              alCambiarRespuesta(persona, campo.idCampo, valor)
-            }
-            error={errores[`resp-${persona}-${campo.idCampo}`]}
-          />
-        ))}
-      </div>
-    ) : null;
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-md">
       <div>
-        <h2 className="font-serif text-xl font-bold text-navy">
+        <h2 className="text-xl font-bold text-primary">
           Datos de los viajeros
         </h2>
         <p className="mt-1 text-sm text-text-muted">
           El titular se toma de tu cuenta; completa los datos de cada
-          acompañante y responde las preguntas del viaje por separado para cada
-          persona.
+          acompañante. Las preguntas del viaje se responden una sola vez para
+          toda la reserva.
         </p>
       </div>
 
-      <section className="space-y-2 rounded-md border border-neutral-border p-4">
+      <section className="space-y-sm rounded-md border border-neutral-border p-md">
         <h3 className="text-sm font-bold text-primary">Titular (tú)</h3>
         {perfil ? (
-          <dl className="grid gap-3 text-sm sm:grid-cols-2">
+          <dl className="grid gap-sm text-sm sm:grid-cols-2">
             <div>
               <dt className="text-xs font-semibold text-text-muted">Nombre</dt>
-              <dd className="font-medium text-text-main break-words">
-                {perfil.nombreCompleto}
+              <dd className="break-words font-medium text-text-main">
+                {perfil.primerNombre} {perfil.primerApellido}
               </dd>
             </div>
             <div>
               <dt className="text-xs font-semibold text-text-muted">Correo</dt>
-              <dd className="font-medium text-text-main break-words">
+              <dd className="break-words font-medium text-text-main">
                 {perfil.correo}
               </dd>
             </div>
@@ -99,29 +71,28 @@ export default function PasoViajeros({
               <dt className="text-xs font-semibold text-text-muted">
                 Identificación
               </dt>
-              <dd className="font-medium text-text-main break-words">
-                {perfil.numeroIdentificacion}
+              <dd className="break-words font-medium text-text-main">
+                {perfil.tipoIdentificacion}: {perfil.numeroIdentificacion}
               </dd>
             </div>
           </dl>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-sm">
             <Skeleton className="h-4 w-2/3" />
             <Skeleton className="h-4 w-1/2" />
           </div>
         )}
-        {preguntasDe("titular")}
       </section>
 
       {acompanantes.map((acompanante, indice) => (
         <section
           key={indice}
-          className="space-y-4 rounded-md border border-neutral-border p-4"
+          className="space-y-md rounded-md border border-neutral-border p-md"
         >
           <h3 className="text-sm font-bold text-primary">
             Acompañante {indice + 1}
           </h3>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-md sm:grid-cols-2">
             <Campo
               label="Primer nombre"
               required
@@ -145,7 +116,11 @@ export default function PasoViajeros({
               opciones={TIPOS_IDENTIFICACION}
               valor={acompanante.tipoIdentificacion}
               alCambiar={(valor) =>
-                alCambiarAcompanante(indice, "tipoIdentificacion", valor)
+                alCambiarAcompanante(
+                  indice,
+                  "tipoIdentificacion",
+                  valor as Acompanante["tipoIdentificacion"],
+                )
               }
             />
             <Campo
@@ -159,11 +134,33 @@ export default function PasoViajeros({
               error={errores[`${indice}-numeroIdentificacion`]}
             />
           </div>
-          {preguntasDe(`acomp-${indice}`)}
         </section>
       ))}
 
-      <div className="flex gap-3">
+      {campos.length > 0 ? (
+        <section className="space-y-md rounded-md border border-neutral-border p-md">
+          <h3 className="text-sm font-bold text-primary">
+            Preguntas del viaje
+          </h3>
+          <p className="text-xs text-text-muted">
+            Una respuesta por pregunta, válida para toda la reserva.
+          </p>
+          {campos.map((campo) => (
+            <Campo
+              key={campo.idCampo}
+              label={campo.etiquetaPregunta}
+              required={campo.obligatorio}
+              tipo={campo.tipoCampo === "fecha" ? "date" : "text"}
+              opciones={opcionesDeCampo(campo)}
+              valor={respuestas[campo.idCampo] ?? opcionesDeCampo(campo)[0] ?? ""}
+              alCambiar={(valor) => alCambiarRespuesta(campo.idCampo, valor)}
+              error={errores[`resp-${campo.idCampo}`]}
+            />
+          ))}
+        </section>
+      ) : null}
+
+      <div className="flex gap-sm">
         <Boton variante="contorno" onClick={alAtras}>
           Atrás
         </Boton>

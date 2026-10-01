@@ -1,28 +1,29 @@
 import type { Dificultad } from "@/types/viaje";
 
+/** GET /estadisticas/panel — EstadisticasPanelResponseDto. */
 export interface InscritosPorViaje {
   idViaje: number;
-  tituloViaje: string;
-  inscritos: number;
+  titulo: string;
+  totalInscritos: number;
   cuposMaximos: number;
   porcentajeOcupacion: number;
 }
 
 export interface RutaPopular {
   idViaje: number;
-  tituloViaje: string;
+  titulo: string;
   dificultad: Dificultad;
-  totalInscritos: number;
+  totalReservasAprobadas: number;
 }
 
 export interface ResumenCupos {
-  totalCupos: number;
-  reservados: number;
-  disponibles: number;
+  totalCuposOfrecidos: number;
+  totalCuposReservados: number;
+  totalCuposDisponibles: number;
 }
 
 export interface EstadisticasPanel {
   inscritosPorViaje: InscritosPorViaje[];
-  rutasPopulares: RutaPopular[];
-  resumenCupos: ResumenCupos;
+  rutasMasPopulares: RutaPopular[];
+  cuposReservados: ResumenCupos;
 }

@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { adminService } from "@/services/admin.service";
+import { ApiError } from "@/lib/api-client";
 import { EstadisticasPanel } from "@/types/estadistica";
 import {
   Users,
@@ -17,18 +18,26 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<EstadisticasPanel | null>(null);
   const [pendientes, setPendientes] = useState(0);
   const [error, setError] = useState(false);
+  const [mensaje, setMensaje] = useState("");
   const [reintentos, setReintentos] = useState(0);
 
   useEffect(() => {
     Promise.all([
       adminService.getDashboardStats(),
-      adminService.listarReservas(0, 1, "pendiente"),
+      adminService.listarReservas({ estado: "pendiente" }, 0, 1),
     ])
       .then(([panel, resPendientes]) => {
         setStats(panel);
         setPendientes(resPendientes.totalElements);
       })
-      .catch(() => setError(true));
+      .catch((e) => {
+        setMensaje(
+          e instanceof ApiError && e.message
+            ? e.message
+            : "Ocurrió un error al obtener el panel. Inténtalo de nuevo.",
+        );
+        setError(true);
+      });
   }, [reintentos]);
 
   function reintentar() {
@@ -41,7 +50,7 @@ export default function AdminDashboard() {
     return (
       <EmptyState
         titulo="No pudimos cargar las estadísticas"
-        descripcion="Ocurrió un error al obtener el panel. Inténtalo de nuevo."
+        descripcion={mensaje}
         accion={{ etiqueta: "Reintentar", onClick: reintentar }}
       />
     );
@@ -75,20 +84,20 @@ export default function AdminDashboard() {
     <div className="space-y-md">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-md">
         <StatCard
-          title="Cupos Totales"
-          value={stats.resumenCupos.totalCupos}
+          title="Cupos Ofrecidos"
+          value={stats.cuposReservados.totalCuposOfrecidos}
           icon={<Users className="text-admin-accent" />}
           color="bg-admin-bg"
         />
         <StatCard
-          title="Reservados"
-          value={stats.resumenCupos.reservados}
+          title="Cupos Reservados"
+          value={stats.cuposReservados.totalCuposReservados}
           icon={<CalendarCheck className="text-warning-text" />}
           color="bg-warning-bg"
         />
         <StatCard
-          title="Disponibles"
-          value={stats.resumenCupos.disponibles}
+          title="Cupos Disponibles"
+          value={stats.cuposReservados.totalCuposDisponibles}
           icon={<TrendingUp className="text-estado-aprobada-text" />}
           color="bg-estado-aprobada-bg"
         />
@@ -115,48 +124,58 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-lg">
         <div className="bg-admin-surface p-md rounded-md shadow-sm border border-admin-border">
           <h3 className="text-lg font-bold mb-sm">Inscritos por Viaje</h3>
-          <div className="space-y-sm">
-            {stats.inscritosPorViaje.map((item) => (
-              <div key={item.idViaje} className="space-y-xs">
-                <div className="flex justify-between text-sm mb-xs">
-                  <span>{item.tituloViaje}</span>
-                  <span className="font-medium">{item.inscritos}/{item.cuposMaximos}</span>
+          {stats.inscritosPorViaje.length === 0 ? (
+            <p className="text-sm text-admin-muted italic">Aún no hay viajes con inscritos.</p>
+          ) : (
+            <div className="space-y-sm">
+              {stats.inscritosPorViaje.map((item) => (
+                <div key={item.idViaje} className="space-y-xs">
+                  <div className="flex justify-between text-sm mb-xs">
+                    <span>{item.titulo}</span>
+                    <span className="font-medium">
+                      {item.totalInscritos}/{item.cuposMaximos} · {item.porcentajeOcupacion}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-admin-bg rounded-sm h-2">
+                    <div
+                      className="bg-admin-accent h-2 rounded-sm transition-all"
+                      style={{ width: `${Math.min(item.porcentajeOcupacion, 100)}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="w-full bg-admin-bg rounded-sm h-2">
-                  <div
-                    className="bg-admin-accent h-2 rounded-sm transition-all"
-                    style={{ width: `${item.porcentajeOcupacion}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="bg-admin-surface p-md rounded-md shadow-sm border border-admin-border">
           <h3 className="text-lg font-bold mb-sm">Rutas más Populares</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="text-xs text-admin-muted border-b border-admin-border">
-                <tr>
-                  <th className="pb-sm font-medium">Viaje</th>
-                  <th className="pb-sm font-medium">Dificultad</th>
-                  <th className="pb-sm font-medium text-right">Inscritos</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-admin-border">
-                {stats.rutasPopulares.map((ruta) => (
-                  <tr key={ruta.idViaje} className="hover:bg-admin-bg transition-colors">
-                    <td className="py-sm font-medium text-sm">{ruta.tituloViaje}</td>
-                    <td className="py-sm">
-                      <ChipDificultad dificultad={ruta.dificultad} />
-                    </td>
-                    <td className="py-sm text-right text-sm">{ruta.totalInscritos}</td>
+          {stats.rutasMasPopulares.length === 0 ? (
+            <p className="text-sm text-admin-muted italic">Aún no hay reservas aprobadas.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="text-xs text-admin-muted border-b border-admin-border">
+                  <tr>
+                    <th className="pb-sm font-medium">Viaje</th>
+                    <th className="pb-sm font-medium">Dificultad</th>
+                    <th className="pb-sm font-medium text-right">Reservas aprobadas</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-admin-border">
+                  {stats.rutasMasPopulares.map((ruta) => (
+                    <tr key={ruta.idViaje} className="hover:bg-admin-bg transition-colors">
+                      <td className="py-sm font-medium text-sm">{ruta.titulo}</td>
+                      <td className="py-sm">
+                        <ChipDificultad dificultad={ruta.dificultad} />
+                      </td>
+                      <td className="py-sm text-right text-sm">{ruta.totalReservasAprobadas}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -2,13 +2,13 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { limpiarRolDemo } from "@/lib/demo";
+import { cerrarSesion } from "@/lib/auth";
 
 export default function LogoutPage() {
   const router = useRouter();
 
   useEffect(() => {
-    limpiarRolDemo();
+    cerrarSesion();
     router.replace("/");
   }, [router]);
 

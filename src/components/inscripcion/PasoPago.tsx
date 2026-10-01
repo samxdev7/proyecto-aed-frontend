@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import Image from "next/image";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import TemporizadorRetencion from "@/components/inscripcion/TemporizadorRetencion";
+import { DATOS_PAGO } from "@/config/pago";
 import { formatoCordobas, formatoUSDAproximado } from "@/lib/format";
 import type { BorradorReserva } from "@/services/reserva.service";
 import type { Viaje } from "@/types/viaje";
@@ -13,9 +15,10 @@ interface PasoPagoProps {
   cantidad: number;
   borrador: BorradorReserva;
   enviando: boolean;
+  /** Mensaje del backend si el POST falló (p.ej. "cupos insuficientes"). */
+  errorEnvio: string | null;
   alConfirmar: (numeroReferenciaPago: string, capturaComprobanteUrl: string) => void;
   alAtras: () => void;
-  alExpirar: () => void;
 }
 
 interface ErroresPago {
@@ -23,40 +26,59 @@ interface ErroresPago {
   comprobante?: string;
 }
 
+/** Comprime la captura en el cliente: lado mayor máx 1200px, JPEG 0.72. */
+async function comprimirImagen(archivo: File): Promise<string> {
+  const bitmap = await createImageBitmap(archivo);
+  const escala = Math.min(1, 1200 / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * escala);
+  canvas.height = Math.round(bitmap.height * escala);
+  canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/jpeg", 0.72);
+}
+
 export default function PasoPago({
   viaje,
   cantidad,
   borrador,
   enviando,
+  errorEnvio,
   alConfirmar,
   alAtras,
-  alExpirar,
 }: PasoPagoProps) {
   const [referencia, setReferencia] = useState("");
   const [comprobante, setComprobante] = useState<string | null>(null);
   const [nombreArchivo, setNombreArchivo] = useState("");
+  const [procesando, setProcesando] = useState(false);
+  const [expirado, setExpirado] = useState(false);
   const [errores, setErrores] = useState<ErroresPago>({});
-  const refComprobante = useRef<string | null>(null);
 
-  // El objectURL local se libera al salir del paso; la reserva guarda el URL como mock.
-  useEffect(
-    () => () => {
-      if (refComprobante.current) URL.revokeObjectURL(refComprobante.current);
-    },
-    [],
-  );
+  // El backend re-fija su propia ventana al crear la reserva; esto solo
+  // retiene el cupo en UX y deshabilita el envío al agotarse.
+  useEffect(() => {
+    setExpirado(new Date(borrador.fechaLimitePago).getTime() <= Date.now());
+  }, [borrador.fechaLimitePago]);
 
   const monto = viaje.montoReserva * cantidad;
+  const bloqueado = enviando || procesando || expirado;
 
-  function alElegirArchivo(evento: React.ChangeEvent<HTMLInputElement>) {
+  async function alElegirArchivo(evento: React.ChangeEvent<HTMLInputElement>) {
     const archivo = evento.target.files?.[0];
     if (!archivo) return;
-    if (refComprobante.current) URL.revokeObjectURL(refComprobante.current);
-    const url = URL.createObjectURL(archivo);
-    refComprobante.current = url;
-    setComprobante(url);
-    setNombreArchivo(archivo.name);
-    setErrores((previas) => ({ ...previas, comprobante: undefined }));
+    setProcesando(true);
+    try {
+      const dataUri = await comprimirImagen(archivo);
+      setComprobante(dataUri);
+      setNombreArchivo(archivo.name);
+      setErrores((previas) => ({ ...previas, comprobante: undefined }));
+    } catch {
+      setErrores((previas) => ({
+        ...previas,
+        comprobante: "No pudimos procesar la imagen. Prueba con otra foto.",
+      }));
+    } finally {
+      setProcesando(false);
+    }
   }
 
   function confirmar() {
@@ -77,38 +99,38 @@ export default function PasoPago({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-md">
       <TemporizadorRetencion
         fechaLimite={borrador.fechaLimitePago}
-        alExpirar={alExpirar}
+        alExpirar={() => setExpirado(true)}
       />
 
       <div>
-        <h2 className="font-serif text-xl font-bold text-navy">
-          Pago por transferencia
-        </h2>
+        <h2 className="text-xl font-bold text-primary">Pago por transferencia</h2>
         <p className="mt-1 text-sm text-text-muted">
           Transferí el abono exacto, guarda el número de referencia y sube la
           captura del comprobante. Tu solicitud se envía con ambos datos.
         </p>
       </div>
 
-      <dl className="space-y-2 rounded-md bg-sand p-4 text-sm">
+      <dl className="space-y-sm rounded-md bg-sand p-md text-sm">
         <div className="flex items-center justify-between">
           <dt className="text-ink/70">Banco</dt>
-          <dd className="font-medium text-navy">BanPro</dd>
+          <dd className="font-medium text-navy">{DATOS_PAGO.banco}</dd>
         </div>
         <div className="flex items-center justify-between">
-          <dt className="text-ink/70">Cuenta (córdobas)</dt>
-          <dd className="font-mono font-medium text-navy">100-022-000123-4</dd>
+          <dt className="text-ink/70">
+            Cuenta ({DATOS_PAGO.moneda.toLowerCase()})
+          </dt>
+          <dd className="font-mono font-medium text-navy">
+            {DATOS_PAGO.cuenta}
+          </dd>
         </div>
         <div className="flex items-center justify-between">
           <dt className="text-ink/70">Titular</dt>
-          <dd className="font-medium text-navy">
-            Club Nicaragüense de Montañismo
-          </dd>
+          <dd className="font-medium text-navy">{DATOS_PAGO.titular}</dd>
         </div>
-        <div className="flex items-center justify-between border-t border-ink/10 pt-2">
+        <div className="flex items-center justify-between border-t border-ink/10 pt-sm">
           <dt className="font-semibold text-navy">Monto exacto</dt>
           <dd className="font-bold text-navy">
             {formatoCordobas(monto)}
@@ -145,21 +167,29 @@ export default function PasoPago({
           type="file"
           accept="image/*"
           onChange={alElegirArchivo}
-          className="block w-full text-sm text-text-muted file:mr-4 file:rounded-sm file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-medium file:text-sand"
+          disabled={procesando}
+          className="block w-full text-sm text-text-muted file:mr-md file:rounded-sm file:border-0 file:bg-primary file:px-md file:py-xs file:text-sm file:font-medium file:text-sand"
         />
+        {procesando ? (
+          <p className="text-xs text-text-muted">Procesando imagen…</p>
+        ) : null}
         {errores.comprobante ? (
           <p className="text-xs text-error" role="alert">
             {errores.comprobante}
           </p>
         ) : null}
         {comprobante ? (
-          <figure className="mt-3 space-y-1">
-            {/* eslint-disable-next-line @next/next/no-img-element -- preview local de un blob, no hay optimización posible */}
-            <img
-              src={comprobante}
-              alt={`Comprobante: ${nombreArchivo}`}
-              className="max-h-48 rounded-md border border-neutral-border bg-surface-alt object-contain"
-            />
+          <figure className="mt-sm space-y-1">
+            <div className="relative h-48 w-full overflow-hidden rounded-md border border-neutral-border bg-surface-alt">
+              {/* Data-URI: next/image lo pasa directo sin optimización. */}
+              <Image
+                src={comprobante}
+                alt={`Comprobante: ${nombreArchivo}`}
+                fill
+                sizes="(min-width: 768px) 60vw, 100vw"
+                className="object-contain"
+              />
+            </div>
             <figcaption className="text-xs text-text-muted">
               {nombreArchivo}
             </figcaption>
@@ -167,11 +197,35 @@ export default function PasoPago({
         ) : null}
       </div>
 
-      <div className="flex gap-3">
+      {expirado ? (
+        <p
+          className="rounded-md bg-estado-rechazada-bg px-md py-sm text-sm font-medium text-estado-rechazada-text"
+          role="alert"
+        >
+          Se agotó el tiempo de retención. Vuelve al paso anterior e inicia la
+          reserva de nuevo.
+        </p>
+      ) : null}
+
+      {errorEnvio ? (
+        <p
+          className="rounded-md bg-estado-rechazada-bg px-md py-sm text-sm font-medium text-estado-rechazada-text"
+          role="alert"
+        >
+          {errorEnvio}
+        </p>
+      ) : null}
+
+      <div className="flex gap-sm">
         <Boton variante="contorno" onClick={alAtras} disabled={enviando}>
           Atrás
         </Boton>
-        <Boton className="flex-1" onClick={confirmar} loading={enviando}>
+        <Boton
+          className="flex-1"
+          onClick={confirmar}
+          loading={enviando}
+          disabled={bloqueado}
+        >
           Confirmar reserva
         </Boton>
       </div>

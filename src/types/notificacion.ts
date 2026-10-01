@@ -1,14 +1,15 @@
+export type TipoNotificacion =
+  | "nuevo_viaje"
+  | "pocos_cupos"
+  | "reserva_aprobada"
+  | "reserva_rechazada";
+
+/** GET /notificaciones/me — NotificacionResponseDto. */
 export interface Notificacion {
   idNotificacion: number;
   idUsuario: number;
-  tipo: string;
+  tipo: TipoNotificacion | string;
   mensaje: string;
-  fecha: string;
+  fechaEnvio: string;
   leida: boolean;
-}
-
-export interface SuscripcionPushRequest {
-  endpoint: string;
-  p256dh: string;
-  auth: string;
 }
