@@ -94,6 +94,8 @@ export default function PasoViajeros({
           </h3>
           <div className="grid gap-md sm:grid-cols-2">
             <Campo
+              id={`acomp-${indice}-primerNombre`}
+              name={`acomp-${indice}-primerNombre`}
               label="Primer nombre"
               required
               valor={acompanante.primerNombre}
@@ -103,6 +105,8 @@ export default function PasoViajeros({
               error={errores[`${indice}-primerNombre`]}
             />
             <Campo
+              id={`acomp-${indice}-primerApellido`}
+              name={`acomp-${indice}-primerApellido`}
               label="Primer apellido"
               required
               valor={acompanante.primerApellido}
@@ -112,6 +116,8 @@ export default function PasoViajeros({
               error={errores[`${indice}-primerApellido`]}
             />
             <Campo
+              id={`acomp-${indice}-tipoIdentificacion`}
+              name={`acomp-${indice}-tipoIdentificacion`}
               label="Tipo de identificación"
               opciones={TIPOS_IDENTIFICACION}
               valor={acompanante.tipoIdentificacion}
@@ -124,6 +130,8 @@ export default function PasoViajeros({
               }
             />
             <Campo
+              id={`acomp-${indice}-numeroIdentificacion`}
+              name={`acomp-${indice}-numeroIdentificacion`}
               label="Número de identificación"
               required
               placeholder="001-000000-0000A"
@@ -148,6 +156,8 @@ export default function PasoViajeros({
           {campos.map((campo) => (
             <Campo
               key={campo.idCampo}
+              id={`campo-resp-${campo.idCampo}`}
+              name={`campo-resp-${campo.idCampo}`}
               label={campo.etiquetaPregunta}
               required={campo.obligatorio}
               tipo={campo.tipoCampo === "fecha" ? "date" : "text"}

@@ -47,7 +47,7 @@ export default function Campo({
     id: campoId,
     name: name ?? campoId,
     placeholder,
-    value: valor,
+    value: valor ?? "",
     disabled,
     required,
     onChange: (

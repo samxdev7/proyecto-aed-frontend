@@ -19,20 +19,30 @@ export default function Modal({
   className = "max-w-2xl",
 }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const onCerrarRef = useRef(onCerrar);
+
+  useEffect(() => {
+    onCerrarRef.current = onCerrar;
+  }, [onCerrar]);
 
   useEffect(() => {
     if (!abierto) return;
     const alPresionar = (evento: KeyboardEvent) => {
-      if (evento.key === "Escape") onCerrar();
+      if (evento.key === "Escape") onCerrarRef.current();
     };
     document.addEventListener("keydown", alPresionar);
     document.body.style.overflow = "hidden";
-    panelRef.current?.focus();
+
+    // Solo enfocar el panel al abrir si ningún elemento hijo ya tiene el foco
+    if (panelRef.current && !panelRef.current.contains(document.activeElement)) {
+      panelRef.current.focus();
+    }
+
     return () => {
       document.removeEventListener("keydown", alPresionar);
       document.body.style.overflow = "";
     };
-  }, [abierto, onCerrar]);
+  }, [abierto]);
 
   if (!abierto) return null;
 
