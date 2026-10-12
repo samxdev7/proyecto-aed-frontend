@@ -6,7 +6,7 @@ import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import TemporizadorRetencion from "@/components/inscripcion/TemporizadorRetencion";
 import { DATOS_PAGO } from "@/config/pago";
-import { formatoCordobas, formatoUSDAproximado } from "@/lib/format";
+import { formatoCordobas } from "@/lib/format";
 import type { BorradorReserva } from "@/services/reserva.service";
 import type { Viaje } from "@/types/viaje";
 
@@ -132,9 +132,6 @@ export default function PasoPago({
           <dt className="font-semibold text-navy">Monto exacto</dt>
           <dd className="font-bold text-navy">
             {formatoCordobas(monto)}
-            <span className="ml-1 text-xs font-normal text-ink/50">
-              ({formatoUSDAproximado(monto)})
-            </span>
           </dd>
         </div>
       </dl>

@@ -6,7 +6,7 @@ import { splitLineas, viajesService } from "@/services/viajes.service";
 import GaleriaViaje from "@/components/viajes/GaleriaViaje";
 import Boton from "@/components/ui/Boton";
 import { ChipDificultad } from "@/components/ui/Chip";
-import { formatoCordobas, formatoFecha, formatoUSDAproximado } from "@/lib/format";
+import { formatoCordobas, formatoFecha } from "@/lib/format";
 
 /**
  * Inclusiones base del club para toda expedición (el backend solo persiste
@@ -134,9 +134,6 @@ export default async function ViajeDetallePage({ params }: ViajeDetallePageProps
             </span>
             <p className="text-3xl font-bold text-primary">
               {formatoCordobas(viaje.montoTotal)}
-            </p>
-            <p className="text-xs text-text-muted">
-              {formatoUSDAproximado(viaje.montoTotal)}
             </p>
           </div>
 

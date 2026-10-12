@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { CalendarX, Eye, EyeOff, FileText, User, Users } from "lucide-react";
 import { reservaService } from "@/services/reserva.service";
 import type { ReservaDetalle } from "@/types/reserva";
-import { formatoCordobas, formatoFecha, formatoUSDAproximado } from "@/lib/format";
+import { formatoCordobas, formatoFecha } from "@/lib/format";
 import Boton from "@/components/ui/Boton";
 import Chip from "@/components/ui/Chip";
 import EmptyState from "@/components/ui/EmptyState";
@@ -118,10 +118,7 @@ export default function ReservaDetallePage() {
               Abono (por persona)
             </p>
             <p className="font-medium">
-              {formatoCordobas(reserva.montoReserva)}{" "}
-              <span className="text-xs font-normal text-text-muted">
-                ({formatoUSDAproximado(reserva.montoReserva)})
-              </span>
+              {formatoCordobas(reserva.montoReserva)}
             </p>
           </div>
           <div className="space-y-xs">
