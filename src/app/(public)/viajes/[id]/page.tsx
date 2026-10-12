@@ -198,17 +198,6 @@ export default async function ViajeDetallePage({ params }: ViajeDetallePageProps
             </Boton>
           )}
 
-          {viaje.enlaceWhatsApp ? (
-            <a
-              href={viaje.enlaceWhatsApp}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-md py-sm text-sm font-medium text-sand transition hover:bg-primary-dark"
-            >
-              Unirme al grupo de WhatsApp
-            </a>
-          ) : null}
-
           <p className="text-center text-[10px] text-text-muted">
             Al inscribirte, aceptas los términos y condiciones del club.
           </p>
