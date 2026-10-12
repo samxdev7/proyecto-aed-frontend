@@ -51,3 +51,9 @@ CLAUDE.md
 INFORME-E12-2026-09-27.md
 INFORME-UI-2026-09-28.md
 PLAN.md
+# OpenCode / La Agencia (artefactos locales, no se suben)
+.opencode/
+PLAN.md
+INFORME-*.md
+Wireframes/
+docs/entregables/
