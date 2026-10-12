@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { LogIn } from "lucide-react";
 import { authService } from "@/services/auth.service";
 import { EVENTO_SESION, esAdministrador, guardarSesion, obtenerSesion } from "@/lib/auth";
+import { ApiError } from "@/lib/api-client";
 import type { Sesion } from "@/types/auth";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
@@ -44,10 +45,15 @@ export default function LoginPage() {
         router.push("/");
       }
     } catch (excepcion) {
+      // Credenciales inválidas (401): mensaje amigable, no el crudo del backend.
+      const credInvalidas =
+        excepcion instanceof ApiError && excepcion.status === 401;
       setError(
-        excepcion instanceof Error
-          ? excepcion.message
-          : "No pudimos iniciar tu sesión.",
+        credInvalidas
+          ? "No se pudo encontrar este correo electrónico, o la contraseña no coincide con el correo registrado."
+          : excepcion instanceof Error
+            ? excepcion.message
+            : "No pudimos iniciar tu sesión.",
       );
       setEnviando(false);
     }
@@ -89,10 +95,10 @@ export default function LoginPage() {
             <LogIn size={28} aria-hidden="true" />
           </div>
           <h1 className="text-2xl font-bold text-primary">
-            Bienvenido de vuelta
+            Accede a tu cuenta
           </h1>
           <p className="text-sm text-text-muted">
-            Ingresa tus credenciales para acceder.
+            Usa tu cuenta registrada.
           </p>
         </div>
 

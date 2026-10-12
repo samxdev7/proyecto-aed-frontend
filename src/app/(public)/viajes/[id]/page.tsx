@@ -130,7 +130,7 @@ export default async function ViajeDetallePage({ params }: ViajeDetallePageProps
         <aside className="self-start space-y-md rounded-md border border-neutral-border bg-surface p-lg shadow-sm lg:sticky lg:top-lg">
           <div className="space-y-xs">
             <span className="text-xs font-bold uppercase text-text-muted">
-              Inversión Total
+              Costo Total
             </span>
             <p className="text-3xl font-bold text-primary">
               {formatoCordobas(viaje.montoTotal)}
