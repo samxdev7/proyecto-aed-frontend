@@ -6,7 +6,7 @@ import { splitLineas, viajesService } from "@/services/viajes.service";
 import GaleriaViaje from "@/components/viajes/GaleriaViaje";
 import Boton from "@/components/ui/Boton";
 import { ChipDificultad } from "@/components/ui/Chip";
-import { formatoCordobas, formatoFecha, formatoUSDAproximado } from "@/lib/format";
+import { formatoCordobas, formatoFecha, formatoHora } from "@/lib/format";
 
 /**
  * Inclusiones base del club para toda expedición (el backend solo persiste
@@ -130,13 +130,10 @@ export default async function ViajeDetallePage({ params }: ViajeDetallePageProps
         <aside className="self-start space-y-md rounded-md border border-neutral-border bg-surface p-lg shadow-sm lg:sticky lg:top-lg">
           <div className="space-y-xs">
             <span className="text-xs font-bold uppercase text-text-muted">
-              Inversión Total
+              Costo Total
             </span>
             <p className="text-3xl font-bold text-primary">
               {formatoCordobas(viaje.montoTotal)}
-            </p>
-            <p className="text-xs text-text-muted">
-              {formatoUSDAproximado(viaje.montoTotal)}
             </p>
           </div>
 
@@ -158,12 +155,12 @@ export default async function ViajeDetallePage({ params }: ViajeDetallePageProps
             <FilaDato
               icono={Calendar}
               etiqueta="Salida"
-              valor={formatoFecha(viaje.fechaHoraIda)}
+              valor={`${formatoFecha(viaje.fechaHoraIda)}, ${formatoHora(viaje.fechaHoraIda)}`}
             />
             <FilaDato
               icono={Calendar}
               etiqueta="Regreso"
-              valor={formatoFecha(viaje.fechaHoraVuelta)}
+              valor={`${formatoFecha(viaje.fechaHoraVuelta)}, ${formatoHora(viaje.fechaHoraVuelta)}`}
             />
             <FilaDato
               icono={MapPin}
@@ -200,17 +197,6 @@ export default async function ViajeDetallePage({ params }: ViajeDetallePageProps
                 : "Inscripciones cerradas"}
             </Boton>
           )}
-
-          {viaje.enlaceWhatsApp ? (
-            <a
-              href={viaje.enlaceWhatsApp}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-md py-sm text-sm font-medium text-sand transition hover:bg-primary-dark"
-            >
-              Unirme al grupo de WhatsApp
-            </a>
-          ) : null}
 
           <p className="text-center text-[10px] text-text-muted">
             Al inscribirte, aceptas los términos y condiciones del club.

@@ -36,50 +36,55 @@ export class ApiClient {
     throw new ApiError(response.status, mensaje);
   }
 
+  /** fetch envuelto: backend caído o sin conexión -> ApiError(0) con mensaje amigable. */
+  private static async request(endpoint: string, init: RequestInit): Promise<Response> {
+    let response: Response;
+    try {
+      response = await fetch(`${this.baseUrl}${endpoint}`, {
+        ...init,
+        headers: this.headers(),
+      });
+    } catch {
+      throw new ApiError(
+        0,
+        "No pudimos conectar con el servidor. Intenta de nuevo en unos minutos.",
+      );
+    }
+    if (!response.ok) return this.fallar(response);
+    return response;
+  }
+
   static async get<T>(endpoint: string, params?: Record<string, string>): Promise<T> {
     const query = params ? `?${new URLSearchParams(params).toString()}` : "";
-    const response = await fetch(`${this.baseUrl}${endpoint}${query}`, {
-      headers: this.headers(),
-    });
-    if (!response.ok) return this.fallar(response);
+    const response = await this.request(`${endpoint}${query}`, {});
     return response.json();
   }
 
   static async post<T>(endpoint: string, body?: unknown): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+    const response = await this.request(endpoint, {
       method: "POST",
-      headers: this.headers(),
       body: body === undefined ? undefined : JSON.stringify(body),
     });
-    if (!response.ok) return this.fallar(response);
     return response.json();
   }
 
   static async patch<T>(endpoint: string, body?: unknown): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+    const response = await this.request(endpoint, {
       method: "PATCH",
-      headers: this.headers(),
       body: body === undefined ? undefined : JSON.stringify(body),
     });
-    if (!response.ok) return this.fallar(response);
     return response.json();
   }
 
   static async put<T>(endpoint: string, body?: unknown): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+    const response = await this.request(endpoint, {
       method: "PUT",
-      headers: this.headers(),
       body: body === undefined ? undefined : JSON.stringify(body),
     });
-    if (!response.ok) return this.fallar(response);
     return response.json();
   }
 
   static async delete(endpoint: string): Promise<void> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: "DELETE",
-      headers: this.headers(),
-    });
-    if (!response.ok) return this.fallar(response);
+    await this.request(endpoint, { method: "DELETE" });
   }
 }

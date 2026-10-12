@@ -3,7 +3,7 @@
 import { CalendarX, Minus, Plus } from "lucide-react";
 import Boton from "@/components/ui/Boton";
 import EmptyState from "@/components/ui/EmptyState";
-import { formatoCordobas, formatoUSDAproximado } from "@/lib/format";
+import { formatoCordobas } from "@/lib/format";
 import type { Viaje } from "@/types/viaje";
 
 /** Tope por reserva además de los cupos del viaje. */
@@ -95,9 +95,6 @@ export default function PasoCupos({
           <dt className="font-semibold text-navy">Total a transferir</dt>
           <dd className="font-bold text-navy">
             {formatoCordobas(viaje.montoReserva * cantidad)}
-            <span className="ml-1 text-xs font-normal text-ink/50">
-              ({formatoUSDAproximado(viaje.montoReserva * cantidad)})
-            </span>
           </dd>
         </div>
       </dl>

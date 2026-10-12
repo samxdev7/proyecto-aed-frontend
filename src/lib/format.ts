@@ -1,15 +1,18 @@
-const TIPO_CAMBIO_USD = 36.7;
-
 export function formatoCordobas(monto: number): string {
   return `C$ ${Math.round(monto).toLocaleString("en-US")}`;
 }
 
-export function formatoUSDAproximado(monto: number): string {
-  return `~$${Math.round(monto / TIPO_CAMBIO_USD)} USD`;
+export function formatoPrecio(monto: number): string {
+  // Solo córdobas — nada de conversión aproximada a USD.
+  return formatoCordobas(monto);
 }
 
-export function formatoPrecio(monto: number): string {
-  return `${formatoCordobas(monto)} (${formatoUSDAproximado(monto)})`;
+export function formatoHora(iso: string): string {
+  return new Date(iso).toLocaleTimeString("es-NI", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
 }
 
 export function formatoFecha(iso: string): string {

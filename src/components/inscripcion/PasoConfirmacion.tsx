@@ -4,7 +4,7 @@ import { Clock } from "lucide-react";
 import Boton from "@/components/ui/Boton";
 import Chip from "@/components/ui/Chip";
 import TemporizadorRetencion from "@/components/inscripcion/TemporizadorRetencion";
-import { formatoCordobas, formatoUSDAproximado } from "@/lib/format";
+import { formatoCordobas } from "@/lib/format";
 import type { ReservaDetalle } from "@/types/reserva";
 
 export default function PasoConfirmacion({
@@ -61,9 +61,6 @@ export default function PasoConfirmacion({
           </dt>
           <dd className="font-bold text-navy">
             {formatoCordobas(total)}
-            <span className="ml-1 text-xs font-normal text-ink/50">
-              ({formatoUSDAproximado(total)})
-            </span>
           </dd>
         </div>
       </dl>

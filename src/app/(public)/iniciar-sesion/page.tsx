@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { LogIn } from "lucide-react";
 import { authService } from "@/services/auth.service";
 import { EVENTO_SESION, esAdministrador, guardarSesion, obtenerSesion } from "@/lib/auth";
+import { ApiError } from "@/lib/api-client";
 import type { Sesion } from "@/types/auth";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
@@ -44,10 +45,18 @@ export default function LoginPage() {
         router.push("/");
       }
     } catch (excepcion) {
+      // Credenciales inválidas: backend devuelve 500 (debería ser 401) con
+      // "Credenciales inválidas" en el mensaje. Nunca mostrar ese texto crudo.
+      const credInvalidas =
+        excepcion instanceof ApiError &&
+        (excepcion.status === 401 ||
+          /credenciales/i.test(excepcion.message));
       setError(
-        excepcion instanceof Error
-          ? excepcion.message
-          : "No pudimos iniciar tu sesión.",
+        credInvalidas
+          ? "No se pudo encontrar este correo electrónico, o la contraseña no coincide con el correo registrado."
+          : excepcion instanceof Error
+            ? excepcion.message
+            : "No pudimos iniciar tu sesión.",
       );
       setEnviando(false);
     }
@@ -89,10 +98,10 @@ export default function LoginPage() {
             <LogIn size={28} aria-hidden="true" />
           </div>
           <h1 className="text-2xl font-bold text-primary">
-            Bienvenido de vuelta
+            Accede a tu cuenta
           </h1>
           <p className="text-sm text-text-muted">
-            Ingresa tus credenciales para acceder.
+            Usa tu cuenta registrada.
           </p>
         </div>
 
@@ -102,6 +111,7 @@ export default function LoginPage() {
             tipo="email"
             placeholder="correo@ejemplo.com"
             required
+            ocultarAsterisco
             valor={correo}
             alCambiar={setCorreo}
           />
@@ -110,6 +120,7 @@ export default function LoginPage() {
             tipo="password"
             placeholder="••••••••"
             required
+            ocultarAsterisco
             valor={contrasena}
             alCambiar={setContrasena}
           />

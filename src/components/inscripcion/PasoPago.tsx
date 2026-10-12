@@ -6,7 +6,7 @@ import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import TemporizadorRetencion from "@/components/inscripcion/TemporizadorRetencion";
 import { DATOS_PAGO } from "@/config/pago";
-import { formatoCordobas, formatoUSDAproximado } from "@/lib/format";
+import { formatoCordobas } from "@/lib/format";
 import type { BorradorReserva } from "@/services/reserva.service";
 import type { Viaje } from "@/types/viaje";
 
@@ -63,6 +63,14 @@ export default function PasoPago({
   async function alElegirArchivo(evento: React.ChangeEvent<HTMLInputElement>) {
     const archivo = evento.target.files?.[0];
     if (!archivo) return;
+    if (!["image/jpeg", "image/png"].includes(archivo.type)) {
+      setErrores((previas) => ({
+        ...previas,
+        comprobante: "Formato no válido. Solo se aceptan .jpg, .jpeg o .png.",
+      }));
+      evento.target.value = "";
+      return;
+    }
     setProcesando(true);
     try {
       const dataUri = await comprimirImagen(archivo);
@@ -132,9 +140,6 @@ export default function PasoPago({
           <dt className="font-semibold text-navy">Monto exacto</dt>
           <dd className="font-bold text-navy">
             {formatoCordobas(monto)}
-            <span className="ml-1 text-xs font-normal text-ink/50">
-              ({formatoUSDAproximado(monto)})
-            </span>
           </dd>
         </div>
       </dl>
@@ -163,7 +168,7 @@ export default function PasoPago({
         <input
           id="captura-comprobante"
           type="file"
-          accept="image/*"
+          accept=".jpg,.jpeg,.png"
           onChange={alElegirArchivo}
           disabled={procesando}
           className="block w-full text-sm text-text-muted file:mr-md file:rounded-sm file:border-0 file:bg-primary file:px-md file:py-xs file:text-sm file:font-medium file:text-sand"
