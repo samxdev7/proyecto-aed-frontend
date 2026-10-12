@@ -45,9 +45,12 @@ export default function LoginPage() {
         router.push("/");
       }
     } catch (excepcion) {
-      // Credenciales inválidas (401): mensaje amigable, no el crudo del backend.
+      // Credenciales inválidas: backend devuelve 500 (debería ser 401) con
+      // "Credenciales inválidas" en el mensaje. Nunca mostrar ese texto crudo.
       const credInvalidas =
-        excepcion instanceof ApiError && excepcion.status === 401;
+        excepcion instanceof ApiError &&
+        (excepcion.status === 401 ||
+          /credenciales/i.test(excepcion.message));
       setError(
         credInvalidas
           ? "No se pudo encontrar este correo electrónico, o la contraseña no coincide con el correo registrado."
