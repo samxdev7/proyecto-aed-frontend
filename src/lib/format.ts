@@ -7,6 +7,14 @@ export function formatoPrecio(monto: number): string {
   return formatoCordobas(monto);
 }
 
+export function formatoHora(iso: string): string {
+  return new Date(iso).toLocaleTimeString("es-NI", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
 export function formatoFecha(iso: string): string {
   return new Date(iso).toLocaleDateString("es-ES", {
     day: "numeric",

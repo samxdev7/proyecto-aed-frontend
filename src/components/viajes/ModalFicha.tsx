@@ -7,6 +7,7 @@ import Modal from "@/components/ui/Modal";
 import {
   formatoCordobas,
   formatoFecha,
+  formatoHora,
   formatoPrecio,
 } from "@/lib/format";
 import type { Viaje } from "@/types/viaje";
@@ -78,7 +79,7 @@ export default function ModalFicha({ viaje, onCerrar }: ModalFichaProps) {
           ) : null}
 
           <div className="mt-6 flex flex-wrap gap-3">
-            <DatoChico etiqueta="Fecha" texto={formatoFecha(viaje.fechaHoraIda)} />
+            <DatoChico etiqueta="Fecha" texto={`${formatoFecha(viaje.fechaHoraIda)}, ${formatoHora(viaje.fechaHoraIda)}`} />
             <DatoChico
               etiqueta="Punto de encuentro"
               texto={viaje.puntoEncuentro}

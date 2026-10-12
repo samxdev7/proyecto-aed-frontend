@@ -6,7 +6,7 @@ import { splitLineas, viajesService } from "@/services/viajes.service";
 import GaleriaViaje from "@/components/viajes/GaleriaViaje";
 import Boton from "@/components/ui/Boton";
 import { ChipDificultad } from "@/components/ui/Chip";
-import { formatoCordobas, formatoFecha } from "@/lib/format";
+import { formatoCordobas, formatoFecha, formatoHora } from "@/lib/format";
 
 /**
  * Inclusiones base del club para toda expedición (el backend solo persiste
@@ -155,12 +155,12 @@ export default async function ViajeDetallePage({ params }: ViajeDetallePageProps
             <FilaDato
               icono={Calendar}
               etiqueta="Salida"
-              valor={formatoFecha(viaje.fechaHoraIda)}
+              valor={`${formatoFecha(viaje.fechaHoraIda)}, ${formatoHora(viaje.fechaHoraIda)}`}
             />
             <FilaDato
               icono={Calendar}
               etiqueta="Regreso"
-              valor={formatoFecha(viaje.fechaHoraVuelta)}
+              valor={`${formatoFecha(viaje.fechaHoraVuelta)}, ${formatoHora(viaje.fechaHoraVuelta)}`}
             />
             <FilaDato
               icono={MapPin}
