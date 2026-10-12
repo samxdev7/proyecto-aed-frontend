@@ -111,6 +111,7 @@ export default function LoginPage() {
             tipo="email"
             placeholder="correo@ejemplo.com"
             required
+            ocultarAsterisco
             valor={correo}
             alCambiar={setCorreo}
           />
@@ -119,6 +120,7 @@ export default function LoginPage() {
             tipo="password"
             placeholder="••••••••"
             required
+            ocultarAsterisco
             valor={contrasena}
             alCambiar={setContrasena}
           />

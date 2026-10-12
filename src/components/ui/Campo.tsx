@@ -12,6 +12,8 @@ interface CampoProps {
   error?: string;
   hint?: string;
   required?: boolean;
+  /** required sin el asterisco rojo junto al label (p. ej. login). */
+  ocultarAsterisco?: boolean;
   disabled?: boolean;
   valor?: string;
   alCambiar?: (valor: string) => void;
@@ -28,6 +30,7 @@ export default function Campo({
   error,
   hint,
   required = false,
+  ocultarAsterisco = false,
   disabled = false,
   valor,
   alCambiar,
@@ -64,7 +67,7 @@ export default function Campo({
         className="text-xs font-semibold text-text-muted"
       >
         {label}
-        {required ? (
+        {required && !ocultarAsterisco ? (
           <span className="text-error" aria-hidden="true">
             {" "}
             *
