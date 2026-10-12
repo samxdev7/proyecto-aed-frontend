@@ -177,6 +177,11 @@ export default function AdminViajes() {
       setErrorForm("Completa la fecha y hora de ida y de vuelta.");
       return;
     }
+    const cupos = Number(form.cuposMaximos);
+    if (!Number.isInteger(cupos) || cupos < 1) {
+      setErrorForm("Los cupos deben ser un número entero mayor a 0.");
+      return;
+    }
     const request: ViajeRequest = {
       titulo: form.titulo.trim(),
       descripcion: form.descripcion.trim() || undefined,

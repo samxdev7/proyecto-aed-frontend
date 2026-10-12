@@ -63,6 +63,14 @@ export default function PasoPago({
   async function alElegirArchivo(evento: React.ChangeEvent<HTMLInputElement>) {
     const archivo = evento.target.files?.[0];
     if (!archivo) return;
+    if (!["image/jpeg", "image/png"].includes(archivo.type)) {
+      setErrores((previas) => ({
+        ...previas,
+        comprobante: "Formato no válido. Solo se aceptan .jpg, .jpeg o .png.",
+      }));
+      evento.target.value = "";
+      return;
+    }
     setProcesando(true);
     try {
       const dataUri = await comprimirImagen(archivo);
@@ -160,7 +168,7 @@ export default function PasoPago({
         <input
           id="captura-comprobante"
           type="file"
-          accept="image/*"
+          accept=".jpg,.jpeg,.png"
           onChange={alElegirArchivo}
           disabled={procesando}
           className="block w-full text-sm text-text-muted file:mr-md file:rounded-sm file:border-0 file:bg-primary file:px-md file:py-xs file:text-sm file:font-medium file:text-sand"
