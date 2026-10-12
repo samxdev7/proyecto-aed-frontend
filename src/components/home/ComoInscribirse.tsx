@@ -31,6 +31,7 @@ export default function ComoInscribirse() {
           titulo="¿Cómo Inscribirte a un Viaje?"
           descripcion="El paso a paso para asegurar tu lugar en nuestras expediciones"
           tituloClase="text-sand"
+          descripcionClase="text-sand/80"
         />
 
         {/* 2 columnas en tablet: 4 seguidas no caben y desbordan el ancho. */}
