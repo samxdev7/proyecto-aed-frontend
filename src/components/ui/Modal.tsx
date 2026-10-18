@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 interface ModalProps {
   abierto: boolean;
@@ -20,6 +21,15 @@ export default function Modal({
 }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const onCerrarRef = useRef(onCerrar);
+  // Portal a <body>: sin ancestros con transform/sticky que rompan el `fixed`
+  // y dejen el blur cortado en pantallas con scroll.
+  const [montado, setMontado] = useState(false);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMontado(true);
+    return () => setMontado(false);
+  }, []);
 
   useEffect(() => {
     onCerrarRef.current = onCerrar;
@@ -31,7 +41,12 @@ export default function Modal({
       if (evento.key === "Escape") onCerrarRef.current();
     };
     document.addEventListener("keydown", alPresionar);
-    document.body.style.overflow = "hidden";
+    const html = document.documentElement;
+    const body = document.body;
+    const overflowPrevioHtml = html.style.overflow;
+    const overflowPrevioBody = body.style.overflow;
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
 
     // Solo enfocar el panel al abrir si ningún elemento hijo ya tiene el foco
     if (panelRef.current && !panelRef.current.contains(document.activeElement)) {
@@ -40,15 +55,17 @@ export default function Modal({
 
     return () => {
       document.removeEventListener("keydown", alPresionar);
-      document.body.style.overflow = "";
+      html.style.overflow = overflowPrevioHtml;
+      body.style.overflow = overflowPrevioBody;
     };
   }, [abierto]);
 
-  if (!abierto) return null;
+  if (!abierto || !montado) return null;
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-md backdrop-blur-sm"
+      style={{ backdropFilter: "blur(4px)" }}
       onClick={onCerrar}
     >
       <div
@@ -57,11 +74,12 @@ export default function Modal({
         role="dialog"
         aria-modal="true"
         aria-label={titulo}
-        className={`max-h-[90vh] w-full overflow-y-auto rounded-lg bg-surface shadow-xl ring-1 ring-neutral-border outline-none ${className}`}
+        className={`relative max-h-[90vh] w-full overflow-y-auto rounded-lg bg-surface shadow-xl ring-1 ring-neutral-border outline-none ${className}`}
         onClick={(evento) => evento.stopPropagation()}
       >
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
