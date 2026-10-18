@@ -41,6 +41,15 @@ export function cerrarSesion(): void {
   window.dispatchEvent(new Event(EVENTO_SESION));
 }
 
+/** Actualiza propiedades locales de la sesión (nombreCompleto, notificaciones) y notifica a los oyentes. */
+export function actualizarDatosSesion(
+  parcial: Partial<Pick<Sesion, "nombreCompleto" | "notificacionesHabilitadas">>,
+): void {
+  const actual = obtenerSesion();
+  if (!actual) return;
+  guardarSesion({ ...actual, ...parcial });
+}
+
 /** Token para el header Authorization; null si no hay sesión. */
 export function obtenerToken(): string | null {
   return obtenerSesion()?.token ?? null;

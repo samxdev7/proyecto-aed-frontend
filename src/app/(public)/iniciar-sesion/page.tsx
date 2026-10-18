@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { LogIn } from "lucide-react";
 import { authService } from "@/services/auth.service";
 import { EVENTO_SESION, esAdministrador, guardarSesion, obtenerSesion } from "@/lib/auth";
@@ -11,8 +11,12 @@ import type { Sesion } from "@/types/auth";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const destino = searchParams.get("redir");
+  const redir = destino && destino.startsWith("/") ? destino : null;
+
   const [correo, setCorreo] = useState("");
   const [contrasena, setContrasena] = useState("");
   const [sesion, setSesion] = useState<Sesion | null>(null);
@@ -36,9 +40,8 @@ export default function LoginPage() {
         contrasena,
       });
       guardarSesion(nueva);
-      const destino = new URLSearchParams(window.location.search).get("redir");
-      if (destino?.startsWith("/")) {
-        router.push(destino);
+      if (redir) {
+        router.push(redir);
       } else if (esAdministrador(nueva)) {
         router.push("/admin");
       } else {
@@ -143,7 +146,11 @@ export default function LoginPage() {
           <p className="text-sm text-text-muted">
             ¿No tienes una cuenta?{" "}
             <Link
-              href="/registro"
+              href={
+                redir
+                  ? `/registro?redir=${encodeURIComponent(redir)}`
+                  : "/registro"
+              }
               className="font-bold text-primary hover:underline"
             >
               Regístrate aquí
@@ -160,3 +167,12 @@ export default function LoginPage() {
     </div>
   );
 }
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-dvh bg-bg-main" />}>
+      <LoginContent />
+    </Suspense>
+  );
+}
+

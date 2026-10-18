@@ -268,7 +268,7 @@ export default function InscripcionPage() {
                   </div>
                 </div>
                 <Link
-                  href={`/user/perfil?redir=/inscripcion/${viaje.idViaje}`}
+                  href={`/completar-perfil?redir=/inscripcion/${viaje.idViaje}`}
                   className="inline-flex items-center gap-sm rounded-md bg-primary px-md py-sm text-sm font-semibold text-white transition hover:bg-primary-light"
                 >
                   Completar mi perfil &rarr;

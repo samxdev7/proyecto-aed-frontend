@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Bell, Mail, MapPin, Phone, User } from "lucide-react";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { AlertCircle, Bell, Mail, MapPin, Phone, User } from "lucide-react";
 import { userService } from "@/services/user.service";
+import { actualizarDatosSesion } from "@/lib/auth";
 import type { UsuarioPerfil } from "@/types/usuario";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
@@ -26,19 +28,24 @@ interface FormularioPerfil {
 
 function aFormulario(perfil: UsuarioPerfil): FormularioPerfil {
   return {
-    primerNombre: perfil.primerNombre,
+    primerNombre: perfil.primerNombre ?? "",
     segundoNombre: perfil.segundoNombre ?? "",
-    primerApellido: perfil.primerApellido,
+    primerApellido: perfil.primerApellido ?? "",
     segundoApellido: perfil.segundoApellido ?? "",
-    telefono: perfil.telefono,
-    sexo: perfil.sexo,
-    nacionalidad: perfil.nacionalidad,
-    tipoIdentificacion: perfil.tipoIdentificacion,
-    numeroIdentificacion: perfil.numeroIdentificacion,
+    telefono: perfil.telefono ?? "",
+    sexo: perfil.sexo ?? "M",
+    nacionalidad: perfil.nacionalidad ?? "Nicaragüense",
+    tipoIdentificacion: perfil.tipoIdentificacion ?? "cedula",
+    numeroIdentificacion: perfil.numeroIdentificacion ?? "",
   };
 }
 
-export default function UserProfile() {
+function UserProfileContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const destino = searchParams.get("redir");
+  const redir = destino && destino.startsWith("/") ? destino : null;
+
   const [perfil, setPerfil] = useState<UsuarioPerfil | null>(null);
   const [error, setError] = useState(false);
   const [reintentos, setReintentos] = useState(0);
@@ -56,6 +63,10 @@ export default function UserProfile() {
         if (activo) {
           setPerfil(data);
           setError(false);
+          if (redir) {
+            setForm(aFormulario(data));
+            setEditando(true);
+          }
         }
       })
       .catch(() => {
@@ -64,7 +75,7 @@ export default function UserProfile() {
     return () => {
       activo = false;
     };
-  }, [reintentos]);
+  }, [reintentos, redir]);
 
   function reintentar() {
     setError(false);
@@ -96,6 +107,13 @@ export default function UserProfile() {
       setErrorGuardado("Nombre, apellido e identificación son obligatorios.");
       return;
     }
+    if (form.telefono.trim()) {
+      if (!/^[+0-9 -]{8,20}$/.test(form.telefono.trim())) {
+        setErrorGuardado("El teléfono debe contener entre 8 y 20 caracteres válidos.");
+        return;
+      }
+    }
+
     setGuardando(true);
     setErrorGuardado(null);
     const request = {
@@ -103,7 +121,7 @@ export default function UserProfile() {
       primerApellido: form.primerApellido.trim(),
       telefono: form.telefono.trim(),
       sexo: form.sexo,
-      nacionalidad: form.nacionalidad.trim(),
+      nacionalidad: form.nacionalidad.trim() || "Nicaragüense",
       tipoIdentificacion: form.tipoIdentificacion,
       numeroIdentificacion: form.numeroIdentificacion.trim(),
       // Opcionales solo viajan si el usuario los llenó.
@@ -120,6 +138,12 @@ export default function UserProfile() {
         setPerfil(actualizado);
         setEditando(false);
         setGuardando(false);
+        actualizarDatosSesion({
+          nombreCompleto: actualizado.nombreCompleto,
+        });
+        if (redir && redir.startsWith("/")) {
+          router.push(redir);
+        }
       })
       .catch((excepcion) => {
         setErrorGuardado(
@@ -171,13 +195,24 @@ export default function UserProfile() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-lg">
+      {redir && (
+        <div className="flex items-center gap-sm rounded-md border border-warning-text/20 bg-warning-bg p-md text-sm text-warning-text">
+          <AlertCircle size={20} className="shrink-0" />
+          <span>
+            Completa tus datos personales para continuar con tu proceso de reserva de viaje.
+          </span>
+        </div>
+      )}
+
       <div className="flex flex-col items-center gap-lg rounded-md border border-neutral-border bg-surface p-lg shadow-sm md:flex-row">
         <div className="flex h-32 w-32 items-center justify-center rounded-full bg-primary text-4xl font-bold text-white">
-          {perfil.primerNombre[0]?.toUpperCase() ?? "·"}
+          {(perfil.primerNombre && perfil.primerNombre[0]?.toUpperCase()) ||
+            perfil.correo[0]?.toUpperCase() ||
+            "·"}
         </div>
         <div className="space-y-xs text-center md:text-left">
           <h2 className="text-3xl font-bold text-primary">
-            {perfil.nombreCompleto}
+            {perfil.nombreCompleto || perfil.correo}
           </h2>
           <p className="text-text-muted">{perfil.correo}</p>
           <div className="flex justify-center gap-xs md:justify-start">
@@ -394,3 +429,22 @@ function DetailItem({
     </div>
   );
 }
+
+export default function UserProfile() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-4xl space-y-lg">
+          <Skeleton className="h-40 w-full rounded-md" />
+          <div className="grid grid-cols-1 gap-md md:grid-cols-2">
+            <Skeleton className="h-64 w-full rounded-md" />
+            <Skeleton className="h-64 w-full rounded-md" />
+          </div>
+        </div>
+      }
+    >
+      <UserProfileContent />
+    </Suspense>
+  );
+}
+
