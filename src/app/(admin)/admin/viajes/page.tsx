@@ -21,6 +21,7 @@ import Modal from "@/components/ui/Modal";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import { ChipDificultad } from "@/components/ui/Chip";
+import GaleriaSupabaseModal from "@/components/admin/GaleriaSupabaseModal";
 
 const DIFICULTADES = ["Baja", "Media", "Alta", "Extrema"] as const;
 
@@ -85,6 +86,9 @@ export default function AdminViajes() {
   const [guardando, setGuardando] = useState(false);
   const [errorForm, setErrorForm] = useState("");
   const [form, setForm] = useState<FormViaje>(FORM_VACIO);
+  /* Modal de galeria de Supabase Storage para portada. */
+  const [galeriaAbierta, setGaleriaAbierta] = useState(false);
+  const [mostrarUrlAvanzada, setMostrarUrlAvanzada] = useState(false);
   /* id del viaje con una mutación de fila en curso (toggle/eliminar). */
   const [ocupado, setOcupado] = useState<number | null>(null);
 
@@ -498,14 +502,84 @@ export default function AdminViajes() {
               valor={form.enlaceWhatsApp}
               alCambiar={(v) => setForm({ ...form, enlaceWhatsApp: v })}
             />
-            <div className="md:col-span-2">
-              <Campo
-                label="Imagen"
-                placeholder="/Presentaciones/viajes/mombacho.jpg"
-                hint="Ruta local del club o data-URI."
-                valor={form.imagenUrl}
-                alCambiar={(v) => setForm({ ...form, imagenUrl: v })}
-              />
+            <div className="md:col-span-2 space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-text-muted">
+                  Foto de Portada del Viaje
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setMostrarUrlAvanzada(!mostrarUrlAvanzada)}
+                  className="text-[11px] text-admin-accent hover:underline font-medium"
+                >
+                  {mostrarUrlAvanzada ? "Ocultar URL directa" : "Editar URL directa (avanzado)"}
+                </button>
+              </div>
+
+              {/* Widget visual de portada con integracion a Supabase Storage */}
+              <div className="flex flex-col sm:flex-row items-center gap-4 rounded-lg border border-admin-border bg-admin-bg p-3">
+                {form.imagenUrl ? (
+                  <div className="relative h-28 w-44 shrink-0 overflow-hidden rounded-md border border-admin-border bg-white shadow-xs">
+                    <Image
+                      src={form.imagenUrl}
+                      alt="Portada del viaje"
+                      fill
+                      unoptimized
+                      className="object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex h-28 w-44 shrink-0 flex-col items-center justify-center rounded-md border border-dashed border-admin-border bg-white text-admin-muted">
+                    <ImageIcon className="h-8 w-8 mb-1 text-admin-muted/40" />
+                    <span className="text-[11px]">Sin portada</span>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-2 flex-1 w-full">
+                  <div>
+                    <p className="text-xs font-semibold text-admin-text">
+                      {form.imagenUrl ? "Imagen seleccionada para el viaje" : "Selecciona o sube una imagen de portada"}
+                    </p>
+                    <p className="text-[11px] text-admin-muted mt-0.5 line-clamp-2 break-all">
+                      {form.imagenUrl || "Explora las carpetas de Supabase Storage en cnm-files/viajes o sube una nueva imagen."}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setGaleriaAbierta(true)}
+                      className="flex items-center gap-1.5 rounded-md bg-admin-accent px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-admin-accent-hover transition-colors"
+                    >
+                      <ImageIcon className="h-3.5 w-3.5" />
+                      <span>{form.imagenUrl ? "Cambiar desde Galería" : "Elegir desde Galería Supabase"}</span>
+                    </button>
+
+                    {form.imagenUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, imagenUrl: "" })}
+                        className="rounded-md border border-admin-border bg-white px-3 py-1.5 text-xs font-medium text-error hover:bg-estado-rechazada-bg transition-colors"
+                      >
+                        Quitar imagen
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Campo colapsable opcional de URL directa para casos avanzados */}
+              {mostrarUrlAvanzada && (
+                <div className="pt-2">
+                  <Campo
+                    label="URL Directa de la Imagen"
+                    placeholder="https://gnotslrwwptblfoofgsx.supabase.co/storage/v1/object/public/cnm-files/..."
+                    hint="Puedes ingresar manualmente cualquier URL válida o data-URI si lo requieres."
+                    valor={form.imagenUrl}
+                    alCambiar={(v) => setForm({ ...form, imagenUrl: v })}
+                  />
+                </div>
+              )}
             </div>
             <div className="md:col-span-2">
               <Campo
@@ -554,6 +628,15 @@ export default function AdminViajes() {
           </form>
         )}
       </Modal>
+
+      <GaleriaSupabaseModal
+        abierto={galeriaAbierta}
+        onCerrar={() => setGaleriaAbierta(false)}
+        imagenSeleccionadaActual={form.imagenUrl}
+        onSeleccionarImagen={(urlPublica) => {
+          setForm((prev) => ({ ...prev, imagenUrl: urlPublica }));
+        }}
+      />
     </div>
   );
 }
