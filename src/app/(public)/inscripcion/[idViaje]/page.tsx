@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { AlertCircle, Mountain, ShieldAlert } from "lucide-react";
+import { AlertCircle, Mountain } from "lucide-react";
 import { EVENTO_SESION, obtenerSesion, perfilEstaCompleto, leerPerfilCompleto, marcarPerfilCompleto } from "@/lib/auth";
 import type { Sesion } from "@/types/auth";
 import { reservaService } from "@/services/reserva.service";
@@ -55,6 +55,8 @@ export default function InscripcionPage() {
   });
   /** Popup para completar el perfil sin salir de la inscripción. */
   const [perfilModalAbierto, setPerfilModalAbierto] = useState(false);
+  /** Popup de aviso: los administradores no pueden reservar. */
+  const [adminBloqueado, setAdminBloqueado] = useState(false);
 
   useEffect(() => {
     if (Number.isNaN(idViajeNumero)) return;
@@ -90,6 +92,7 @@ export default function InscripcionPage() {
           .catch(() => setPerfil(null));
       } else {
         setPerfil(null);
+        if (s?.rol === "administrador") setAdminBloqueado(true);
       }
     };
     actualizar();
@@ -272,24 +275,6 @@ export default function InscripcionPage() {
                 <Skeleton className="h-5 w-2/3" />
                 <Skeleton className="h-10 w-full" />
               </div>
-            ) : sesionLista && sesion?.rol === "administrador" ? (
-              /* Los administradores no pueden reservar cupos. */
-              <div className="rounded-md border border-warning-text/20 bg-warning-bg p-lg space-y-md">
-                <div className="flex items-start gap-md">
-                  <div className="shrink-0 rounded-full bg-warning-text/10 p-sm">
-                    <ShieldAlert size={24} className="text-warning-text" />
-                  </div>
-                  <div className="space-y-xs">
-                    <h2 className="text-lg font-bold text-warning-text">
-                      Los administradores no pueden reservar cupos
-                    </h2>
-                    <p className="text-sm text-text-muted">
-                      Esta cuenta tiene rol de administrador. Para reservar un
-                      cupo, usa una cuenta de cliente.
-                    </p>
-                  </div>
-                </div>
-              </div>
             ) : perfilIncompleto === true ||
               (perfil !== null && !perfilEstaCompleto(perfil)) ? (
               /* Alerta premium: perfil incompleto */
@@ -347,6 +332,32 @@ export default function InscripcionPage() {
               recargarPerfil();
             }}
           />
+        </Modal>
+
+        <Modal
+          abierto={adminBloqueado}
+          onCerrar={() => setAdminBloqueado(false)}
+          titulo="Reserva no disponible"
+          className="max-w-md p-lg"
+        >
+          <div className="flex flex-col items-center gap-md text-center">
+            <svg
+              viewBox="0 0 512 512"
+              className="h-16 w-16 text-error"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M335.188 154.188 256 233.375l-79.188-79.187-22.624 22.624L233.375 256l-79.187 79.188 22.624 22.624L256 278.625l79.188 79.187 22.624-22.624L278.625 256l79.187-79.188z" />
+              <path d="M256 0C114.609 0 0 114.609 0 256s114.609 256 256 256 256-114.609 256-256S397.391 0 256 0m0 472c-119.297 0-216-96.703-216-216S136.703 40 256 40s216 96.703 216 216-96.703 216-216 216" />
+            </svg>
+            <h2 className="text-lg font-bold text-text-main">
+              Los administradores no pueden reservar cupos
+            </h2>
+            <p className="text-sm text-text-muted">
+              Esta cuenta tiene rol de administrador. Para reservar un cupo, usa
+              una cuenta de cliente.
+            </p>
+          </div>
         </Modal>
       </div>
     </div>
