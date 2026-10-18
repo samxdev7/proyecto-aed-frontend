@@ -18,6 +18,7 @@ import Boton from "@/components/ui/Boton";
 import Chip, { ChipDificultad } from "@/components/ui/Chip";
 import Skeleton from "@/components/ui/Skeleton";
 import Modal from "@/components/ui/Modal";
+import EmptyState from "@/components/ui/EmptyState";
 import CompletarPerfilPopup from "@/components/auth/CompletarPerfilPopup";
 import FlujoInscripcion from "@/components/inscripcion/FlujoInscripcion";
 
@@ -286,30 +287,12 @@ export default function InscripcionPage() {
               </div>
             ) : perfilIncompleto === true ||
               (perfil !== null && !perfilEstaCompleto(perfil)) ? (
-              /* Alerta premium: perfil incompleto */
-              <div className="rounded-md border border-warning-text/20 bg-warning-bg p-lg space-y-md">
-                <div className="flex items-start gap-md">
-                  <div className="shrink-0 rounded-full bg-warning-text/10 p-sm">
-                    <AlertCircle size={24} className="text-warning-text" />
-                  </div>
-                  <div className="space-y-xs">
-                    <h2 className="text-lg font-bold text-warning-text">
-                      Faltan datos en tu perfil para continuar
-                    </h2>
-                    <p className="text-sm text-text-muted">
-                      Para reservar un cupo necesitamos que tu perfil esté completo:
-                      nombre completo, identificación y nacionalidad.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setPerfilModalAbierto(true)}
-                  className="inline-flex items-center gap-sm rounded-md bg-primary px-md py-sm text-sm font-semibold text-white transition hover:bg-primary-light"
-                >
-                  Completar mi perfil
-                </button>
-              </div>
+              /* Sin perfil completo no se puede avanzar; el popup salta solo. */
+              <EmptyState
+                icono={AlertCircle}
+                titulo="Completa tu perfil para reservar"
+                descripcion="Rellena tus datos personales (nombre, identificación y nacionalidad) y vuelve a intentarlo."
+              />
             ) : (
               <FlujoInscripcion viaje={viaje} />
             )}

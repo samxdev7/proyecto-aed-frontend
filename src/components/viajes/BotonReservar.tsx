@@ -2,23 +2,35 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { obtenerSesion } from "@/lib/auth";
+import { leerPerfilCompleto, obtenerSesion } from "@/lib/auth";
 import Boton from "@/components/ui/Boton";
 import Modal from "@/components/ui/Modal";
+import CompletarPerfilPopup from "@/components/auth/CompletarPerfilPopup";
 
 /**
- * Botón "Reservar" del detalle de viaje. Si el usuario es administrador no
- * navega a la inscripción: muestra la alerta en el mismo lugar.
+ * Botón "Reservar" del detalle de viaje. Sin navegar a otra pantalla:
+ * - admin → alerta de que no puede reservar.
+ * - perfil incompleto → popup para completarlo.
+ * - resto → flujo de inscripción.
  */
 export default function BotonReservar({ idViaje }: { idViaje: number }) {
   const router = useRouter();
   const [adminBloqueado, setAdminBloqueado] = useState(false);
+  const [perfilPopupAbierto, setPerfilPopupAbierto] = useState(false);
 
   function reservar() {
-    if (obtenerSesion()?.rol === "administrador") {
+    const sesion = obtenerSesion();
+
+    if (sesion?.rol === "administrador") {
       setAdminBloqueado(true);
       return;
     }
+
+    if (sesion && leerPerfilCompleto(sesion.idUsuario) === false) {
+      setPerfilPopupAbierto(true);
+      return;
+    }
+
     router.push(`/inscripcion/${idViaje}`);
   }
 
@@ -27,6 +39,17 @@ export default function BotonReservar({ idViaje }: { idViaje: number }) {
       <Boton type="button" fullWidth onClick={reservar}>
         Reservar
       </Boton>
+
+      <CompletarPerfilPopup
+        abierto={perfilPopupAbierto}
+        onCerrar={() => setPerfilPopupAbierto(false)}
+        alCompletar={() => {
+          setPerfilPopupAbierto(false);
+          router.push(`/inscripcion/${idViaje}`);
+        }}
+        textoOmitir="Omitir y seguir viendo"
+      />
+
       <Modal
         abierto={adminBloqueado}
         onCerrar={() => setAdminBloqueado(false)}
