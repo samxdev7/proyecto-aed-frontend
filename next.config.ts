@@ -2,8 +2,26 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    /* Solo assets locales del club; rutas con query string y URLs externas quedan bloqueadas. */
+    /* Assets locales del club */
     localPatterns: [{ pathname: "/Presentaciones/**", search: "" }],
+    /* Almacenamiento remoto de Supabase Storage para fotos de viajes y comprobantes */
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "gnotslrwwptblfoofgsx.supabase.co",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "**.supabase.co",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+        pathname: "/**",
+      },
+    ],
   },
 };
 
