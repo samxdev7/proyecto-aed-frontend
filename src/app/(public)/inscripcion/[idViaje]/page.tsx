@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { AlertCircle, Mountain } from "lucide-react";
-import { EVENTO_SESION, obtenerSesion } from "@/lib/auth";
+import { EVENTO_SESION, obtenerSesion, perfilEstaCompleto } from "@/lib/auth";
 import type { Sesion } from "@/types/auth";
 import { reservaService } from "@/services/reserva.service";
 import type { HistorialReservaResumen } from "@/types/reserva";
@@ -18,16 +18,6 @@ import Boton from "@/components/ui/Boton";
 import Chip, { ChipDificultad } from "@/components/ui/Chip";
 import Skeleton from "@/components/ui/Skeleton";
 import FlujoInscripcion from "@/components/inscripcion/FlujoInscripcion";
-
-/** Campos que definen un perfil completo para poder reservar. */
-function perfilEstaCompleto(p: UsuarioPerfil): boolean {
-  return (
-    !!p.primerNombre?.trim() &&
-    !!p.primerApellido?.trim() &&
-    !!p.numeroIdentificacion?.trim() &&
-    !!p.nacionalidad?.trim()
-  );
-}
 
 /** Estados de reserva que bloquean un nuevo intento (rechazada NO bloquea). */
 const ESTADOS_BLOQUEANTES: HistorialReservaResumen["estado"][] = [

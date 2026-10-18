@@ -10,6 +10,7 @@ import { ApiError } from "@/lib/api-client";
 import type { Sesion } from "@/types/auth";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
+import BotonGoogle from "@/components/auth/BotonGoogle";
 
 function LoginContent() {
   const router = useRouter();
@@ -141,6 +142,15 @@ function LoginContent() {
             Iniciar sesión
           </Boton>
         </form>
+
+        <div className="relative my-sm flex items-center justify-center">
+          <div className="w-full border-t border-neutral-border" />
+          <span className="bg-surface px-sm text-xs uppercase text-text-muted">
+            o continúa con
+          </span>
+        </div>
+
+        <BotonGoogle redir={redir} />
 
         <div className="space-y-xs text-center">
           <p className="text-sm text-text-muted">

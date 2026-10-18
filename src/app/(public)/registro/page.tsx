@@ -10,6 +10,7 @@ import type { RegistroRequest } from "@/types/auth";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import SeccionCompletarPerfil from "@/components/auth/SeccionCompletarPerfil";
+import BotonGoogle from "@/components/auth/BotonGoogle";
 
 /** Solo correo y contraseña — el resto del perfil se completa en el paso siguiente o desde /user/perfil. */
 type FormularioRegistro = {
@@ -142,6 +143,15 @@ function ContenidoRegistro() {
               Crear mi cuenta
             </Boton>
           </form>
+
+          <div className="relative my-sm flex items-center justify-center">
+            <div className="w-full border-t border-neutral-border" />
+            <span className="bg-surface px-sm text-xs uppercase text-text-muted">
+              o continúa con
+            </span>
+          </div>
+
+          <BotonGoogle redir={redir} texto="Registrarse con Google" />
 
           <p className="text-center text-sm text-text-muted">
             ¿Ya tienes una cuenta?{" "}

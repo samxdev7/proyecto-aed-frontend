@@ -12,4 +12,9 @@ export const authService = {
   async registro(request: RegistroRequest): Promise<UsuarioPerfil> {
     return ApiClient.post<UsuarioPerfil>("/auth/registro", request);
   },
+
+  /** Inicia sesión o registra mediante cuenta de Google (POST /auth/google). */
+  async loginGoogle(idToken: string): Promise<Sesion> {
+    return ApiClient.post<Sesion>("/auth/google", { idToken });
+  },
 };
