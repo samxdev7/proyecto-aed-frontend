@@ -2,12 +2,12 @@ import { cerrarSesion, obtenerToken } from "@/lib/auth";
 
 /** Error de API con status HTTP; message viene del ErrorResponseDto del backend. */
 export class ApiError extends Error {
-  constructor(
-    public status: number,
-    mensaje: string,
-  ) {
+  status: number;
+
+  constructor(status: number, mensaje: string) {
     super(mensaje);
     this.name = "ApiError";
+    this.status = status;
   }
 }
 
