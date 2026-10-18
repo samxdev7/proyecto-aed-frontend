@@ -379,9 +379,21 @@ export default function SeccionCompletarPerfil({
             </p>
           ) : null}
 
-          <Boton type="submit" fullWidth loading={guardando}>
-            Guardar y continuar
-          </Boton>
+          <div className="flex flex-col gap-xs pt-xs">
+            <Boton type="submit" fullWidth loading={guardando}>
+              Guardar y continuar
+            </Boton>
+            {permitirOmitir ? (
+              <button
+                type="button"
+                onClick={omitir}
+                disabled={guardando}
+                className="py-1 text-center text-xs text-text-muted transition-colors hover:text-primary"
+              >
+                Omitir por ahora y ver el catálogo
+              </button>
+            ) : null}
+          </div>
         </form>
       )}
     </div>
