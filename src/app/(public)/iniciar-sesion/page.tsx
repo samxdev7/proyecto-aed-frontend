@@ -10,6 +10,7 @@ import { ApiError } from "@/lib/api-client";
 import type { Sesion } from "@/types/auth";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
+import BotonGoogle from "@/components/auth/BotonGoogle";
 
 function LoginContent() {
   const router = useRouter();
@@ -142,6 +143,8 @@ function LoginContent() {
           </Boton>
         </form>
 
+        <BotonGoogle redir={redir} />
+
         <div className="space-y-xs text-center">
           <p className="text-sm text-text-muted">
             ¿No tienes una cuenta?{" "}
@@ -156,12 +159,6 @@ function LoginContent() {
               Regístrate aquí
             </Link>
           </p>
-          <Link
-            href="/viajes"
-            className="inline-block text-xs text-primary hover:underline"
-          >
-            Continuar sin cuenta →
-          </Link>
         </div>
       </div>
     </div>

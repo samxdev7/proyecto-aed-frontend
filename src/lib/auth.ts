@@ -1,4 +1,5 @@
 import type { Rol, Sesion } from "@/types/auth";
+import type { UsuarioPerfil } from "@/types/usuario";
 
 /** Única clave de sesión del cliente. */
 export const CLAVE_SESION = "cnm_auth";
@@ -58,3 +59,15 @@ export function obtenerToken(): string | null {
 export function esAdministrador(sesion: Sesion | null): sesion is Sesion & { rol: Rol } {
   return sesion !== null && sesion.rol === "administrador";
 }
+
+/** Determina si el perfil cuenta con los datos indispensables para reservar viajes. */
+export function perfilEstaCompleto(p: UsuarioPerfil | null | undefined): boolean {
+  if (!p) return false;
+  return (
+    !!p.primerNombre?.trim() &&
+    !!p.primerApellido?.trim() &&
+    !!p.numeroIdentificacion?.trim() &&
+    !!p.nacionalidad?.trim()
+  );
+}
+

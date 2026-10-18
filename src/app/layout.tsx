@@ -19,7 +19,11 @@ export const metadata: Metadata = {
     "Exploramos, cuidamos y disfrutamos las montañas y volcanes. Únete a la próxima expedición.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html lang="es" className={`${inter.variable} ${merriweather.variable} antialiased`}>
       <body className="min-h-dvh flex flex-col">{children}</body>
