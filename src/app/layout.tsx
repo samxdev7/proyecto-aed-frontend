@@ -17,6 +17,27 @@ export const metadata: Metadata = {
   title: "Club Nicaragüense de Montañismo",
   description:
     "Exploramos, cuidamos y disfrutamos las montañas y volcanes. Únete a la próxima expedición.",
+  icons: {
+    icon: [
+      {
+        url: "https://gnotslrwwptblfoofgsx.supabase.co/storage/v1/object/public/cnm-files/cnm-logo.png",
+        type: "image/png",
+      },
+      {
+        url: "/icon.png",
+        type: "image/png",
+      },
+    ],
+    shortcut: ["/favicon.ico"],
+    apple: [
+      {
+        url: "https://gnotslrwwptblfoofgsx.supabase.co/storage/v1/object/public/cnm-files/cnm-logo.png",
+      },
+      {
+        url: "/apple-icon.png",
+      },
+    ],
+  },
 };
 
 export default function RootLayout({

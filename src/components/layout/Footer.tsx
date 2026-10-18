@@ -29,7 +29,7 @@ export default function Footer() {
     <footer className="bg-navy px-4 py-10 md:px-8">
       <div className="flex max-w-6xl flex-col items-center justify-between gap-6 md:flex-row">
         <div className="flex min-w-0 items-center gap-2.5 text-sand">
-          <Logo className="h-8 w-8 shrink-0" />
+          <Logo className="h-8 w-auto shrink-0 md:h-9" />
           {/* Sin `truncate`: en tablet el texto se partía en "Club Nicaragüense de M…".
               Mejor a 2 líneas que cortado. */}
           <span className="text-sm font-semibold md:text-base">
