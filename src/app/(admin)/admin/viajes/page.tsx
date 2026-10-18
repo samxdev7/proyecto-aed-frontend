@@ -9,7 +9,7 @@ import { formatoCordobas, formatoFecha } from "@/lib/format";
 import {
   Plus,
   Edit2,
-  Trash2,
+  Archive,
   Map,
   ListChecks,
   Power,
@@ -22,6 +22,7 @@ import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import { ChipDificultad } from "@/components/ui/Chip";
 import GaleriaSupabaseModal from "@/components/admin/GaleriaSupabaseModal";
+import ModalViajesArchivados from "@/components/admin/ModalViajesArchivados";
 
 const DIFICULTADES = ["Baja", "Media", "Alta", "Extrema"] as const;
 
@@ -89,7 +90,9 @@ export default function AdminViajes() {
   /* Modal de galeria de Supabase Storage para portada. */
   const [galeriaAbierta, setGaleriaAbierta] = useState(false);
   const [mostrarUrlAvanzada, setMostrarUrlAvanzada] = useState(false);
-  /* id del viaje con una mutación de fila en curso (toggle/eliminar). */
+  /* Modal de viajes archivados. */
+  const [modalArchivadosAbierto, setModalArchivadosAbierto] = useState(false);
+  /* id del viaje con una mutación de fila en curso (toggle/archivar). */
   const [ocupado, setOcupado] = useState<number | null>(null);
   /** Errores por campo para validación inline. */
   const [erroresCampo, setErroresCampo] = useState<Partial<Record<keyof FormViaje, string>>>({});
@@ -100,8 +103,8 @@ export default function AdminViajes() {
     setLoading(true);
     setError(false);
     try {
-      const respuesta = await viajesService.listarViajes();
-      setViajes(respuesta.content);
+      const respuesta = await viajesService.listarViajesNoArchivados();
+      setViajes(respuesta);
     } catch (e) {
       setMensaje(mensajeDeError(e, "Ocurrió un error al obtener la lista. Inténtalo de nuevo."));
       setError(true);
@@ -113,10 +116,10 @@ export default function AdminViajes() {
   useEffect(() => {
     let activo = true;
     viajesService
-      .listarViajes()
+      .listarViajesNoArchivados()
       .then((respuesta) => {
         if (!activo) return;
-        setViajes(respuesta.content);
+        setViajes(respuesta);
         setLoading(false);
       })
       .catch((e) => {
@@ -302,16 +305,28 @@ export default function AdminViajes() {
     }
   }
 
-  async function eliminar(viaje: Viaje) {
-    if (!window.confirm(`¿Eliminar el viaje "${viaje.titulo}"? Esta acción no se puede deshacer.`)) return;
+  async function archivar(viaje: Viaje) {
+    if (viaje.estado !== "cerrado") {
+      setAviso({
+        tipo: "error",
+        texto: "Para archivar un viaje, su estado debe ser 'cerrado'. Ciérralo primero antes de archivar.",
+      });
+      return;
+    }
+    if (
+      !window.confirm(
+        `¿Deseas archivar el viaje "${viaje.titulo}"? Podrás consultarlo y desarchivarlo en cualquier momento desde la sección de Viajes Archivados.`
+      )
+    ) {
+      return;
+    }
     setOcupado(viaje.idViaje);
     try {
-      await viajesService.eliminarViaje(viaje.idViaje);
-      setAviso({ tipo: "ok", texto: `Viaje "${viaje.titulo}" eliminado.` });
+      await viajesService.archivarViaje(viaje.idViaje);
+      setAviso({ tipo: "ok", texto: `Viaje "${viaje.titulo}" archivado correctamente.` });
       await cargarViajes();
     } catch (e) {
-      /* 409 con message del backend si el viaje tiene reservas activas. */
-      setAviso({ tipo: "error", texto: mensajeDeError(e, "No se pudo eliminar el viaje.") });
+      setAviso({ tipo: "error", texto: mensajeDeError(e, "No se pudo archivar el viaje.") });
     } finally {
       setOcupado(null);
     }
@@ -356,12 +371,22 @@ export default function AdminViajes() {
           <h2 className="text-2xl font-bold text-admin-text">Gestión de Viajes</h2>
           <p className="text-sm text-admin-muted">Administra las expediciones y rutas disponibles.</p>
         </div>
-        <button
-          onClick={abrirCrear}
-          className="bg-admin-accent text-white px-sm py-xs rounded-md flex items-center gap-sm hover:bg-admin-accent-hover transition-colors text-sm font-medium"
-        >
-          <Plus size={18} /> Nuevo Viaje
-        </button>
+        <div className="flex items-center gap-sm">
+          <button
+            onClick={() => setModalArchivadosAbierto(true)}
+            className="border border-admin-border bg-admin-surface text-admin-text px-sm py-xs rounded-md flex items-center gap-sm hover:bg-admin-bg transition-colors text-sm font-medium"
+            title="Ver y restaurar viajes archivados"
+          >
+            <Archive size={18} className="text-admin-muted" />
+            Viajes Archivados
+          </button>
+          <button
+            onClick={abrirCrear}
+            className="bg-admin-accent text-white px-sm py-xs rounded-md flex items-center gap-sm hover:bg-admin-accent-hover transition-colors text-sm font-medium"
+          >
+            <Plus size={18} /> Nuevo Viaje
+          </button>
+        </div>
       </div>
 
       {aviso && (
@@ -462,12 +487,20 @@ export default function AdminViajes() {
                         <Edit2 size={16} />
                       </button>
                       <button
-                        onClick={() => eliminar(viaje)}
-                        disabled={ocupado === viaje.idViaje}
-                        className="p-xs text-error hover:bg-estado-rechazada-bg rounded-sm transition-colors disabled:opacity-50"
-                        title="Eliminar"
+                        onClick={() => archivar(viaje)}
+                        disabled={ocupado === viaje.idViaje || viaje.estado !== "cerrado"}
+                        className={`p-xs rounded-sm transition-colors ${
+                          viaje.estado === "cerrado"
+                            ? "text-admin-muted hover:text-admin-accent hover:bg-admin-bg cursor-pointer"
+                            : "text-neutral-border opacity-40 cursor-not-allowed"
+                        }`}
+                        title={
+                          viaje.estado === "cerrado"
+                            ? "Archivar viaje"
+                            : "Solo los viajes con estado 'Cerrado' pueden archivarse"
+                        }
                       >
-                        <Trash2 size={16} />
+                        <Archive size={16} />
                       </button>
                     </div>
                   </td>
@@ -728,6 +761,12 @@ export default function AdminViajes() {
         onSeleccionarImagen={(urlPublica) => {
           cambiarCampo("imagenUrl", urlPublica);
         }}
+      />
+
+      <ModalViajesArchivados
+        abierto={modalArchivadosAbierto}
+        onCerrar={() => setModalArchivadosAbierto(false)}
+        onViajeDesarchivado={cargarViajes}
       />
     </div>
   );

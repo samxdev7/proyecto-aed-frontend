@@ -25,6 +25,8 @@ export interface Viaje {
   estado: EstadoViaje;
   /** Ruta local o URL de la imagen; null si el viaje aún no tiene foto. */
   imagenUrl: string | null;
+  /** Indica si el viaje fue archivado (borrado lógico). */
+  archivado?: boolean;
 }
 
 /** Ficha completa (GET /viajes/{id} — ViajeDetalleDto). */

@@ -153,9 +153,29 @@ export const viajesService = {
     return res;
   },
 
-  async eliminarViaje(idViaje: number): Promise<void> {
-    const res = await ApiClient.delete(`/viajes/${idViaje}`);
-    removerModificacionViaje(idViaje);
+  /** Obtiene la lista completa de viajes que no han sido archivados (GET /viajes/no-archivados). */
+  async listarViajesNoArchivados(): Promise<Viaje[]> {
+    const respuesta = await ApiClient.get<Viaje[]>("/viajes/no-archivados");
+    return ordenarViajesRecientesPrimero(respuesta);
+  },
+
+  /** Obtiene la lista completa de viajes archivados (GET /viajes/archivados). */
+  async listarViajesArchivados(): Promise<Viaje[]> {
+    const respuesta = await ApiClient.get<Viaje[]>("/viajes/archivados");
+    return ordenarViajesRecientesPrimero(respuesta);
+  },
+
+  /** Archiva un viaje en estado cerrado (PATCH /viajes/{idViaje}/archivar). */
+  async archivarViaje(idViaje: number): Promise<ViajeDetalle> {
+    const res = await ApiClient.patch<ViajeDetalle>(`/viajes/${idViaje}/archivar`, {});
+    registrarModificacionViaje(idViaje);
+    return res;
+  },
+
+  /** Desarchiva un viaje previamente archivado (PATCH /viajes/{idViaje}/desarchivar). */
+  async desarchivarViaje(idViaje: number): Promise<ViajeDetalle> {
+    const res = await ApiClient.patch<ViajeDetalle>(`/viajes/${idViaje}/desarchivar`, {});
+    registrarModificacionViaje(idViaje);
     return res;
   },
 
