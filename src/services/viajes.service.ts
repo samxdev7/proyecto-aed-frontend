@@ -29,6 +29,83 @@ export function opcionesDeCampo(campo: CampoFormulario): string[] {
   }
 }
 
+const KEY_MODIFICACIONES = "cnm_viajes_modificaciones_ts";
+
+/** Registra una modificación reciente del viaje en el cliente para mantenerlo al tope de la lista. */
+export function registrarModificacionViaje(idViaje: number): void {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = localStorage.getItem(KEY_MODIFICACIONES);
+    const mapa: Record<number, number> = raw ? JSON.parse(raw) : {};
+    mapa[idViaje] = Date.now();
+    localStorage.setItem(KEY_MODIFICACIONES, JSON.stringify(mapa));
+  } catch {
+    /* Manejo silencioso en caso de storage no disponible */
+  }
+}
+
+/** Remueve el registro de modificación de un viaje eliminado. */
+export function removerModificacionViaje(idViaje: number): void {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = localStorage.getItem(KEY_MODIFICACIONES);
+    if (!raw) return;
+    const mapa: Record<number, number> = JSON.parse(raw);
+    delete mapa[idViaje];
+    localStorage.setItem(KEY_MODIFICACIONES, JSON.stringify(mapa));
+  } catch {
+    /* Manejo silencioso */
+  }
+}
+
+/** Obtiene el mapa de modificaciones recientes. */
+export function obtenerModificacionesViajes(): Record<number, number> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(KEY_MODIFICACIONES);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Ordena la lista de viajes colocando primero aquellos creados o modificados más recientemente
+ * (invierte el orden ascendente original por defecto del backend).
+ */
+export function ordenarViajesRecientesPrimero<T extends Viaje>(viajes: T[]): T[] {
+  const modificaciones = obtenerModificacionesViajes();
+  return [...viajes].sort((a, b) => {
+    // 1. Modificaciones recientes registradas en el cliente
+    const modA = modificaciones[a.idViaje] || 0;
+    const modB = modificaciones[b.idViaje] || 0;
+    if (modA !== modB) {
+      return modB - modA;
+    }
+
+    // 2. Fecha de modificación o actualización si la provee el backend
+    const anyA = a as unknown as Record<string, unknown>;
+    const anyB = b as unknown as Record<string, unknown>;
+    const fechaModA = (anyA.fechaModificacion || anyA.updatedAt || anyA.fechaActualizacion) as string | undefined;
+    const fechaModB = (anyB.fechaModificacion || anyB.updatedAt || anyB.fechaActualizacion) as string | undefined;
+    if (fechaModA && fechaModB) {
+      const diffMod = new Date(fechaModB).getTime() - new Date(fechaModA).getTime();
+      if (diffMod !== 0) return diffMod;
+    }
+
+    // 3. Fecha de creación si la provee el backend
+    const fechaCreacionA = (anyA.fechaCreacion || anyA.createdAt) as string | undefined;
+    const fechaCreacionB = (anyB.fechaCreacion || anyB.createdAt) as string | undefined;
+    if (fechaCreacionA && fechaCreacionB) {
+      const diffCreacion = new Date(fechaCreacionB).getTime() - new Date(fechaCreacionA).getTime();
+      if (diffCreacion !== 0) return diffCreacion;
+    }
+
+    // 4. Por defecto, orden inverso por idViaje (los IDs mayores son los más nuevos)
+    return b.idViaje - a.idViaje;
+  });
+}
+
 export const viajesService = {
   /** Catálogo público paginado (GET /viajes). */
   async listarViajes(
@@ -39,7 +116,11 @@ export const viajesService = {
     const params: Record<string, string> = { page: String(page), size: String(size) };
     if (filtros?.dificultad) params.dificultad = filtros.dificultad;
     if (filtros?.estado) params.estado = filtros.estado;
-    return ApiClient.get<PageResponse<Viaje>>("/viajes", params);
+    const respuesta = await ApiClient.get<PageResponse<Viaje>>("/viajes", params);
+    return {
+      ...respuesta,
+      content: ordenarViajesRecientesPrimero(respuesta.content),
+    };
   },
 
   /** Ficha del viaje; null si no existe. */
@@ -55,19 +136,27 @@ export const viajesService = {
   // ----- administración de viajes (requiere rol administrador) -----
 
   async crearViaje(request: ViajeRequest): Promise<ViajeDetalle> {
-    return ApiClient.post<ViajeDetalle>("/viajes", request);
+    const res = await ApiClient.post<ViajeDetalle>("/viajes", request);
+    if (res?.idViaje) registrarModificacionViaje(res.idViaje);
+    return res;
   },
 
   async actualizarViaje(idViaje: number, request: ViajeRequest): Promise<ViajeDetalle> {
-    return ApiClient.put<ViajeDetalle>(`/viajes/${idViaje}`, request);
+    const res = await ApiClient.put<ViajeDetalle>(`/viajes/${idViaje}`, request);
+    registrarModificacionViaje(idViaje);
+    return res;
   },
 
   async cambiarEstado(idViaje: number, estado: EstadoViaje): Promise<ViajeDetalle> {
-    return ApiClient.patch<ViajeDetalle>(`/viajes/${idViaje}/estado`, { estado });
+    const res = await ApiClient.patch<ViajeDetalle>(`/viajes/${idViaje}/estado`, { estado });
+    registrarModificacionViaje(idViaje);
+    return res;
   },
 
   async eliminarViaje(idViaje: number): Promise<void> {
-    return ApiClient.delete(`/viajes/${idViaje}`);
+    const res = await ApiClient.delete(`/viajes/${idViaje}`);
+    removerModificacionViaje(idViaje);
+    return res;
   },
 
   // ----- formulario de inscripción (público leer, admin escribir) -----

@@ -4,18 +4,30 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Mountain } from "lucide-react";
+import { AlertCircle, Mountain } from "lucide-react";
 import { EVENTO_SESION, obtenerSesion } from "@/lib/auth";
 import type { Sesion } from "@/types/auth";
 import { reservaService } from "@/services/reserva.service";
 import type { HistorialReservaResumen } from "@/types/reserva";
 import { viajesService } from "@/services/viajes.service";
 import type { ViajeDetalle } from "@/types/viaje";
+import { userService } from "@/services/user.service";
+import type { UsuarioPerfil } from "@/types/usuario";
 import { formatoFecha, formatoPrecio } from "@/lib/format";
 import Boton from "@/components/ui/Boton";
 import Chip, { ChipDificultad } from "@/components/ui/Chip";
 import Skeleton from "@/components/ui/Skeleton";
 import FlujoInscripcion from "@/components/inscripcion/FlujoInscripcion";
+
+/** Campos que definen un perfil completo para poder reservar. */
+function perfilEstaCompleto(p: UsuarioPerfil): boolean {
+  return (
+    !!p.primerNombre?.trim() &&
+    !!p.primerApellido?.trim() &&
+    !!p.numeroIdentificacion?.trim() &&
+    !!p.nacionalidad?.trim()
+  );
+}
 
 /** Estados de reserva que bloquean un nuevo intento (rechazada NO bloquea). */
 const ESTADOS_BLOQUEANTES: HistorialReservaResumen["estado"][] = [
@@ -38,6 +50,8 @@ export default function InscripcionPage() {
   const [reservaExistente, setReservaExistente] = useState<
     HistorialReservaResumen | null | undefined
   >(undefined);
+  /** Perfil del usuario: undefined = cargando, null = error/no hay sesión. */
+  const [perfil, setPerfil] = useState<UsuarioPerfil | null | undefined>(undefined);
 
   useEffect(() => {
     if (Number.isNaN(idViajeNumero)) return;
@@ -57,8 +71,18 @@ export default function InscripcionPage() {
 
   useEffect(() => {
     const actualizar = () => {
-      setSesion(obtenerSesion());
+      const s = obtenerSesion();
+      setSesion(s);
       setSesionLista(true);
+      // Cargar perfil solo si hay sesión de cliente.
+      if (s && s.rol !== "administrador") {
+        userService
+          .getMyProfile()
+          .then((data) => setPerfil(data))
+          .catch(() => setPerfil(null));
+      } else {
+        setPerfil(null);
+      }
     };
     actualizar();
     window.addEventListener(EVENTO_SESION, actualizar);
@@ -220,6 +244,35 @@ export default function InscripcionPage() {
                 >
                   Ver estado de mi reserva
                 </Boton>
+              </div>
+            ) : perfil === undefined ? (
+              <div className="space-y-md">
+                <Skeleton className="h-5 w-2/3" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            ) : perfil !== null && !perfilEstaCompleto(perfil) ? (
+              /* Alerta premium: perfil incompleto */
+              <div className="rounded-md border border-warning-text/20 bg-warning-bg p-lg space-y-md">
+                <div className="flex items-start gap-md">
+                  <div className="shrink-0 rounded-full bg-warning-text/10 p-sm">
+                    <AlertCircle size={24} className="text-warning-text" />
+                  </div>
+                  <div className="space-y-xs">
+                    <h2 className="text-lg font-bold text-warning-text">
+                      Faltan datos en tu perfil para continuar
+                    </h2>
+                    <p className="text-sm text-text-muted">
+                      Para reservar un cupo necesitamos que tu perfil esté completo:
+                      nombre completo, identificación y nacionalidad.
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  href={`/completar-perfil?redir=/inscripcion/${viaje.idViaje}`}
+                  className="inline-flex items-center gap-sm rounded-md bg-primary px-md py-sm text-sm font-semibold text-white transition hover:bg-primary-light"
+                >
+                  Completar mi perfil &rarr;
+                </Link>
               </div>
             ) : (
               <FlujoInscripcion viaje={viaje} />

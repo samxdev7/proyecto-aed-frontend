@@ -10,7 +10,7 @@ import {
   CheckCircle,
   Eye,
   CalendarX,
-  ZoomIn,
+  Download,
   Users as UsersIcon
 } from "lucide-react";
 import Skeleton, { FilaTablaSkeleton } from "@/components/ui/Skeleton";
@@ -352,7 +352,7 @@ function AdminReservas() {
       <Modal
         abierto={detalleId !== null}
         onCerrar={cerrarModal}
-        titulo={detalleId ? `Detalle de Reserva #${detalleId}` : "Detalle de Reserva"}
+        titulo="Detalle de Reserva"
         className="max-w-3xl p-lg"
       >
         {cargandoDetalle ? (
@@ -377,7 +377,7 @@ function AdminReservas() {
           <>
             <div className="flex justify-between items-start mb-md">
               <h3 className="text-xl font-bold text-admin-text">
-                Detalle de Reserva #{detalle.idReserva}
+                Detalle de Reserva
               </h3>
               <Chip estado={detalle.estado} />
             </div>
@@ -442,7 +442,7 @@ function AdminReservas() {
                       download="comprobante-pago"
                       className="mt-2 inline-flex items-center gap-2 text-sm text-admin-accent hover:text-admin-accent-hover transition-colors"
                     >
-                      <ZoomIn size={16} /> Descargar comprobante
+                      <Download size={16} /> Descargar comprobante
                     </a>
                   )}
                 </div>

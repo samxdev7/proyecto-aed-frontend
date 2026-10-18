@@ -1,17 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { LogIn } from "lucide-react";
 import { authService } from "@/services/auth.service";
 import { EVENTO_SESION, esAdministrador, guardarSesion, obtenerSesion } from "@/lib/auth";
+import { ApiError } from "@/lib/api-client";
 import type { Sesion } from "@/types/auth";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const destino = searchParams.get("redir");
+  const redir = destino && destino.startsWith("/") ? destino : null;
+
   const [correo, setCorreo] = useState("");
   const [contrasena, setContrasena] = useState("");
   const [sesion, setSesion] = useState<Sesion | null>(null);
@@ -35,19 +40,26 @@ export default function LoginPage() {
         contrasena,
       });
       guardarSesion(nueva);
-      const destino = new URLSearchParams(window.location.search).get("redir");
-      if (destino?.startsWith("/")) {
-        router.push(destino);
+      if (redir) {
+        router.push(redir);
       } else if (esAdministrador(nueva)) {
         router.push("/admin");
       } else {
         router.push("/");
       }
     } catch (excepcion) {
+      // Credenciales inválidas: backend devuelve 500 (debería ser 401) con
+      // "Credenciales inválidas" en el mensaje. Nunca mostrar ese texto crudo.
+      const credInvalidas =
+        excepcion instanceof ApiError &&
+        (excepcion.status === 401 ||
+          /credenciales/i.test(excepcion.message));
       setError(
-        excepcion instanceof Error
-          ? excepcion.message
-          : "No pudimos iniciar tu sesión.",
+        credInvalidas
+          ? "No se pudo encontrar este correo electrónico, o la contraseña no coincide con el correo registrado."
+          : excepcion instanceof Error
+            ? excepcion.message
+            : "No pudimos iniciar tu sesión.",
       );
       setEnviando(false);
     }
@@ -89,10 +101,10 @@ export default function LoginPage() {
             <LogIn size={28} aria-hidden="true" />
           </div>
           <h1 className="text-2xl font-bold text-primary">
-            Bienvenido de vuelta
+            Accede a tu cuenta
           </h1>
           <p className="text-sm text-text-muted">
-            Ingresa tus credenciales para acceder.
+            Usa tu cuenta registrada.
           </p>
         </div>
 
@@ -102,6 +114,7 @@ export default function LoginPage() {
             tipo="email"
             placeholder="correo@ejemplo.com"
             required
+            ocultarAsterisco
             valor={correo}
             alCambiar={setCorreo}
           />
@@ -110,6 +123,7 @@ export default function LoginPage() {
             tipo="password"
             placeholder="••••••••"
             required
+            ocultarAsterisco
             valor={contrasena}
             alCambiar={setContrasena}
           />
@@ -132,7 +146,11 @@ export default function LoginPage() {
           <p className="text-sm text-text-muted">
             ¿No tienes una cuenta?{" "}
             <Link
-              href="/registro"
+              href={
+                redir
+                  ? `/registro?redir=${encodeURIComponent(redir)}`
+                  : "/registro"
+              }
               className="font-bold text-primary hover:underline"
             >
               Regístrate aquí
@@ -149,3 +167,12 @@ export default function LoginPage() {
     </div>
   );
 }
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-dvh bg-bg-main" />}>
+      <LoginContent />
+    </Suspense>
+  );
+}
+
