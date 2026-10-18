@@ -25,7 +25,12 @@ function CallbackContent() {
         // 1. Si viene un código PKCE en la query, intercambiarlo por sesión
         const code = searchParams.get("code");
         if (code) {
-          await supabase.auth.exchangeCodeForSession(code);
+          try {
+            await supabase.auth.exchangeCodeForSession(code);
+          } catch (e) {
+            // Si ya fue intercambiado automáticamente por detectSessionInUrl, continuamos de forma segura
+            console.warn("PKCE exchangeCodeForSession ya procesado:", e);
+          }
         }
 
         // 2. Obtener sesión actual de Supabase

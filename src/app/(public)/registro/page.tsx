@@ -144,13 +144,6 @@ function ContenidoRegistro() {
             </Boton>
           </form>
 
-          <div className="relative my-sm flex items-center justify-center">
-            <div className="w-full border-t border-neutral-border" />
-            <span className="bg-surface px-sm text-xs uppercase text-text-muted">
-              o continúa con
-            </span>
-          </div>
-
           <BotonGoogle redir={redir} texto="Registrarse con Google" />
 
           <p className="text-center text-sm text-text-muted">

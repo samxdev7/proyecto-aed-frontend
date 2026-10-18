@@ -143,13 +143,6 @@ function LoginContent() {
           </Boton>
         </form>
 
-        <div className="relative my-sm flex items-center justify-center">
-          <div className="w-full border-t border-neutral-border" />
-          <span className="bg-surface px-sm text-xs uppercase text-text-muted">
-            o continúa con
-          </span>
-        </div>
-
         <BotonGoogle redir={redir} />
 
         <div className="space-y-xs text-center">
@@ -166,12 +159,6 @@ function LoginContent() {
               Regístrate aquí
             </Link>
           </p>
-          <Link
-            href="/viajes"
-            className="inline-block text-xs text-primary hover:underline"
-          >
-            Continuar sin cuenta →
-          </Link>
         </div>
       </div>
     </div>
