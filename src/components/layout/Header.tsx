@@ -165,7 +165,7 @@ export default function Header() {
             aria-label="Inicio"
             className="flex min-w-0 items-center gap-2.5"
           >
-            <Logo className="h-10 w-10 shrink-0 md:h-12 md:w-12" />
+            <Logo className="h-10 w-auto shrink-0 md:h-12" />
             <span className="truncate text-sm font-semibold text-sand md:text-base">
               Club Nicaragüense de Montañismo
             </span>
