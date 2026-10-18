@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, UserCheck } from "lucide-react";
+import { UserCheck } from "lucide-react";
 import { userService } from "@/services/user.service";
+import { ApiError } from "@/lib/api-client";
 import { actualizarDatosSesion } from "@/lib/auth";
 import type { ActualizarPerfilRequest, UsuarioPerfil } from "@/types/usuario";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
+import PerfilExito from "@/components/ui/PerfilExito";
 
 interface FormularioCompletar {
   primerNombre: string;
@@ -33,14 +35,80 @@ const vacio: FormularioCompletar = {
   telefono: "",
 };
 
+const CLAVE_DRAFT = "cnm:perfil-pendiente";
+const ESPERA_BASE_MS = 3000;
+const ESPERA_MAX_MS = 30000;
+/** Duración de la alerta de éxito antes de cerrarse sola. */
+const DURACION_EXITO_MS = 2500;
+
+type Vista = "prompt" | "form" | "exito";
+
+/** El draft sobrevive un cierre de pestaña: el envío se reintentará al volver. */
+function leerDraft(): Partial<FormularioCompletar> | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const crudo = window.localStorage.getItem(CLAVE_DRAFT);
+    return crudo ? (JSON.parse(crudo) as Partial<FormularioCompletar>) : null;
+  } catch {
+    return null;
+  }
+}
+
+function guardarDraft(request: ActualizarPerfilRequest) {
+  try {
+    window.localStorage.setItem(CLAVE_DRAFT, JSON.stringify(request));
+  } catch {
+    /* sin localStorage: el retry en memoria sigue funcionando */
+  }
+}
+
+/** Solo errores de red o servidor caído: la validación del servidor no se reintenta. */
+function esErrorReintentable(err: unknown): boolean {
+  if (err instanceof ApiError) return err.status === 0 || err.status >= 500;
+  return err instanceof TypeError;
+}
+
+/**
+ * Envío con reintento silencioso: si la red falla, espera con backoff
+ * exponencial (3s → 30s) y vuelve a intentar hasta tener éxito. El usuario
+ * nunca ve estos errores.
+ */
+async function enviarSilenciosamente(
+  request: ActualizarPerfilRequest,
+  alExito: (perfil: UsuarioPerfil) => void,
+): Promise<void> {
+  let intento = 0;
+  for (;;) {
+    try {
+      const perfil = await userService.actualizarPerfil(request);
+      try {
+        window.localStorage.removeItem(CLAVE_DRAFT);
+      } catch {
+        /* noop */
+      }
+      alExito(perfil);
+      return;
+    } catch (err) {
+      if (!esErrorReintentable(err)) return;
+      const espera = Math.min(ESPERA_BASE_MS * 2 ** intento, ESPERA_MAX_MS);
+      intento += 1;
+      await new Promise((resolver) => setTimeout(resolver, espera));
+    }
+  }
+}
+
 interface SeccionCompletarPerfilProps {
-  /** Ruta a la que se debe redirigir tras completar los datos (ej: /inscripcion/1). */
+  /** Ruta a la que se redirige tras completar/omitir (si no hay alCerrar). */
   redir?: string | null;
   /** Callback opcional invocado al guardar exitosamente. */
   alCompletar?: (perfil: UsuarioPerfil) => void;
+  /** Al cerrar el popup tras el éxito (sin redirect de ruta). */
+  alCerrarExito?: () => void;
   /** Si permite omitir este paso temporalmente (por defecto true). */
   permitirOmitir?: boolean;
-  /** Título principal de la sección. */
+  /** Muestra primero la tarjeta de 2 botones (Completar / Omitir). */
+  modoPrompt?: boolean;
+  /** Título principal. */
   titulo?: string;
   /** Subtítulo descriptivo. */
   descripcion?: string;
@@ -49,18 +117,29 @@ interface SeccionCompletarPerfilProps {
 export default function SeccionCompletarPerfil({
   redir,
   alCompletar,
+  alCerrarExito,
   permitirOmitir = true,
+  modoPrompt = true,
   titulo = "¡Casi listo! Completa tu perfil",
   descripcion = "Necesitamos estos datos personales para emitir tus inscripciones y registrarte como titular en las expediciones.",
 }: SeccionCompletarPerfilProps) {
   const router = useRouter();
+  const [vista, setVista] = useState<Vista>(modoPrompt ? "prompt" : "form");
   const [form, setForm] = useState<FormularioCompletar>(vacio);
   const [errores, setErrores] = useState<Partial<Record<keyof FormularioCompletar, string>>>({});
   const [errorGeneral, setErrorGeneral] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
-  const [exito, setExito] = useState(false);
 
   const destinoFinal = redir && redir.startsWith("/") ? redir : "/viajes";
+
+  // Precargar lo que el usuario ya escribió (envío fallido por red).
+  useEffect(() => {
+    const draft = leerDraft();
+    if (draft) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setForm((prev) => ({ ...prev, ...draft }));
+    }
+  }, []);
 
   function actualizar<K extends keyof FormularioCompletar>(
     campo: K,
@@ -118,6 +197,14 @@ export default function SeccionCompletarPerfil({
     return Object.keys(nuevosErrores).length === 0;
   }
 
+  function finalizar() {
+    if (alCerrarExito) {
+      alCerrarExito();
+      return;
+    }
+    router.push(destinoFinal);
+  }
+
   async function manejarEnvio(e: React.FormEvent) {
     e.preventDefault();
     setErrorGeneral(null);
@@ -126,8 +213,6 @@ export default function SeccionCompletarPerfil({
       setErrorGeneral("Por favor completa los campos obligatorios marcados en rojo.");
       return;
     }
-
-    setGuardando(true);
 
     const request: ActualizarPerfilRequest = {
       primerNombre: form.primerNombre.trim(),
@@ -141,39 +226,36 @@ export default function SeccionCompletarPerfil({
       ...(form.telefono.trim() ? { telefono: form.telefono.trim() } : {}),
     };
 
-    try {
-      const perfilActualizado = await userService.actualizarPerfil(request);
+    const nombresCompletos = [
+      form.primerNombre.trim(),
+      form.segundoNombre.trim(),
+      form.primerApellido.trim(),
+      form.segundoApellido.trim(),
+    ]
+      .filter(Boolean)
+      .join(" ");
 
-      const nombresCompletos = [
-        form.primerNombre.trim(),
-        form.segundoNombre.trim(),
-        form.primerApellido.trim(),
-        form.segundoApellido.trim(),
-      ]
-        .filter(Boolean)
-        .join(" ");
+    setGuardando(true);
 
+    // Éxito optimista: mostramos la alerta de inmediato y enviamos por debajo,
+    // reintentando en silencio si la red falla.
+    guardarDraft(request);
+    setVista("exito");
+    setGuardando(false);
+
+    void enviarSilenciosamente(request, (perfil) => {
       actualizarDatosSesion({
-        nombreCompleto: perfilActualizado.nombreCompleto || nombresCompletos,
+        nombreCompleto: perfil.nombreCompleto || nombresCompletos,
       });
+      alCompletar?.(perfil);
+    });
 
-      setExito(true);
-      alCompletar?.(perfilActualizado);
-
-      // Pequeña pausa visual antes de redirigir para confirmar éxito
-      setTimeout(() => {
-        router.push(destinoFinal);
-      }, 700);
-    } catch (err) {
-      setErrorGeneral(
-        err instanceof Error ? err.message : "Ocurrió un error al guardar tus datos de perfil.",
-      );
-      setGuardando(false);
-    }
+    // La alerta se cierra sola y el usuario ya puede reservar.
+    setTimeout(finalizar, DURACION_EXITO_MS);
   }
 
   function omitir() {
-    router.push(destinoFinal);
+    finalizar();
   }
 
   return (
@@ -186,13 +268,24 @@ export default function SeccionCompletarPerfil({
         <p className="text-sm text-text-muted">{descripcion}</p>
       </div>
 
-      {exito ? (
-        <div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
-          <CheckCircle2 className="h-12 w-12 text-success" />
-          <p className="text-base font-semibold text-text-main">
-            ¡Perfil completado con éxito!
-          </p>
-          <p className="text-xs text-text-muted">Redirigiendo a tu destino...</p>
+      {vista === "prompt" ? (
+        <div className="animacion-fade-up flex flex-col gap-sm pt-xs">
+          <Boton type="button" fullWidth onClick={() => setVista("form")}>
+            Completar
+          </Boton>
+          {permitirOmitir ? (
+            <button
+              type="button"
+              onClick={omitir}
+              className="py-1 text-center text-xs text-text-muted transition-colors hover:text-primary"
+            >
+              Omitir por ahora
+            </button>
+          ) : null}
+        </div>
+      ) : vista === "exito" ? (
+        <div className="animacion-fade-up">
+          <PerfilExito />
         </div>
       ) : (
         <form onSubmit={manejarEnvio} className="flex flex-col gap-md" noValidate>
@@ -277,30 +370,29 @@ export default function SeccionCompletarPerfil({
             alCambiar={(v) => actualizar("telefono", v)}
           />
 
-          {errorGeneral && (
+          {errorGeneral ? (
             <p
               className="rounded-sm bg-estado-rechazada-bg px-md py-sm text-sm text-estado-rechazada-text"
               role="alert"
             >
               {errorGeneral}
             </p>
-          )}
+          ) : null}
 
           <div className="flex flex-col gap-xs pt-xs">
             <Boton type="submit" fullWidth loading={guardando}>
               Guardar y continuar
             </Boton>
-
-            {permitirOmitir && (
+            {permitirOmitir ? (
               <button
                 type="button"
                 onClick={omitir}
                 disabled={guardando}
-                className="mt-1 text-center text-xs text-text-muted hover:text-primary transition-colors py-1"
+                className="py-1 text-center text-xs text-text-muted transition-colors hover:text-primary"
               >
-                Omitir por ahora y completar más tarde
+                Omitir por ahora y ver el catálogo
               </button>
-            )}
+            ) : null}
           </div>
         </form>
       )}

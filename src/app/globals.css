@@ -103,3 +103,19 @@
     @apply bg-bg-main font-sans text-text-main antialiased;
   }
 }
+
+/* Entrada suave para el cambio form -> exito (y para el prompt). */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animacion-fade-up {
+  animation: fade-up 0.35s ease-out both;
+}

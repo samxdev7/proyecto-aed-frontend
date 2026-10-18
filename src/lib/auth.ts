@@ -71,3 +71,29 @@ export function perfilEstaCompleto(p: UsuarioPerfil | null | undefined): boolean
   );
 }
 
+/**
+ * Marca el estado del perfil (completo o no) por usuario. Permite a la
+ * inscripción saberlo al instante, sin esperar a cargar el perfil.
+ */
+const CLAVE_PERFIL = "cnm:perfil-completo";
+
+export function marcarPerfilCompleto(idUsuario: number, completo: boolean): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(`${CLAVE_PERFIL}:${idUsuario}`, completo ? "1" : "0");
+  } catch {
+    /* sin localStorage */
+  }
+}
+
+/** null = aún no verificado; true/false = última verificación. */
+export function leerPerfilCompleto(idUsuario: number): boolean | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const valor = window.localStorage.getItem(`${CLAVE_PERFIL}:${idUsuario}`);
+    return valor === null ? null : valor === "1";
+  } catch {
+    return null;
+  }
+}
+

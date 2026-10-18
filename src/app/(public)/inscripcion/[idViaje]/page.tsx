@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { AlertCircle, Mountain } from "lucide-react";
-import { EVENTO_SESION, obtenerSesion, perfilEstaCompleto } from "@/lib/auth";
+import { EVENTO_SESION, obtenerSesion, perfilEstaCompleto, leerPerfilCompleto, marcarPerfilCompleto } from "@/lib/auth";
 import type { Sesion } from "@/types/auth";
 import { reservaService } from "@/services/reserva.service";
 import type { HistorialReservaResumen } from "@/types/reserva";
@@ -17,6 +17,8 @@ import { formatoFecha, formatoPrecio } from "@/lib/format";
 import Boton from "@/components/ui/Boton";
 import Chip, { ChipDificultad } from "@/components/ui/Chip";
 import Skeleton from "@/components/ui/Skeleton";
+import Modal from "@/components/ui/Modal";
+import SeccionCompletarPerfil from "@/components/auth/SeccionCompletarPerfil";
 import FlujoInscripcion from "@/components/inscripcion/FlujoInscripcion";
 
 /** Estados de reserva que bloquean un nuevo intento (rechazada NO bloquea). */
@@ -42,6 +44,19 @@ export default function InscripcionPage() {
   >(undefined);
   /** Perfil del usuario: undefined = cargando, null = error/no hay sesión. */
   const [perfil, setPerfil] = useState<UsuarioPerfil | null | undefined>(undefined);
+  /**
+   * true = ya sabemos que el perfil está incompleto (guardado al cargar el
+   * catálogo), así mostramos la alerta sin esperar a cargar el perfil.
+   */
+  const [perfilIncompleto, setPerfilIncompleto] = useState<boolean | null>(() => {
+    const s = obtenerSesion();
+    if (!s || s.rol === "administrador") return null;
+    return leerPerfilCompleto(s.idUsuario) === false ? true : null;
+  });
+  /** Popup para completar el perfil sin salir de la inscripción. */
+  const [perfilModalAbierto, setPerfilModalAbierto] = useState(false);
+  /** Popup de aviso: los administradores no pueden reservar. */
+  const [adminBloqueado, setAdminBloqueado] = useState(false);
 
   useEffect(() => {
     if (Number.isNaN(idViajeNumero)) return;
@@ -68,16 +83,36 @@ export default function InscripcionPage() {
       if (s && s.rol !== "administrador") {
         userService
           .getMyProfile()
-          .then((data) => setPerfil(data))
+          .then((data) => {
+            const completo = perfilEstaCompleto(data);
+            marcarPerfilCompleto(s.idUsuario, completo);
+            setPerfilIncompleto(!completo);
+            setPerfil(data);
+          })
           .catch(() => setPerfil(null));
       } else {
         setPerfil(null);
+        if (s?.rol === "administrador") setAdminBloqueado(true);
       }
     };
     actualizar();
     window.addEventListener(EVENTO_SESION, actualizar);
     return () => window.removeEventListener(EVENTO_SESION, actualizar);
   }, []);
+
+  function recargarPerfil() {
+    if (sesion && sesion.rol !== "administrador") {
+      userService
+        .getMyProfile()
+        .then((data) => {
+          const completo = perfilEstaCompleto(data);
+          marcarPerfilCompleto(sesion.idUsuario, completo);
+          setPerfilIncompleto(!completo);
+          setPerfil(data);
+        })
+        .catch(() => setPerfil(null));
+    }
+  }
 
   useEffect(() => {
     if (!sesion || !viaje) return;
@@ -240,7 +275,8 @@ export default function InscripcionPage() {
                 <Skeleton className="h-5 w-2/3" />
                 <Skeleton className="h-10 w-full" />
               </div>
-            ) : perfil !== null && !perfilEstaCompleto(perfil) ? (
+            ) : perfilIncompleto === true ||
+              (perfil !== null && !perfilEstaCompleto(perfil)) ? (
               /* Alerta premium: perfil incompleto */
               <div className="rounded-md border border-warning-text/20 bg-warning-bg p-lg space-y-md">
                 <div className="flex items-start gap-md">
@@ -257,12 +293,13 @@ export default function InscripcionPage() {
                     </p>
                   </div>
                 </div>
-                <Link
-                  href={`/completar-perfil?redir=/inscripcion/${viaje.idViaje}`}
+                <button
+                  type="button"
+                  onClick={() => setPerfilModalAbierto(true)}
                   className="inline-flex items-center gap-sm rounded-md bg-primary px-md py-sm text-sm font-semibold text-white transition hover:bg-primary-light"
                 >
-                  Completar mi perfil &rarr;
-                </Link>
+                  Completar mi perfil
+                </button>
               </div>
             ) : (
               <FlujoInscripcion viaje={viaje} />
@@ -278,6 +315,68 @@ export default function InscripcionPage() {
             </div>
           </div>
         </div>
+
+        <Modal
+          abierto={perfilModalAbierto}
+          onCerrar={() => setPerfilModalAbierto(false)}
+          titulo="Completa tu perfil de usuario"
+          className="max-w-xl p-lg"
+        >
+          <SeccionCompletarPerfil
+            modoPrompt={false}
+            permitirOmitir={false}
+            titulo="Completa tu perfil de usuario"
+            descripcion="Tus datos personales son necesarios para formalizar reservas y asegurar tus cupos en las expediciones."
+            alCerrarExito={() => {
+              setPerfilModalAbierto(false);
+              recargarPerfil();
+            }}
+          />
+        </Modal>
+
+        <Modal
+          abierto={adminBloqueado}
+          onCerrar={() => setAdminBloqueado(false)}
+          titulo="Reserva no disponible"
+          className="max-w-md p-lg"
+        >
+          <button
+            type="button"
+            onClick={() => setAdminBloqueado(false)}
+            aria-label="Cerrar alerta"
+            className="absolute right-sm top-sm flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition hover:bg-surface-alt hover:text-error"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
+              <path d="M6 6l12 12M18 6 6 18" />
+            </svg>
+          </button>
+          <div className="flex flex-col items-center gap-md text-center">
+            <svg
+              viewBox="0 0 512 512"
+              className="h-16 w-16 text-error"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M335.188 154.188 256 233.375l-79.188-79.187-22.624 22.624L233.375 256l-79.187 79.188 22.624 22.624L256 278.625l79.188 79.187 22.624-22.624L278.625 256l79.187-79.188z" />
+              <path d="M256 0C114.609 0 0 114.609 0 256s114.609 256 256 256 256-114.609 256-256S397.391 0 256 0m0 472c-119.297 0-216-96.703-216-216S136.703 40 256 40s216 96.703 216 216-96.703 216-216 216" />
+            </svg>
+            <h2 className="text-lg font-bold text-text-main">
+              Los administradores no pueden reservar cupos
+            </h2>
+            <p className="text-sm text-text-muted">
+              Esta cuenta tiene rol de administrador. Para reservar un cupo, usa
+              una cuenta de cliente.
+            </p>
+          </div>
+        </Modal>
       </div>
     </div>
   );
