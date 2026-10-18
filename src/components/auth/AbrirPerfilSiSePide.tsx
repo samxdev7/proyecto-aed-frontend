@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { obtenerSesion } from "@/lib/auth";
 import CompletarPerfilPopup from "./CompletarPerfilPopup";
 
 /**
@@ -15,14 +16,20 @@ export default function AbrirPerfilSiSePide() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("perfil") !== "1") return;
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setAbierto(true);
+    // El param se limpia siempre: si quedó pegado tras un logout, no debe
+    // reabrir el popup en una próxima recarga.
     params.delete("perfil");
     const resto = params.toString();
     const url = resto
       ? `${window.location.pathname}?${resto}`
       : window.location.pathname;
     window.history.replaceState({}, "", url);
+
+    // Sin sesión activa no hay perfil que completar.
+    if (!obtenerSesion()) return;
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setAbierto(true);
   }, []);
 
   return <CompletarPerfilPopup abierto={abierto} onCerrar={() => setAbierto(false)} />;

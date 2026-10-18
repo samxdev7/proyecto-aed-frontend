@@ -40,6 +40,13 @@ export function cerrarSesion(): void {
   cacheSesion = { cruda: null, valor: null };
   window.localStorage.removeItem(CLAVE_SESION);
   window.dispatchEvent(new Event(EVENTO_SESION));
+  /* Cerrar también la sesión de Supabase (login con Google): si queda viva,
+     un reintento de OAuth devuelve la cuenta vieja aunque el usuario la cancele. */
+  void import("@/lib/supabase")
+    .then((m) => m.supabase.auth.signOut())
+    .catch(() => {
+      /* best-effort */
+    });
 }
 
 /** Actualiza propiedades locales de la sesión (nombreCompleto, notificaciones) y notifica a los oyentes. */
