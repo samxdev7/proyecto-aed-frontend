@@ -30,10 +30,9 @@ export default async function ViajeDetallePage({ params }: ViajeDetallePageProps
 
   const itinerario = splitLineas(viaje.itinerario);
   const equipo = splitLineas(viaje.equipo);
-  const inclusiones = [
-    ...INCLUSIONES_BASE,
-    ...splitLineas(viaje.inclusionesAdicionales),
-  ];
+  const inclusiones = viaje.inclusionesAdicionales
+    ? splitLineas(viaje.inclusionesAdicionales)
+    : INCLUSIONES_BASE;
   const inscripcionAbierta =
     viaje.estado === "activo" && viaje.cuposDisponibles > 0;
   const ultimosCupos = inscripcionAbierta && viaje.cuposDisponibles <= 2;

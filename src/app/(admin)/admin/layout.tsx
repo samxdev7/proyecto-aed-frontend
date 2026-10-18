@@ -2,13 +2,14 @@
 
 import React, { useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
   Map,
   CalendarCheck,
-  LogOut
+  LogOut,
+  Globe,
 } from "lucide-react";
 import {
   EVENTO_SESION,
@@ -42,11 +43,8 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const pathname = usePathname();
   const sesion = useSyncExternalStore(suscribirSesion, obtenerSesion, () => null);
   const esAdmin = esAdministrador(sesion);
-  /** Ocultar el enlace al sitio web cuando el admin está creando/editando viajes. */
-  const ocultarEnlaceSitio = pathname.startsWith("/admin/viajes");
 
   /* El redirect se decide en el efecto (post-hidratación); mientras no haya
      sesión admin válida no se renderiza nada de /admin. */
@@ -67,13 +65,6 @@ export default function AdminLayout({
       <aside className="w-full shrink-0 md:w-64 bg-admin-sidebar text-white flex flex-col">
         <div className="p-6 border-b border-white/10 flex items-center justify-between">
           <span className="text-2xl font-bold">CNM Admin</span>
-          <Link
-            href="/"
-            title="Volver al catálogo y sitio web"
-            className="text-xs text-white/70 hover:text-white transition-colors underline underline-offset-4"
-          >
-            Sitio web &rarr;
-          </Link>
         </div>
         <nav className="flex-1 p-4 space-y-2">
           {menuItems.map((item) => (
@@ -107,15 +98,13 @@ export default function AdminLayout({
         <header className="h-16 bg-admin-surface border-b border-admin-border flex items-center justify-between px-8 shadow-sm">
           <h1 className="text-xl font-semibold">Panel de Administración</h1>
           <div className="flex items-center gap-md">
-            {!ocultarEnlaceSitio && (
-              <Link
-                href="/"
-                className="text-xs font-medium text-admin-muted hover:text-admin-text transition-colors flex items-center gap-1"
-              >
-                <span>Ver sitio web</span>
-                <span aria-hidden="true">&rarr;</span>
-              </Link>
-            )}
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 rounded-md bg-admin-bg px-2.5 py-1 text-xs font-semibold text-admin-text ring-1 ring-admin-border transition hover:bg-admin-border/40"
+            >
+              <Globe className="h-3.5 w-3.5 text-admin-accent" aria-hidden="true" />
+              <span>Sitio Web</span>
+            </Link>
             <div className="flex items-center gap-sm border-l border-admin-border pl-md">
               <span className="text-sm text-admin-muted">{sesion.nombreCompleto}</span>
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-admin-accent text-xs font-bold text-white">
