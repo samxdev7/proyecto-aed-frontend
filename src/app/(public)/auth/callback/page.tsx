@@ -22,6 +22,13 @@ function CallbackContent() {
 
     async function procesarOAuth() {
       try {
+        // 0. El usuario canceló en Google: no hay nada que sincronizar.
+        const errorOAuth = searchParams.get("error");
+        if (errorOAuth) {
+          router.replace("/iniciar-sesion");
+          return;
+        }
+
         // 1. Si viene un código PKCE en la query, intercambiarlo por sesión
         const code = searchParams.get("code");
         if (code) {

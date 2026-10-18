@@ -16,6 +16,13 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 export async function iniciarSesionConGoogle(redir?: string | null): Promise<void> {
   if (typeof window === "undefined") return;
 
+  /* Matar la sesión previa de Supabase antes de iniciar el flujo: si queda
+     viva, el callback la reutiliza y "acepta" el login aunque el usuario
+     cancele en Google. */
+  await supabase.auth.signOut().catch(() => {
+    /* best-effort */
+  });
+
   const callbackUrl = new URL("/auth/callback", window.location.origin);
   if (redir && redir.startsWith("/")) {
     callbackUrl.searchParams.set("redir", redir);
