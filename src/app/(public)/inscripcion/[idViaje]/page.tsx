@@ -17,6 +17,8 @@ import { formatoFecha, formatoPrecio } from "@/lib/format";
 import Boton from "@/components/ui/Boton";
 import Chip, { ChipDificultad } from "@/components/ui/Chip";
 import Skeleton from "@/components/ui/Skeleton";
+import Modal from "@/components/ui/Modal";
+import SeccionCompletarPerfil from "@/components/auth/SeccionCompletarPerfil";
 import FlujoInscripcion from "@/components/inscripcion/FlujoInscripcion";
 
 /** Estados de reserva que bloquean un nuevo intento (rechazada NO bloquea). */
@@ -42,6 +44,8 @@ export default function InscripcionPage() {
   >(undefined);
   /** Perfil del usuario: undefined = cargando, null = error/no hay sesión. */
   const [perfil, setPerfil] = useState<UsuarioPerfil | null | undefined>(undefined);
+  /** Popup para completar el perfil sin salir de la inscripción. */
+  const [perfilModalAbierto, setPerfilModalAbierto] = useState(false);
 
   useEffect(() => {
     if (Number.isNaN(idViajeNumero)) return;
@@ -78,6 +82,15 @@ export default function InscripcionPage() {
     window.addEventListener(EVENTO_SESION, actualizar);
     return () => window.removeEventListener(EVENTO_SESION, actualizar);
   }, []);
+
+  function recargarPerfil() {
+    if (sesion && sesion.rol !== "administrador") {
+      userService
+        .getMyProfile()
+        .then(setPerfil)
+        .catch(() => setPerfil(null));
+    }
+  }
 
   useEffect(() => {
     if (!sesion || !viaje) return;
@@ -257,12 +270,13 @@ export default function InscripcionPage() {
                     </p>
                   </div>
                 </div>
-                <Link
-                  href={`/completar-perfil?redir=/inscripcion/${viaje.idViaje}`}
+                <button
+                  type="button"
+                  onClick={() => setPerfilModalAbierto(true)}
                   className="inline-flex items-center gap-sm rounded-md bg-primary px-md py-sm text-sm font-semibold text-white transition hover:bg-primary-light"
                 >
-                  Completar mi perfil &rarr;
-                </Link>
+                  Completar mi perfil
+                </button>
               </div>
             ) : (
               <FlujoInscripcion viaje={viaje} />
@@ -278,6 +292,24 @@ export default function InscripcionPage() {
             </div>
           </div>
         </div>
+
+        <Modal
+          abierto={perfilModalAbierto}
+          onCerrar={() => setPerfilModalAbierto(false)}
+          titulo="Completa tu perfil de usuario"
+          className="max-w-xl p-lg"
+        >
+          <SeccionCompletarPerfil
+            modoPrompt={false}
+            permitirOmitir={false}
+            titulo="Completa tu perfil de usuario"
+            descripcion="Tus datos personales son necesarios para formalizar reservas y asegurar tus cupos en las expediciones."
+            alCerrarExito={() => {
+              setPerfilModalAbierto(false);
+              recargarPerfil();
+            }}
+          />
+        </Modal>
       </div>
     </div>
   );
