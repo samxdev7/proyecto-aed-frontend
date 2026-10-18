@@ -87,6 +87,10 @@ export default function AdminViajes() {
   const [form, setForm] = useState<FormViaje>(FORM_VACIO);
   /* id del viaje con una mutación de fila en curso (toggle/eliminar). */
   const [ocupado, setOcupado] = useState<number | null>(null);
+  /** Errores por campo para validación inline. */
+  const [erroresCampo, setErroresCampo] = useState<Partial<Record<keyof FormViaje, string>>>({});
+  /** Campos que el usuario ya tocó (para mostrar error al desenfocar). */
+  const [tocados, setTocados] = useState<Partial<Record<keyof FormViaje, boolean>>>({});
 
   async function cargarViajes() {
     setLoading(true);
@@ -126,6 +130,8 @@ export default function AdminViajes() {
     setEditandoId(null);
     setForm(FORM_VACIO);
     setErrorForm("");
+    setErroresCampo({});
+    setTocados({});
     setCargandoDetalle(false);
     setModalAbierto(true);
   }
@@ -134,6 +140,8 @@ export default function AdminViajes() {
     setEditandoId(viaje.idViaje);
     setForm(FORM_VACIO);
     setErrorForm("");
+    setErroresCampo({});
+    setTocados({});
     setCargandoDetalle(true);
     setModalAbierto(true);
     try {
@@ -169,17 +177,76 @@ export default function AdminViajes() {
     setModalAbierto(false);
     setEditandoId(null);
     setErrorForm("");
+    setErroresCampo({});
+    setTocados({});
+  }
+
+  /** Valida un campo individual y actualiza erroresCampo. Devuelve el mensaje o "". */
+  function validarCampo(nombre: keyof FormViaje, valor: string): string {
+    switch (nombre) {
+      case "titulo":
+        return valor.trim() ? "" : "El título es obligatorio.";
+      case "puntoEncuentro":
+        return valor.trim() ? "" : "El punto de encuentro es obligatorio.";
+      case "fechaIdaLocal":
+        return valor ? "" : "La fecha de ida es obligatoria.";
+      case "fechaVueltaLocal":
+        if (!valor) return "La fecha de vuelta es obligatoria.";
+        if (form.fechaIdaLocal && new Date(valor) <= new Date(form.fechaIdaLocal))
+          return "La vuelta debe ser posterior a la ida.";
+        return "";
+      case "montoTotal":
+        if (!valor) return "El monto total es obligatorio.";
+        if (Number(valor) <= 0) return "Debe ser un valor mayor a 0.";
+        return "";
+      case "montoReserva":
+        if (!valor) return "El monto de reserva es obligatorio.";
+        if (Number(valor) <= 0) return "Debe ser un valor mayor a 0.";
+        return "";
+      case "cuposMaximos": {
+        if (!valor) return "Los cupos son obligatorios.";
+        const n = Number(valor);
+        if (!Number.isInteger(n) || n < 1)
+          return "Debe ser un número entero positivo (mínimo 1).";
+        return "";
+      }
+      default:
+        return "";
+    }
+  }
+
+  function tocar(nombre: keyof FormViaje) {
+    setTocados((prev) => ({ ...prev, [nombre]: true }));
+    const err = validarCampo(nombre, form[nombre]);
+    setErroresCampo((prev) => ({ ...prev, [nombre]: err }));
+  }
+
+  function cambiarCampo(nombre: keyof FormViaje, valor: string) {
+    const nuevoForm = { ...form, [nombre]: valor };
+    setForm(nuevoForm);
+    // Actualizar error solo si el campo ya fue tocado.
+    if (tocados[nombre]) {
+      const err = validarCampo(nombre, valor);
+      setErroresCampo((prev) => ({ ...prev, [nombre]: err }));
+    }
   }
 
   async function guardar(evento: React.FormEvent) {
     evento.preventDefault();
-    if (!form.fechaIdaLocal || !form.fechaVueltaLocal) {
-      setErrorForm("Completa la fecha y hora de ida y de vuelta.");
-      return;
+    // Marcar todos los campos requeridos como tocados y validar.
+    const camposRequeridos: (keyof FormViaje)[] = [
+      "titulo", "puntoEncuentro", "fechaIdaLocal", "fechaVueltaLocal",
+      "montoTotal", "montoReserva", "cuposMaximos",
+    ];
+    const nuevosErrores: Partial<Record<keyof FormViaje, string>> = {};
+    for (const campo of camposRequeridos) {
+      const err = validarCampo(campo, form[campo]);
+      if (err) nuevosErrores[campo] = err;
     }
-    const cupos = Number(form.cuposMaximos);
-    if (!Number.isInteger(cupos) || cupos < 1) {
-      setErrorForm("Los cupos deben ser un número entero mayor a 0.");
+    setErroresCampo(nuevosErrores);
+    setTocados(Object.fromEntries(camposRequeridos.map((c) => [c, true])));
+    if (Object.keys(nuevosErrores).length > 0) {
+      setErrorForm("Corrige los errores marcados en el formulario.");
       return;
     }
     const request: ViajeRequest = {
@@ -427,13 +494,15 @@ export default function AdminViajes() {
             <Skeleton className="h-24 w-full rounded-sm" />
           </div>
         ) : (
-          <form onSubmit={guardar} className="grid grid-cols-1 md:grid-cols-2 gap-md">
+          <form onSubmit={guardar} className="grid grid-cols-1 md:grid-cols-2 gap-md" noValidate>
             <div className="md:col-span-2">
               <Campo
                 label="Título del viaje"
                 required
                 valor={form.titulo}
-                alCambiar={(v) => setForm({ ...form, titulo: v })}
+                alCambiar={(v) => cambiarCampo("titulo", v)}
+                error={erroresCampo.titulo}
+                onBlur={() => tocar("titulo")}
               />
             </div>
             <div className="md:col-span-2">
@@ -441,41 +510,49 @@ export default function AdminViajes() {
                 label="Descripción"
                 multilinea
                 valor={form.descripcion}
-                alCambiar={(v) => setForm({ ...form, descripcion: v })}
+                alCambiar={(v) => cambiarCampo("descripcion", v)}
               />
             </div>
             <Campo
               label="Dificultad"
               opciones={[...DIFICULTADES]}
               valor={form.dificultad}
-              alCambiar={(v) => setForm({ ...form, dificultad: v as Dificultad })}
+              alCambiar={(v) => cambiarCampo("dificultad", v as Dificultad)}
             />
             <Campo
               label="Punto de encuentro"
               required
               valor={form.puntoEncuentro}
-              alCambiar={(v) => setForm({ ...form, puntoEncuentro: v })}
+              alCambiar={(v) => cambiarCampo("puntoEncuentro", v)}
+              error={erroresCampo.puntoEncuentro}
+              onBlur={() => tocar("puntoEncuentro")}
             />
             <Campo
               label="Fecha y hora de ida"
               tipo="datetime-local"
               required
               valor={form.fechaIdaLocal}
-              alCambiar={(v) => setForm({ ...form, fechaIdaLocal: v })}
+              alCambiar={(v) => cambiarCampo("fechaIdaLocal", v)}
+              error={erroresCampo.fechaIdaLocal}
+              onBlur={() => tocar("fechaIdaLocal")}
             />
             <Campo
               label="Fecha y hora de vuelta"
               tipo="datetime-local"
               required
               valor={form.fechaVueltaLocal}
-              alCambiar={(v) => setForm({ ...form, fechaVueltaLocal: v })}
+              alCambiar={(v) => cambiarCampo("fechaVueltaLocal", v)}
+              error={erroresCampo.fechaVueltaLocal}
+              onBlur={() => tocar("fechaVueltaLocal")}
             />
             <Campo
               label="Monto total (C$)"
               tipo="number"
               required
               valor={form.montoTotal}
-              alCambiar={(v) => setForm({ ...form, montoTotal: v })}
+              alCambiar={(v) => cambiarCampo("montoTotal", v)}
+              error={erroresCampo.montoTotal}
+              onBlur={() => tocar("montoTotal")}
             />
             <Campo
               label="Monto de reserva (C$)"
@@ -483,20 +560,35 @@ export default function AdminViajes() {
               required
               hint="Abono por persona; debe ser menor o igual al monto total."
               valor={form.montoReserva}
-              alCambiar={(v) => setForm({ ...form, montoReserva: v })}
+              alCambiar={(v) => cambiarCampo("montoReserva", v)}
+              error={erroresCampo.montoReserva}
+              onBlur={() => tocar("montoReserva")}
             />
             <Campo
               label="Cupos máximos"
               tipo="number"
               required
               valor={form.cuposMaximos}
-              alCambiar={(v) => setForm({ ...form, cuposMaximos: v })}
+              alCambiar={(v) => {
+                // Solo permitir dígitos enteros positivos (sin punto decimal).
+                if (v === "" || /^[1-9]\d*$/.test(v)) cambiarCampo("cuposMaximos", v);
+              }}
+              error={erroresCampo.cuposMaximos}
+              onBlur={() => tocar("cuposMaximos")}
+              inputProps={{
+                min: 1,
+                step: 1,
+                onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => {
+                  // Bloquear '.', ',', '-', '+', 'e', 'E'
+                  if (["-", "+", ".", ",", "e", "E"].includes(e.key)) e.preventDefault();
+                },
+              }}
             />
             <Campo
               label="Enlace de WhatsApp"
               placeholder="https://chat.whatsapp.com/..."
               valor={form.enlaceWhatsApp}
-              alCambiar={(v) => setForm({ ...form, enlaceWhatsApp: v })}
+              alCambiar={(v) => cambiarCampo("enlaceWhatsApp", v)}
             />
             <div className="md:col-span-2">
               <Campo
@@ -504,7 +596,7 @@ export default function AdminViajes() {
                 placeholder="/Presentaciones/viajes/mombacho.jpg"
                 hint="Ruta local del club o data-URI."
                 valor={form.imagenUrl}
-                alCambiar={(v) => setForm({ ...form, imagenUrl: v })}
+                alCambiar={(v) => cambiarCampo("imagenUrl", v)}
               />
             </div>
             <div className="md:col-span-2">
@@ -513,7 +605,7 @@ export default function AdminViajes() {
                 multilinea
                 hint="Una línea por paso."
                 valor={form.itinerario}
-                alCambiar={(v) => setForm({ ...form, itinerario: v })}
+                alCambiar={(v) => cambiarCampo("itinerario", v)}
               />
             </div>
             <div className="md:col-span-2">
@@ -522,7 +614,7 @@ export default function AdminViajes() {
                 multilinea
                 hint="Una línea por inclusión."
                 valor={form.inclusionesAdicionales}
-                alCambiar={(v) => setForm({ ...form, inclusionesAdicionales: v })}
+                alCambiar={(v) => cambiarCampo("inclusionesAdicionales", v)}
               />
             </div>
             <div className="md:col-span-2">
@@ -531,7 +623,7 @@ export default function AdminViajes() {
                 multilinea
                 hint="Una línea por elemento."
                 valor={form.equipo}
-                alCambiar={(v) => setForm({ ...form, equipo: v })}
+                alCambiar={(v) => cambiarCampo("equipo", v)}
               />
             </div>
             {errorForm && (

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
@@ -42,8 +42,11 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const sesion = useSyncExternalStore(suscribirSesion, obtenerSesion, () => null);
   const esAdmin = esAdministrador(sesion);
+  /** Ocultar el enlace al sitio web cuando el admin está creando/editando viajes. */
+  const ocultarEnlaceSitio = pathname.startsWith("/admin/viajes");
 
   /* El redirect se decide en el efecto (post-hidratación); mientras no haya
      sesión admin válida no se renderiza nada de /admin. */
@@ -104,13 +107,15 @@ export default function AdminLayout({
         <header className="h-16 bg-admin-surface border-b border-admin-border flex items-center justify-between px-8 shadow-sm">
           <h1 className="text-xl font-semibold">Panel de Administración</h1>
           <div className="flex items-center gap-md">
-            <Link
-              href="/"
-              className="text-xs font-medium text-admin-muted hover:text-admin-text transition-colors flex items-center gap-1"
-            >
-              <span>Ver sitio web</span>
-              <span aria-hidden="true">&rarr;</span>
-            </Link>
+            {!ocultarEnlaceSitio && (
+              <Link
+                href="/"
+                className="text-xs font-medium text-admin-muted hover:text-admin-text transition-colors flex items-center gap-1"
+              >
+                <span>Ver sitio web</span>
+                <span aria-hidden="true">&rarr;</span>
+              </Link>
+            )}
             <div className="flex items-center gap-sm border-l border-admin-border pl-md">
               <span className="text-sm text-admin-muted">{sesion.nombreCompleto}</span>
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-admin-accent text-xs font-bold text-white">

@@ -17,6 +17,10 @@ interface CampoProps {
   disabled?: boolean;
   valor?: string;
   alCambiar?: (valor: string) => void;
+  /** Llamada cuando el campo pierde el foco (para validación inline). */
+  onBlur?: () => void;
+  /** Props adicionales pasados directamente al elemento input (p.ej. min, step, onKeyDown). */
+  inputProps?: React.InputHTMLAttributes<HTMLInputElement>;
   id?: string;
   name?: string;
 }
@@ -34,6 +38,8 @@ export default function Campo({
   disabled = false,
   valor,
   alCambiar,
+  onBlur,
+  inputProps,
   id,
   name,
 }: CampoProps) {
@@ -53,6 +59,7 @@ export default function Campo({
     value: valor ?? "",
     disabled,
     required,
+    onBlur,
     onChange: (
       evento: React.ChangeEvent<
         HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -85,7 +92,7 @@ export default function Campo({
       ) : multilinea ? (
         <textarea rows={4} {...controlProps} className={`${clases} resize-none`} />
       ) : (
-        <input type={tipo} {...controlProps} className={clases} />
+        <input type={tipo} {...controlProps} {...inputProps} className={clases} />
       )}
       {error ? (
         <p className="text-xs text-error" role="alert">
