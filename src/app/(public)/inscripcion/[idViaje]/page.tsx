@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -18,7 +18,8 @@ import Boton from "@/components/ui/Boton";
 import Chip, { ChipDificultad } from "@/components/ui/Chip";
 import Skeleton from "@/components/ui/Skeleton";
 import Modal from "@/components/ui/Modal";
-import SeccionCompletarPerfil from "@/components/auth/SeccionCompletarPerfil";
+import EmptyState from "@/components/ui/EmptyState";
+import CompletarPerfilPopup from "@/components/auth/CompletarPerfilPopup";
 import FlujoInscripcion from "@/components/inscripcion/FlujoInscripcion";
 
 /** Estados de reserva que bloquean un nuevo intento (rechazada NO bloquea). */
@@ -55,6 +56,8 @@ export default function InscripcionPage() {
   });
   /** Popup para completar el perfil sin salir de la inscripción. */
   const [perfilModalAbierto, setPerfilModalAbierto] = useState(false);
+  /** Evita que el popup se reabra solo tras omitirlo (solo 1 vez por visita). */
+  const popupAutoAbierto = useRef(false);
   /** Popup de aviso: los administradores no pueden reservar. */
   const [adminBloqueado, setAdminBloqueado] = useState(false);
 
@@ -99,6 +102,13 @@ export default function InscripcionPage() {
     window.addEventListener(EVENTO_SESION, actualizar);
     return () => window.removeEventListener(EVENTO_SESION, actualizar);
   }, []);
+
+  /* Perfil incompleto detectado: el popup salta solo, sin warning previo. */
+  useEffect(() => {
+    if (popupAutoAbierto.current || perfilIncompleto !== true) return;
+    popupAutoAbierto.current = true;
+    setPerfilModalAbierto(true);
+  }, [perfilIncompleto]);
 
   function recargarPerfil() {
     if (sesion && sesion.rol !== "administrador") {
@@ -277,30 +287,12 @@ export default function InscripcionPage() {
               </div>
             ) : perfilIncompleto === true ||
               (perfil !== null && !perfilEstaCompleto(perfil)) ? (
-              /* Alerta premium: perfil incompleto */
-              <div className="rounded-md border border-warning-text/20 bg-warning-bg p-lg space-y-md">
-                <div className="flex items-start gap-md">
-                  <div className="shrink-0 rounded-full bg-warning-text/10 p-sm">
-                    <AlertCircle size={24} className="text-warning-text" />
-                  </div>
-                  <div className="space-y-xs">
-                    <h2 className="text-lg font-bold text-warning-text">
-                      Faltan datos en tu perfil para continuar
-                    </h2>
-                    <p className="text-sm text-text-muted">
-                      Para reservar un cupo necesitamos que tu perfil esté completo:
-                      nombre completo, identificación y nacionalidad.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setPerfilModalAbierto(true)}
-                  className="inline-flex items-center gap-sm rounded-md bg-primary px-md py-sm text-sm font-semibold text-white transition hover:bg-primary-light"
-                >
-                  Completar mi perfil
-                </button>
-              </div>
+              /* Sin perfil completo no se puede avanzar; el popup salta solo. */
+              <EmptyState
+                icono={AlertCircle}
+                titulo="Completa tu perfil para reservar"
+                descripcion="Rellena tus datos personales (nombre, identificación y nacionalidad) y vuelve a intentarlo."
+              />
             ) : (
               <FlujoInscripcion viaje={viaje} />
             )}
@@ -316,23 +308,12 @@ export default function InscripcionPage() {
           </div>
         </div>
 
-        <Modal
+        <CompletarPerfilPopup
           abierto={perfilModalAbierto}
           onCerrar={() => setPerfilModalAbierto(false)}
-          titulo="Completa tu perfil de usuario"
-          className="max-w-xl p-lg"
-        >
-          <SeccionCompletarPerfil
-            modoPrompt={false}
-            permitirOmitir={false}
-            titulo="Completa tu perfil de usuario"
-            descripcion="Tus datos personales son necesarios para formalizar reservas y asegurar tus cupos en las expediciones."
-            alCerrarExito={() => {
-              setPerfilModalAbierto(false);
-              recargarPerfil();
-            }}
-          />
-        </Modal>
+          alCompletar={recargarPerfil}
+          textoOmitir="Omitir y seguir viendo"
+        />
 
         <Modal
           abierto={adminBloqueado}

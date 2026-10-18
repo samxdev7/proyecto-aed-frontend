@@ -22,6 +22,13 @@ function CallbackContent() {
 
     async function procesarOAuth() {
       try {
+        // 0. El usuario canceló en Google: no hay nada que sincronizar.
+        const errorOAuth = searchParams.get("error");
+        if (errorOAuth) {
+          router.replace("/iniciar-sesion");
+          return;
+        }
+
         // 1. Si viene un código PKCE en la query, intercambiarlo por sesión
         const code = searchParams.get("code");
         if (code) {
@@ -83,11 +90,10 @@ function CallbackContent() {
         if (!activo) return;
 
         if (!perfilEstaCompleto(perfil)) {
-          // Usuario nuevo o con perfil incompleto: enviar a completar perfil
-          const destino = redir
-            ? `/completar-perfil?redir=${encodeURIComponent(redir)}`
-            : "/completar-perfil";
-          router.replace(destino);
+          // El popup de perfil se abre sobre el destino (catálogo o ruta original).
+          const destino = redir || "/viajes";
+          const separador = destino.includes("?") ? "&" : "?";
+          router.replace(`${destino}${separador}perfil=1`);
         } else {
           // Usuario recurrente con perfil completo: enviar al destino o catálogo
           router.replace(redir || "/viajes");

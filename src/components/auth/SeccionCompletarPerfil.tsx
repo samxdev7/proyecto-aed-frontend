@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import { UserCheck } from "lucide-react";
 import { userService } from "@/services/user.service";
 import { ApiError } from "@/lib/api-client";
-import { actualizarDatosSesion } from "@/lib/auth";
+import {
+  actualizarDatosSesion,
+  marcarPerfilCompleto,
+  obtenerSesion,
+} from "@/lib/auth";
 import type { ActualizarPerfilRequest, UsuarioPerfil } from "@/types/usuario";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
@@ -104,6 +108,8 @@ interface SeccionCompletarPerfilProps {
   alCompletar?: (perfil: UsuarioPerfil) => void;
   /** Al cerrar el popup tras el éxito (sin redirect de ruta). */
   alCerrarExito?: () => void;
+  /** Al omitir: solo cierra el popup y se queda en la ruta actual. */
+  alCerrar?: () => void;
   /** Si permite omitir este paso temporalmente (por defecto true). */
   permitirOmitir?: boolean;
   /** Muestra primero la tarjeta de 2 botones (Completar / Omitir). */
@@ -112,16 +118,20 @@ interface SeccionCompletarPerfilProps {
   titulo?: string;
   /** Subtítulo descriptivo. */
   descripcion?: string;
+  /** Texto del botón omitir dentro del form (varía según el contexto). */
+  textoOmitir?: string;
 }
 
 export default function SeccionCompletarPerfil({
   redir,
   alCompletar,
   alCerrarExito,
+  alCerrar,
   permitirOmitir = true,
   modoPrompt = true,
   titulo = "¡Casi listo! Completa tu perfil",
   descripcion = "Necesitamos estos datos personales para emitir tus inscripciones y registrarte como titular en las expediciones.",
+  textoOmitir = "Omitir por ahora y ver el catálogo",
 }: SeccionCompletarPerfilProps) {
   const router = useRouter();
   const [vista, setVista] = useState<Vista>(modoPrompt ? "prompt" : "form");
@@ -202,6 +212,10 @@ export default function SeccionCompletarPerfil({
       alCerrarExito();
       return;
     }
+    if (alCerrar) {
+      alCerrar();
+      return;
+    }
     router.push(destinoFinal);
   }
 
@@ -247,6 +261,10 @@ export default function SeccionCompletarPerfil({
       actualizarDatosSesion({
         nombreCompleto: perfil.nombreCompleto || nombresCompletos,
       });
+      // El servidor confirmó: el flag de "perfil completo" se actualiza para
+      // que los botones de reserva no vuelvan a pedir el perfil.
+      const sesion = obtenerSesion();
+      if (sesion) marcarPerfilCompleto(sesion.idUsuario, true);
       alCompletar?.(perfil);
     });
 
@@ -390,7 +408,7 @@ export default function SeccionCompletarPerfil({
                 disabled={guardando}
                 className="py-1 text-center text-xs text-text-muted transition-colors hover:text-primary"
               >
-                Omitir por ahora y ver el catálogo
+                {textoOmitir}
               </button>
             ) : null}
           </div>

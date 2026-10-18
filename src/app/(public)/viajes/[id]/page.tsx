@@ -9,17 +9,6 @@ import Boton from "@/components/ui/Boton";
 import { ChipDificultad } from "@/components/ui/Chip";
 import { formatoCordobas, formatoFecha, formatoHora } from "@/lib/format";
 
-/**
- * Inclusiones base del club para toda expedición (el backend solo persiste
- * las adicionales del viaje). Copiada del servicio viejo de mock.
- */
-const INCLUSIONES_BASE = [
-  "Transporte ida y vuelta desde el punto de encuentro",
-  "Guías del club durante toda la ruta",
-  "Charla de seguridad y equipo comunitario",
-  "Coordinación del grupo de WhatsApp del viaje",
-];
-
 interface ViajeDetallePageProps {
   params: Promise<{ id: string }>;
 }
@@ -31,9 +20,8 @@ export default async function ViajeDetallePage({ params }: ViajeDetallePageProps
 
   const itinerario = splitLineas(viaje.itinerario);
   const equipo = splitLineas(viaje.equipo);
-  const inclusiones = viaje.inclusionesAdicionales
-    ? splitLineas(viaje.inclusionesAdicionales)
-    : INCLUSIONES_BASE;
+  // Las inclusiones vienen del backend (inclusionesAdicionales), sin fallback.
+  const inclusiones = splitLineas(viaje.inclusionesAdicionales);
   const inscripcionAbierta =
     viaje.estado === "activo" && viaje.cuposDisponibles > 0;
   const ultimosCupos = inscripcionAbierta && viaje.cuposDisponibles <= 2;
@@ -88,24 +76,26 @@ export default async function ViajeDetallePage({ params }: ViajeDetallePageProps
           ) : null}
 
           <div className="grid grid-cols-1 gap-md md:grid-cols-2">
-            <section className="space-y-md">
-              <h2 className="text-xl font-bold text-primary">Qué incluye</h2>
-              <ul className="space-y-xs">
-                {inclusiones.map((item) => (
-                  <li
-                    key={item}
-                    className="flex items-start gap-xs text-sm text-text-main"
-                  >
-                    <Check
-                      size={16}
-                      className="mt-0.5 shrink-0 text-success"
-                      aria-hidden="true"
-                    />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </section>
+            {inclusiones.length > 0 ? (
+              <section className="space-y-md">
+                <h2 className="text-xl font-bold text-primary">Qué incluye</h2>
+                <ul className="space-y-xs">
+                  {inclusiones.map((item) => (
+                    <li
+                      key={item}
+                      className="flex items-start gap-xs text-sm text-text-main"
+                    >
+                      <Check
+                        size={16}
+                        className="mt-0.5 shrink-0 text-success"
+                        aria-hidden="true"
+                      />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
             {equipo.length > 0 ? (
               <section className="space-y-md">
                 <h2 className="text-xl font-bold text-primary">
