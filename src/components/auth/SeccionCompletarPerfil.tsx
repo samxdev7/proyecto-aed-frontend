@@ -114,6 +114,8 @@ interface SeccionCompletarPerfilProps {
   titulo?: string;
   /** Subtítulo descriptivo. */
   descripcion?: string;
+  /** Texto del botón omitir dentro del form (varía según el contexto). */
+  textoOmitir?: string;
 }
 
 export default function SeccionCompletarPerfil({
@@ -125,6 +127,7 @@ export default function SeccionCompletarPerfil({
   modoPrompt = true,
   titulo = "¡Casi listo! Completa tu perfil",
   descripcion = "Necesitamos estos datos personales para emitir tus inscripciones y registrarte como titular en las expediciones.",
+  textoOmitir = "Omitir por ahora y ver el catálogo",
 }: SeccionCompletarPerfilProps) {
   const router = useRouter();
   const [vista, setVista] = useState<Vista>(modoPrompt ? "prompt" : "form");
@@ -397,7 +400,7 @@ export default function SeccionCompletarPerfil({
                 disabled={guardando}
                 className="py-1 text-center text-xs text-text-muted transition-colors hover:text-primary"
               >
-                Omitir por ahora y ver el catálogo
+                {textoOmitir}
               </button>
             ) : null}
           </div>

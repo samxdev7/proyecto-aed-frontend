@@ -11,6 +11,8 @@ interface CompletarPerfilPopupProps {
   alCompletar?: (perfil: UsuarioPerfil) => void;
   titulo?: string;
   descripcion?: string;
+  /** Texto del botón omitir dentro del form (varía según el contexto). */
+  textoOmitir?: string;
 }
 
 /**
@@ -23,6 +25,7 @@ export default function CompletarPerfilPopup({
   alCompletar,
   titulo = "Completa tu perfil de usuario",
   descripcion = "Tus datos personales son necesarios para formalizar reservas y asegurar tus cupos en las expediciones.",
+  textoOmitir,
 }: CompletarPerfilPopupProps) {
   return (
     <Modal
@@ -35,6 +38,7 @@ export default function CompletarPerfilPopup({
         permitirOmitir
         titulo={titulo}
         descripcion={descripcion}
+        textoOmitir={textoOmitir}
         alCerrar={onCerrar}
         alCerrarExito={onCerrar}
         alCompletar={alCompletar}

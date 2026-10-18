@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -55,6 +55,8 @@ export default function InscripcionPage() {
   });
   /** Popup para completar el perfil sin salir de la inscripción. */
   const [perfilModalAbierto, setPerfilModalAbierto] = useState(false);
+  /** Evita que el popup se reabra solo tras omitirlo (solo 1 vez por visita). */
+  const popupAutoAbierto = useRef(false);
   /** Popup de aviso: los administradores no pueden reservar. */
   const [adminBloqueado, setAdminBloqueado] = useState(false);
 
@@ -99,6 +101,13 @@ export default function InscripcionPage() {
     window.addEventListener(EVENTO_SESION, actualizar);
     return () => window.removeEventListener(EVENTO_SESION, actualizar);
   }, []);
+
+  /* Perfil incompleto detectado: el popup salta solo, sin warning previo. */
+  useEffect(() => {
+    if (popupAutoAbierto.current || perfilIncompleto !== true) return;
+    popupAutoAbierto.current = true;
+    setPerfilModalAbierto(true);
+  }, [perfilIncompleto]);
 
   function recargarPerfil() {
     if (sesion && sesion.rol !== "administrador") {
@@ -320,6 +329,7 @@ export default function InscripcionPage() {
           abierto={perfilModalAbierto}
           onCerrar={() => setPerfilModalAbierto(false)}
           alCompletar={recargarPerfil}
+          textoOmitir="Omitir y seguir viendo"
         />
 
         <Modal
