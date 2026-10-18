@@ -4,6 +4,7 @@ import type { LucideIcon } from "lucide-react";
 import { Calendar, Check, ChevronLeft, MapPin, Users } from "lucide-react";
 import { splitLineas, viajesService } from "@/services/viajes.service";
 import GaleriaViaje from "@/components/viajes/GaleriaViaje";
+import BotonReservar from "@/components/viajes/BotonReservar";
 import Boton from "@/components/ui/Boton";
 import { ChipDificultad } from "@/components/ui/Chip";
 import { formatoCordobas, formatoFecha, formatoHora } from "@/lib/format";
@@ -186,9 +187,7 @@ export default async function ViajeDetallePage({ params }: ViajeDetallePageProps
           </div>
 
           {inscripcionAbierta ? (
-            <Boton href={`/inscripcion/${viaje.idViaje}`} fullWidth>
-              Inscribirme Ahora
-            </Boton>
+            <BotonReservar idViaje={viaje.idViaje} />
           ) : (
             <Boton disabled fullWidth>
               {viaje.estado === "activo"
