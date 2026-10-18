@@ -18,7 +18,7 @@ import Boton from "@/components/ui/Boton";
 import Chip, { ChipDificultad } from "@/components/ui/Chip";
 import Skeleton from "@/components/ui/Skeleton";
 import Modal from "@/components/ui/Modal";
-import SeccionCompletarPerfil from "@/components/auth/SeccionCompletarPerfil";
+import CompletarPerfilPopup from "@/components/auth/CompletarPerfilPopup";
 import FlujoInscripcion from "@/components/inscripcion/FlujoInscripcion";
 
 /** Estados de reserva que bloquean un nuevo intento (rechazada NO bloquea). */
@@ -316,23 +316,11 @@ export default function InscripcionPage() {
           </div>
         </div>
 
-        <Modal
+        <CompletarPerfilPopup
           abierto={perfilModalAbierto}
           onCerrar={() => setPerfilModalAbierto(false)}
-          titulo="Completa tu perfil de usuario"
-          className="max-w-xl p-lg"
-        >
-          <SeccionCompletarPerfil
-            modoPrompt={false}
-            permitirOmitir={false}
-            titulo="Completa tu perfil de usuario"
-            descripcion="Tus datos personales son necesarios para formalizar reservas y asegurar tus cupos en las expediciones."
-            alCerrarExito={() => {
-              setPerfilModalAbierto(false);
-              recargarPerfil();
-            }}
-          />
-        </Modal>
+          alCompletar={recargarPerfil}
+        />
 
         <Modal
           abierto={adminBloqueado}

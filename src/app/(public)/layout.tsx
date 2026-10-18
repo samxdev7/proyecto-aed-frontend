@@ -1,6 +1,7 @@
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import VerificarPerfilAlCargar from "@/components/auth/VerificarPerfilAlCargar";
+import AbrirPerfilSiSePide from "@/components/auth/AbrirPerfilSiSePide";
 
 export default function PublicLayout({
   children,
@@ -8,6 +9,7 @@ export default function PublicLayout({
   return (
     <div className="flex min-h-dvh flex-col">
       <VerificarPerfilAlCargar />
+      <AbrirPerfilSiSePide />
       <Header />
       <main className="flex-1">{children}</main>
       <Footer />

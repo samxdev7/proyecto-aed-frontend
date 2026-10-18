@@ -104,6 +104,8 @@ interface SeccionCompletarPerfilProps {
   alCompletar?: (perfil: UsuarioPerfil) => void;
   /** Al cerrar el popup tras el éxito (sin redirect de ruta). */
   alCerrarExito?: () => void;
+  /** Al omitir: solo cierra el popup y se queda en la ruta actual. */
+  alCerrar?: () => void;
   /** Si permite omitir este paso temporalmente (por defecto true). */
   permitirOmitir?: boolean;
   /** Muestra primero la tarjeta de 2 botones (Completar / Omitir). */
@@ -118,6 +120,7 @@ export default function SeccionCompletarPerfil({
   redir,
   alCompletar,
   alCerrarExito,
+  alCerrar,
   permitirOmitir = true,
   modoPrompt = true,
   titulo = "¡Casi listo! Completa tu perfil",
@@ -200,6 +203,10 @@ export default function SeccionCompletarPerfil({
   function finalizar() {
     if (alCerrarExito) {
       alCerrarExito();
+      return;
+    }
+    if (alCerrar) {
+      alCerrar();
       return;
     }
     router.push(destinoFinal);
