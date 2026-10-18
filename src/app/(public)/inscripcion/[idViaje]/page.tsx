@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { AlertCircle, Mountain } from "lucide-react";
-import { EVENTO_SESION, obtenerSesion, perfilEstaCompleto } from "@/lib/auth";
+import { AlertCircle, Mountain, ShieldAlert } from "lucide-react";
+import { EVENTO_SESION, obtenerSesion, perfilEstaCompleto, leerPerfilCompleto, marcarPerfilCompleto } from "@/lib/auth";
 import type { Sesion } from "@/types/auth";
 import { reservaService } from "@/services/reserva.service";
 import type { HistorialReservaResumen } from "@/types/reserva";
@@ -44,6 +44,15 @@ export default function InscripcionPage() {
   >(undefined);
   /** Perfil del usuario: undefined = cargando, null = error/no hay sesión. */
   const [perfil, setPerfil] = useState<UsuarioPerfil | null | undefined>(undefined);
+  /**
+   * true = ya sabemos que el perfil está incompleto (guardado al cargar el
+   * catálogo), así mostramos la alerta sin esperar a cargar el perfil.
+   */
+  const [perfilIncompleto, setPerfilIncompleto] = useState<boolean | null>(() => {
+    const s = obtenerSesion();
+    if (!s || s.rol === "administrador") return null;
+    return leerPerfilCompleto(s.idUsuario) === false ? true : null;
+  });
   /** Popup para completar el perfil sin salir de la inscripción. */
   const [perfilModalAbierto, setPerfilModalAbierto] = useState(false);
 
@@ -72,7 +81,12 @@ export default function InscripcionPage() {
       if (s && s.rol !== "administrador") {
         userService
           .getMyProfile()
-          .then((data) => setPerfil(data))
+          .then((data) => {
+            const completo = perfilEstaCompleto(data);
+            marcarPerfilCompleto(s.idUsuario, completo);
+            setPerfilIncompleto(!completo);
+            setPerfil(data);
+          })
           .catch(() => setPerfil(null));
       } else {
         setPerfil(null);
@@ -87,7 +101,12 @@ export default function InscripcionPage() {
     if (sesion && sesion.rol !== "administrador") {
       userService
         .getMyProfile()
-        .then(setPerfil)
+        .then((data) => {
+          const completo = perfilEstaCompleto(data);
+          marcarPerfilCompleto(sesion.idUsuario, completo);
+          setPerfilIncompleto(!completo);
+          setPerfil(data);
+        })
         .catch(() => setPerfil(null));
     }
   }
@@ -253,7 +272,26 @@ export default function InscripcionPage() {
                 <Skeleton className="h-5 w-2/3" />
                 <Skeleton className="h-10 w-full" />
               </div>
-            ) : perfil !== null && !perfilEstaCompleto(perfil) ? (
+            ) : sesionLista && sesion?.rol === "administrador" ? (
+              /* Los administradores no pueden reservar cupos. */
+              <div className="rounded-md border border-warning-text/20 bg-warning-bg p-lg space-y-md">
+                <div className="flex items-start gap-md">
+                  <div className="shrink-0 rounded-full bg-warning-text/10 p-sm">
+                    <ShieldAlert size={24} className="text-warning-text" />
+                  </div>
+                  <div className="space-y-xs">
+                    <h2 className="text-lg font-bold text-warning-text">
+                      Los administradores no pueden reservar cupos
+                    </h2>
+                    <p className="text-sm text-text-muted">
+                      Esta cuenta tiene rol de administrador. Para reservar un
+                      cupo, usa una cuenta de cliente.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : perfilIncompleto === true ||
+              (perfil !== null && !perfilEstaCompleto(perfil)) ? (
               /* Alerta premium: perfil incompleto */
               <div className="rounded-md border border-warning-text/20 bg-warning-bg p-lg space-y-md">
                 <div className="flex items-start gap-md">
