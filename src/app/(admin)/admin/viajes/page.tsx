@@ -20,23 +20,12 @@ import EmptyState from "@/components/ui/EmptyState";
 import Modal from "@/components/ui/Modal";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
+import SelectorFechaHora from "@/components/ui/SelectorFechaHora";
 import { ChipDificultad } from "@/components/ui/Chip";
 import GaleriaSupabaseModal from "@/components/admin/GaleriaSupabaseModal";
 import ModalViajesArchivados from "@/components/admin/ModalViajesArchivados";
 
 const DIFICULTADES = ["Baja", "Media", "Alta", "Extrema"] as const;
-
-/** Mensaje del backend (ApiError) o un texto por defecto genérico. */
-function mensajeDeError(e: unknown, porDefecto: string): string {
-  return e instanceof ApiError && e.message ? e.message : porDefecto;
-}
-
-/** ISO → valor de <input type="datetime-local"> en la zona del navegador. */
-function aValorLocal(iso: string): string {
-  const fecha = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${fecha.getFullYear()}-${pad(fecha.getMonth() + 1)}-${pad(fecha.getDate())}T${pad(fecha.getHours())}:${pad(fecha.getMinutes())}`;
-}
 
 /* El formulario vive como strings (inputs) y se convierte en ViajeRequest al guardar. */
 interface FormViaje {
@@ -72,6 +61,52 @@ const FORM_VACIO: FormViaje = {
   imagenUrl: "",
   equipo: "",
 };
+
+const DRAFT_KEY_CREAR = "cnm_admin_viaje_draft_crear";
+const getDraftKeyEditar = (id: number) => `cnm_admin_viaje_draft_editar_${id}`;
+
+function guardarBorradorEnStorage(id: number | null, datos: FormViaje) {
+  if (typeof window === "undefined") return;
+  try {
+    const clave = id === null ? DRAFT_KEY_CREAR : getDraftKeyEditar(id);
+    localStorage.setItem(clave, JSON.stringify(datos));
+  } catch {
+    // Ignorar restricciones de almacenamiento
+  }
+}
+
+function cargarBorradorDeStorage(id: number | null): FormViaje | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const clave = id === null ? DRAFT_KEY_CREAR : getDraftKeyEditar(id);
+    const guardado = localStorage.getItem(clave);
+    return guardado ? JSON.parse(guardado) : null;
+  } catch {
+    return null;
+  }
+}
+
+function eliminarBorradorDeStorage(id: number | null) {
+  if (typeof window === "undefined") return;
+  try {
+    const clave = id === null ? DRAFT_KEY_CREAR : getDraftKeyEditar(id);
+    localStorage.removeItem(clave);
+  } catch {
+    // Ignorar
+  }
+}
+
+/** Mensaje del backend (ApiError) o un texto por defecto genérico. */
+function mensajeDeError(e: unknown, porDefecto: string): string {
+  return e instanceof ApiError && e.message ? e.message : porDefecto;
+}
+
+/** ISO → valor de <input type="datetime-local"> en la zona del navegador. */
+function aValorLocal(iso: string): string {
+  const fecha = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${fecha.getFullYear()}-${pad(fecha.getMonth() + 1)}-${pad(fecha.getDate())}T${pad(fecha.getHours())}:${pad(fecha.getMinutes())}`;
+}
 
 export default function AdminViajes() {
   const [viajes, setViajes] = useState<Viaje[]>([]);
@@ -134,7 +169,12 @@ export default function AdminViajes() {
 
   function abrirCrear() {
     setEditandoId(null);
-    setForm(FORM_VACIO);
+    const borrador = cargarBorradorDeStorage(null);
+    if (borrador) {
+      setForm(borrador);
+    } else {
+      setForm(FORM_VACIO);
+    }
     setErrorForm("");
     setErroresCampo({});
     setTocados({});
@@ -144,6 +184,17 @@ export default function AdminViajes() {
 
   async function abrirEditar(viaje: Viaje) {
     setEditandoId(viaje.idViaje);
+    const borrador = cargarBorradorDeStorage(viaje.idViaje);
+    if (borrador) {
+      setForm(borrador);
+      setErrorForm("");
+      setErroresCampo({});
+      setTocados({});
+      setCargandoDetalle(false);
+      setModalAbierto(true);
+      return;
+    }
+
     setForm(FORM_VACIO);
     setErrorForm("");
     setErroresCampo({});
@@ -156,7 +207,7 @@ export default function AdminViajes() {
         setErrorForm("No pudimos cargar los datos del viaje.");
         return;
       }
-      setForm({
+      const nuevoForm: FormViaje = {
         titulo: detalle.titulo,
         descripcion: detalle.descripcion ?? "",
         itinerario: detalle.itinerario ?? "",
@@ -171,7 +222,8 @@ export default function AdminViajes() {
         enlaceWhatsApp: detalle.enlaceWhatsApp ?? "",
         imagenUrl: detalle.imagenUrl ?? "",
         equipo: detalle.equipo ?? "",
-      });
+      };
+      setForm(nuevoForm);
     } catch (e) {
       setErrorForm(mensajeDeError(e, "No pudimos cargar los datos del viaje."));
     } finally {
@@ -187,20 +239,45 @@ export default function AdminViajes() {
     setTocados({});
   }
 
+  function limpiarCampos() {
+    setForm(FORM_VACIO);
+    setErroresCampo({});
+    setTocados({});
+    setErrorForm("");
+    eliminarBorradorDeStorage(editandoId);
+  }
+
   /** Valida un campo individual y actualiza erroresCampo. Devuelve el mensaje o "". */
-  function validarCampo(nombre: keyof FormViaje, valor: string): string {
+  function validarCampo(nombre: keyof FormViaje, valor: string, formActual = form): string {
     switch (nombre) {
       case "titulo":
         return valor.trim() ? "" : "El título es obligatorio.";
       case "puntoEncuentro":
         return valor.trim() ? "" : "El punto de encuentro es obligatorio.";
-      case "fechaIdaLocal":
-        return valor ? "" : "La fecha de ida es obligatoria.";
-      case "fechaVueltaLocal":
-        if (!valor) return "La fecha de vuelta es obligatoria.";
-        if (form.fechaIdaLocal && new Date(valor) <= new Date(form.fechaIdaLocal))
-          return "La vuelta debe ser posterior a la ida.";
+      case "fechaIdaLocal": {
+        if (!valor) return "La fecha de ida es obligatoria.";
+        const fechaIda = new Date(valor);
+        const ahora = new Date();
+        ahora.setSeconds(0, 0);
+        // 60 segundos de tolerancia
+        if (fechaIda.getTime() < ahora.getTime() - 60000) {
+          return "La fecha de ida no puede ser en el pasado.";
+        }
         return "";
+      }
+      case "fechaVueltaLocal": {
+        if (!valor) return "La fecha de vuelta es obligatoria.";
+        const fechaVuelta = new Date(valor);
+        const ahora = new Date();
+        ahora.setSeconds(0, 0);
+        if (fechaVuelta.getTime() < ahora.getTime() - 60000) {
+          return "La fecha de vuelta no puede ser en el pasado.";
+        }
+        if (formActual.fechaIdaLocal && fechaVuelta <= new Date(formActual.fechaIdaLocal)) {
+          return "La vuelta debe ser posterior a la ida.";
+        }
+        return "";
+      }
       case "montoTotal":
         if (!valor) return "El monto total es obligatorio.";
         if (Number(valor) <= 0) return "Debe ser un valor mayor a 0.";
@@ -230,10 +307,15 @@ export default function AdminViajes() {
   function cambiarCampo(nombre: keyof FormViaje, valor: string) {
     const nuevoForm = { ...form, [nombre]: valor };
     setForm(nuevoForm);
+    guardarBorradorEnStorage(editandoId, nuevoForm);
     // Actualizar error solo si el campo ya fue tocado.
     if (tocados[nombre]) {
-      const err = validarCampo(nombre, valor);
+      const err = validarCampo(nombre, valor, nuevoForm);
       setErroresCampo((prev) => ({ ...prev, [nombre]: err }));
+    }
+    if (nombre === "fechaIdaLocal" && tocados.fechaVueltaLocal) {
+      const errVuelta = validarCampo("fechaVueltaLocal", nuevoForm.fechaVueltaLocal, nuevoForm);
+      setErroresCampo((prev) => ({ ...prev, fechaVueltaLocal: errVuelta }));
     }
   }
 
@@ -277,9 +359,11 @@ export default function AdminViajes() {
       if (editandoId !== null) {
         await viajesService.actualizarViaje(editandoId, request);
         setAviso({ tipo: "ok", texto: `Viaje "${request.titulo}" actualizado.` });
+        eliminarBorradorDeStorage(editandoId);
       } else {
         await viajesService.crearViaje(request);
         setAviso({ tipo: "ok", texto: `Viaje "${request.titulo}" creado.` });
+        eliminarBorradorDeStorage(null);
       }
       cerrarModal();
       await cargarViajes();
@@ -517,9 +601,22 @@ export default function AdminViajes() {
         titulo={editandoId !== null ? "Editar Viaje" : "Crear Nuevo Viaje"}
         className="max-w-2xl p-lg"
       >
-        <h3 className="text-xl font-bold mb-lg text-admin-text">
-          {editandoId !== null ? "Editar Viaje" : "Crear Nuevo Viaje"}
-        </h3>
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-lg">
+          <h3 className="text-xl font-bold text-admin-text">
+            {editandoId !== null ? "Editar Viaje" : "Crear Nuevo Viaje"}
+          </h3>
+          {editandoId !== null ? (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+              Modificación en curso
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+              Creación en proceso
+            </span>
+          )}
+        </div>
         {cargandoDetalle ? (
           <div className="space-y-md">
             <Skeleton className="h-10 w-full rounded-sm" />
@@ -563,21 +660,21 @@ export default function AdminViajes() {
               error={erroresCampo.puntoEncuentro}
               onBlur={() => tocar("puntoEncuentro")}
             />
-            <Campo
+            <SelectorFechaHora
               label="Fecha y hora de ida"
-              tipo="datetime-local"
               required
               valor={form.fechaIdaLocal}
               alCambiar={(v) => cambiarCampo("fechaIdaLocal", v)}
+              min={aValorLocal(new Date().toISOString())}
               error={erroresCampo.fechaIdaLocal}
               onBlur={() => tocar("fechaIdaLocal")}
             />
-            <Campo
+            <SelectorFechaHora
               label="Fecha y hora de vuelta"
-              tipo="datetime-local"
               required
               valor={form.fechaVueltaLocal}
               alCambiar={(v) => cambiarCampo("fechaVueltaLocal", v)}
+              min={form.fechaIdaLocal || aValorLocal(new Date().toISOString())}
               error={erroresCampo.fechaVueltaLocal}
               onBlur={() => tocar("fechaVueltaLocal")}
             />
@@ -717,7 +814,15 @@ export default function AdminViajes() {
                 {errorForm}
               </p>
             )}
-            <div className="md:col-span-2 flex justify-end gap-sm">
+            <div className="md:col-span-2 flex justify-end items-center gap-sm pt-2">
+              <button
+                type="button"
+                onClick={limpiarCampos}
+                className="px-md py-xs border border-admin-border text-admin-muted hover:text-admin-text hover:bg-admin-bg rounded-md transition-colors text-sm font-medium"
+                title="Vaciar los campos del formulario y borrar el borrador"
+              >
+                Limpiar campos
+              </button>
               <Boton variante="contorno" onClick={cerrarModal}>
                 Cancelar
               </Boton>
@@ -726,7 +831,7 @@ export default function AdminViajes() {
                 disabled={guardando}
                 className="px-md py-xs bg-admin-accent text-white rounded-md hover:bg-admin-accent-hover transition-colors text-sm font-medium disabled:opacity-50"
               >
-                Guardar Viaje
+                {guardando ? "Guardando..." : "Guardar Viaje"}
               </button>
             </div>
           </form>
