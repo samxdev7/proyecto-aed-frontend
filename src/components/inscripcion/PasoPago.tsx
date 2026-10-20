@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { Clock } from "lucide-react";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
+import Modal from "@/components/ui/Modal";
 import TemporizadorRetencion from "@/components/inscripcion/TemporizadorRetencion";
 import { DATOS_PAGO } from "@/config/pago";
 import { formatoCordobas } from "@/lib/format";
@@ -19,6 +21,7 @@ interface PasoPagoProps {
   errorEnvio: string | null;
   alConfirmar: (numeroReferenciaPago: string, capturaComprobanteUrl: string) => void;
   alAtras: () => void;
+  alReiniciar?: () => void;
 }
 
 interface ErroresPago {
@@ -45,6 +48,7 @@ export default function PasoPago({
   errorEnvio,
   alConfirmar,
   alAtras,
+  alReiniciar,
 }: PasoPagoProps) {
   const [referencia, setReferencia] = useState("");
   const [comprobante, setComprobante] = useState<string | null>(null);
@@ -53,9 +57,17 @@ export default function PasoPago({
   const [tiempoAgotado, setTiempoAgotado] = useState(
     () => new Date(borrador.fechaLimitePago).getTime() <= Date.now(),
   );
+  const [modalExpiradoAbierto, setModalExpiradoAbierto] = useState(
+    () => new Date(borrador.fechaLimitePago).getTime() <= Date.now(),
+  );
   const [errores, setErrores] = useState<ErroresPago>({});
 
   const expirado = tiempoAgotado;
+
+  function alAgotarseTiempo() {
+    setTiempoAgotado(true);
+    setModalExpiradoAbierto(true);
+  }
 
   const monto = viaje.montoReserva * cantidad;
   const bloqueado = enviando || procesando || expirado;
@@ -108,7 +120,8 @@ export default function PasoPago({
     <div className="space-y-md">
       <TemporizadorRetencion
         fechaLimite={borrador.fechaLimitePago}
-        alExpirar={() => setTiempoAgotado(true)}
+        alExpirar={alAgotarseTiempo}
+        ocultarAlExpirar
       />
 
       <div>
@@ -200,16 +213,6 @@ export default function PasoPago({
         ) : null}
       </div>
 
-      {expirado ? (
-        <p
-          className="rounded-md bg-estado-rechazada-bg px-md py-sm text-sm font-medium text-estado-rechazada-text"
-          role="alert"
-        >
-          Se agotó el tiempo de retención. Vuelve al paso anterior e inicia la
-          reserva de nuevo.
-        </p>
-      ) : null}
-
       {errorEnvio ? (
         <p
           className="rounded-md bg-estado-rechazada-bg px-md py-sm text-sm font-medium text-estado-rechazada-text"
@@ -223,15 +226,63 @@ export default function PasoPago({
         <Boton variante="contorno" onClick={alAtras} disabled={enviando}>
           Atrás
         </Boton>
-        <Boton
-          className="flex-1"
-          onClick={confirmar}
-          loading={enviando}
-          disabled={bloqueado}
-        >
-          Confirmar reserva
-        </Boton>
+        {expirado ? (
+          <Boton
+            className="flex-1"
+            onClick={alReiniciar || alAtras}
+          >
+            Volver a rellenar
+          </Boton>
+        ) : (
+          <Boton
+            className="flex-1"
+            onClick={confirmar}
+            loading={enviando}
+            disabled={bloqueado}
+          >
+            Confirmar reserva
+          </Boton>
+        )}
       </div>
+
+      <Modal
+        abierto={modalExpiradoAbierto}
+        onCerrar={() => setModalExpiradoAbierto(false)}
+        titulo="Tiempo de reserva agotado"
+        className="max-w-md p-lg text-center"
+      >
+        <div className="flex flex-col items-center gap-md">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-warning-bg text-warning">
+            <Clock size={36} aria-hidden="true" />
+          </div>
+
+          <div className="space-y-xs">
+            <h3 className="text-xl font-bold text-primary">
+              El tiempo para completar el pago ha finalizado
+            </h3>
+            <p className="text-sm text-text-muted leading-relaxed">
+              Han finalizado los 30 minutos establecidos para procesar el pago y tu cupo ya no se encuentra retenido. Por favor, vuelve a iniciar el proceso de inscripción y rellenado para asegurar tus lugares.
+            </p>
+          </div>
+
+          <div className="w-full pt-xs">
+            <Boton
+              type="button"
+              fullWidth
+              onClick={() => {
+                setModalExpiradoAbierto(false);
+                if (alReiniciar) {
+                  alReiniciar();
+                } else {
+                  alAtras();
+                }
+              }}
+            >
+              Volver a rellenar la reserva
+            </Boton>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
