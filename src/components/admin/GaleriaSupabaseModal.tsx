@@ -139,7 +139,7 @@ export default function GaleriaSupabaseModal({
     if (listaArchivos.length === 0) {
       setAviso({
         tipo: "error",
-        texto: "Solo se admiten archivos de imagen (JPEG, PNG, WebP, etc.).",
+        texto: "Solo se admiten archivos de imagen JPEG, PNG, y WebP.",
       });
       setSubiendo(false);
       return;
@@ -287,7 +287,7 @@ export default function GaleriaSupabaseModal({
     <Modal
       abierto={abierto}
       onCerrar={onCerrar}
-      titulo="Galería de Almacenamiento Supabase"
+      titulo="Galería de Almacenamiento"
       className="max-w-5xl p-0 overflow-hidden bg-admin-surface border border-admin-border"
     >
       <div className="flex flex-col h-[85vh] max-h-[780px]">
@@ -301,9 +301,6 @@ export default function GaleriaSupabaseModal({
               <h2 className="text-lg font-bold text-admin-text">
                 Galería de Fotos y Portadas
               </h2>
-              <p className="text-xs text-admin-muted">
-                Almacenamiento en producción: Bucket <span className="font-mono font-semibold">cnm-files</span>
-              </p>
             </div>
           </div>
 
@@ -491,7 +488,7 @@ export default function GaleriaSupabaseModal({
           {cargando ? (
             <div className="flex h-64 flex-col items-center justify-center text-admin-muted gap-2">
               <Loader2 className="h-8 w-8 animate-spin text-admin-accent" />
-              <p className="text-sm">Cargando archivos de Supabase Storage...</p>
+              <p className="text-sm">Cargando archivos...</p>
             </div>
           ) : carpetasFiltradas.length === 0 && archivosFiltrados.length === 0 ? (
             <div className="flex h-64 flex-col items-center justify-center text-center text-admin-muted rounded-xl border-2 border-dashed border-admin-border p-8">
@@ -516,7 +513,7 @@ export default function GaleriaSupabaseModal({
                 <div>
                   <h3 className="text-xs font-bold uppercase tracking-wider text-admin-muted mb-3 flex items-center gap-1.5">
                     <Folder className="h-3.5 w-3.5 text-amber-500" />
-                    <span>Carpetas ({carpetasFiltradas.length})</span>
+                    <span>Carpetas</span>
                   </h3>
 
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
@@ -571,7 +568,7 @@ export default function GaleriaSupabaseModal({
                 <div>
                   <h3 className="text-xs font-bold uppercase tracking-wider text-admin-muted mb-3 flex items-center gap-1.5">
                     <FileImage className="h-3.5 w-3.5 text-admin-accent" />
-                    <span>Imágenes ({archivosFiltrados.length})</span>
+                    <span>Imágenes</span>
                   </h3>
 
                   {vistaCuadricula ? (
@@ -767,7 +764,7 @@ export default function GaleriaSupabaseModal({
         {/* Pie del Gestor */}
         <div className="flex items-center justify-between border-t border-admin-border bg-admin-bg px-6 py-3">
           <p className="text-xs text-admin-muted">
-            Ruta activa: <span className="font-mono font-medium">{rutaActual}</span>
+            Ruta actual: <span className="font-mono font-medium">{rutaActual}</span>
           </p>
 
           <button

@@ -89,7 +89,6 @@ export default function AdminViajes() {
   const [form, setForm] = useState<FormViaje>(FORM_VACIO);
   /* Modal de galeria de Supabase Storage para portada. */
   const [galeriaAbierta, setGaleriaAbierta] = useState(false);
-  const [mostrarUrlAvanzada, setMostrarUrlAvanzada] = useState(false);
   /* Modal de viajes archivados. */
   const [modalArchivadosAbierto, setModalArchivadosAbierto] = useState(false);
   /* id del viaje con una mutación de fila en curso (toggle/archivar). */
@@ -632,13 +631,6 @@ export default function AdminViajes() {
                 <label className="text-xs font-semibold text-text-muted">
                   Foto de Portada del Viaje
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setMostrarUrlAvanzada(!mostrarUrlAvanzada)}
-                  className="text-[11px] text-admin-accent hover:underline font-medium"
-                >
-                  {mostrarUrlAvanzada ? "Ocultar URL directa" : "Editar URL directa (avanzado)"}
-                </button>
               </div>
 
               {/* Widget visual de portada con integracion a Supabase Storage */}
@@ -663,10 +655,10 @@ export default function AdminViajes() {
                 <div className="flex flex-col gap-2 flex-1 w-full">
                   <div>
                     <p className="text-xs font-semibold text-admin-text">
-                      {form.imagenUrl ? "Imagen seleccionada para el viaje" : "Selecciona o sube una imagen de portada"}
+                      {form.imagenUrl ? "Imagen seleccionada" : "Selecciona o sube una imagen de portada"}
                     </p>
                     <p className="text-[11px] text-admin-muted mt-0.5 line-clamp-2 break-all">
-                      {form.imagenUrl || "Explora las carpetas de Supabase Storage en cnm-files/viajes o sube una nueva imagen."}
+                      {form.imagenUrl ? "" : "Explora las carpetas de imágenes o sube una nueva imagen."}
                     </p>
                   </div>
 
@@ -677,7 +669,7 @@ export default function AdminViajes() {
                       className="flex items-center gap-1.5 rounded-md bg-admin-accent px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-admin-accent-hover transition-colors"
                     >
                       <ImageIcon className="h-3.5 w-3.5" />
-                      <span>{form.imagenUrl ? "Cambiar desde Galería" : "Elegir desde Galería Supabase"}</span>
+                      <span>{form.imagenUrl ? "Cambiar desde Galería" : "Elegir desde Galería"}</span>
                     </button>
 
                     {form.imagenUrl && (
@@ -692,19 +684,6 @@ export default function AdminViajes() {
                   </div>
                 </div>
               </div>
-
-              {/* Campo colapsable opcional de URL directa para casos avanzados */}
-              {mostrarUrlAvanzada && (
-                <div className="pt-2">
-                  <Campo
-                    label="URL Directa de la Imagen"
-                    placeholder="https://gnotslrwwptblfoofgsx.supabase.co/storage/v1/object/public/cnm-files/..."
-                    hint="Puedes ingresar manualmente cualquier URL válida o data-URI si lo requieres."
-                    valor={form.imagenUrl}
-                    alCambiar={(v) => cambiarCampo("imagenUrl", v)}
-                  />
-                </div>
-              )}
             </div>
             <div className="md:col-span-2">
               <Campo
