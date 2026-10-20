@@ -59,3 +59,52 @@ test("Regla de Ocultamiento de Barra de Navegación en Autenticación", async (t
     assert.equal(debeOcultarHeader("/viajes/1"), false);
   });
 });
+
+test("Regla de Ocultamiento de Footer en Autenticación", async (t) => {
+  function debeOcultarFooter(ruta: string): boolean {
+    return ruta === "/iniciar-sesion" || ruta === "/registro";
+  }
+
+  await t.test("Oculta Footer en /iniciar-sesion", () => {
+    assert.equal(debeOcultarFooter("/iniciar-sesion"), true);
+  });
+
+  await t.test("Oculta Footer en /registro", () => {
+    assert.equal(debeOcultarFooter("/registro"), true);
+  });
+
+  await t.test("Muestra Footer en páginas públicas", () => {
+    assert.equal(debeOcultarFooter("/"), false);
+    assert.equal(debeOcultarFooter("/viajes"), false);
+  });
+});
+
+test("Sanitización de Errores SQL para Administrador", async (t) => {
+  function sanitizarError(mensaje: string, porDefecto = "Ocurrió un error."): string {
+    if (
+      /could not execute statement|character varying|SQL \[|Hibernate|PSQLException|syntax error|constraint|org\.hibernate|column .* does not exist/i.test(
+        mensaje
+      )
+    ) {
+      return "No se pudo guardar la información del viaje con los datos proporcionados. Por favor revisa que los campos sean válidos e intenta nuevamente.";
+    }
+    return mensaje || porDefecto;
+  }
+
+  await t.test("Oculta error raw de SQL 'value too long for type character varying(50)'", () => {
+    const rawSqlError =
+      "Ha ocurrido un error inesperado en el servidor: could not execute statement [ERROR: value too long for type character varying(50)] [insert into app.viaje ...]; SQL [insert into app.viaje ...]";
+    const sanitizado = sanitizarError(rawSqlError);
+    assert.equal(
+      sanitizado,
+      "No se pudo guardar la información del viaje con los datos proporcionados. Por favor revisa que los campos sean válidos e intenta nuevamente."
+    );
+    assert.ok(!sanitizado.includes("character varying"));
+    assert.ok(!sanitizado.includes("SQL"));
+  });
+
+  await t.test("Preserva mensajes funcionales de negocio legibles", () => {
+    const mensajeNegocio = "El monto de reserva debe ser menor o igual al monto total.";
+    assert.equal(sanitizarError(mensajeNegocio), mensajeNegocio);
+  });
+});

@@ -98,7 +98,19 @@ function eliminarBorradorDeStorage(id: number | null) {
 
 /** Mensaje del backend (ApiError) o un texto por defecto genérico. */
 function mensajeDeError(e: unknown, porDefecto: string): string {
-  return e instanceof ApiError && e.message ? e.message : porDefecto;
+  if (e instanceof ApiError && e.message) {
+    const msg = e.message;
+    // Ocultar detalles técnicos internos de base de datos o SQL al administrador
+    if (
+      /could not execute statement|character varying|SQL \[|Hibernate|PSQLException|syntax error|constraint|org\.hibernate|column .* does not exist/i.test(
+        msg
+      )
+    ) {
+      return "No se pudo guardar la información del viaje con los datos proporcionados. Por favor revisa que los campos sean válidos e intenta nuevamente.";
+    }
+    return msg;
+  }
+  return porDefecto;
 }
 
 /** ISO → valor de <input type="datetime-local"> en la zona del navegador. */
@@ -250,10 +262,18 @@ export default function AdminViajes() {
   /** Valida un campo individual y actualiza erroresCampo. Devuelve el mensaje o "". */
   function validarCampo(nombre: keyof FormViaje, valor: string, formActual = form): string {
     switch (nombre) {
-      case "titulo":
-        return valor.trim() ? "" : "El título es obligatorio.";
-      case "puntoEncuentro":
-        return valor.trim() ? "" : "El punto de encuentro es obligatorio.";
+      case "titulo": {
+        const t = valor.trim();
+        if (!t) return "El título es obligatorio.";
+        if (t.length > 200) return "El título no puede superar los 200 caracteres.";
+        return "";
+      }
+      case "puntoEncuentro": {
+        const p = valor.trim();
+        if (!p) return "El punto de encuentro es obligatorio.";
+        if (p.length > 500) return "El punto de encuentro no puede superar los 500 caracteres.";
+        return "";
+      }
       case "fechaIdaLocal": {
         if (!valor) return "La fecha de ida es obligatoria.";
         const fechaIda = new Date(valor);
@@ -282,10 +302,15 @@ export default function AdminViajes() {
         if (!valor) return "El monto total es obligatorio.";
         if (Number(valor) <= 0) return "Debe ser un valor mayor a 0.";
         return "";
-      case "montoReserva":
+      case "montoReserva": {
         if (!valor) return "El monto de reserva es obligatorio.";
-        if (Number(valor) <= 0) return "Debe ser un valor mayor a 0.";
+        const r = Number(valor);
+        if (r <= 0) return "Debe ser un valor mayor a 0.";
+        if (formActual.montoTotal && r > Number(formActual.montoTotal)) {
+          return "El monto de reserva no puede ser mayor al monto total.";
+        }
         return "";
+      }
       case "cuposMaximos": {
         if (!valor) return "Los cupos son obligatorios.";
         const n = Number(valor);
@@ -316,6 +341,10 @@ export default function AdminViajes() {
     if (nombre === "fechaIdaLocal" && tocados.fechaVueltaLocal) {
       const errVuelta = validarCampo("fechaVueltaLocal", nuevoForm.fechaVueltaLocal, nuevoForm);
       setErroresCampo((prev) => ({ ...prev, fechaVueltaLocal: errVuelta }));
+    }
+    if (nombre === "montoTotal" && tocados.montoReserva) {
+      const errReserva = validarCampo("montoReserva", nuevoForm.montoReserva, nuevoForm);
+      setErroresCampo((prev) => ({ ...prev, montoReserva: errReserva }));
     }
   }
 
@@ -636,6 +665,7 @@ export default function AdminViajes() {
                 alCambiar={(v) => cambiarCampo("titulo", v)}
                 error={erroresCampo.titulo}
                 onBlur={() => tocar("titulo")}
+                inputProps={{ maxLength: 200 }}
               />
             </div>
             <div className="md:col-span-2">
@@ -659,6 +689,7 @@ export default function AdminViajes() {
               alCambiar={(v) => cambiarCampo("puntoEncuentro", v)}
               error={erroresCampo.puntoEncuentro}
               onBlur={() => tocar("puntoEncuentro")}
+              inputProps={{ maxLength: 500 }}
             />
             <SelectorFechaHora
               label="Fecha y hora de ida"
