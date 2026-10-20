@@ -155,9 +155,11 @@ function ContenidoRegistro() {
           </Link>
         </p>
 
-        <div className="pt-2 border-t border-neutral-border text-center">
-          <button
+        <div className="pt-3 border-t border-neutral-border">
+          <Boton
             type="button"
+            variante="contorno"
+            fullWidth
             onClick={() => {
               if (typeof window !== "undefined" && window.history.length > 1) {
                 router.back();
@@ -165,11 +167,10 @@ function ContenidoRegistro() {
                 router.push(redir || "/");
               }
             }}
-            className="inline-flex items-center justify-center gap-1.5 text-xs font-medium text-text-muted hover:text-text-main transition-colors py-1.5 px-3 rounded hover:bg-surface-alt"
           >
-            <ArrowLeft size={14} />
-            <span>Volver a la página anterior</span>
-          </button>
+            <ArrowLeft size={16} aria-hidden="true" />
+            <span>Volver a la página principal</span>
+          </Boton>
         </div>
       </div>
 
