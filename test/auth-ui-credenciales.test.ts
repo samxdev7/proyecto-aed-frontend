@@ -108,3 +108,49 @@ test("Sanitización de Errores SQL para Administrador", async (t) => {
     assert.equal(sanitizarError(mensajeNegocio), mensajeNegocio);
   });
 });
+
+test("Formato Seguro de Identificación y Detección de Perfil Incompleto", async (t) => {
+  function formatoIdentificacion(
+    tipo?: string | null,
+    numero?: string | null
+  ): string {
+    const tipoLimpio =
+      tipo && tipo !== "null" && tipo !== "undefined" ? tipo.trim() : "";
+    const numeroLimpio =
+      numero && numero !== "null" && numero !== "undefined" ? numero.trim() : "";
+
+    if (!tipoLimpio && !numeroLimpio) return "Sin registrar";
+
+    const etiquetaTipo =
+      tipoLimpio.toLowerCase() === "cedula"
+        ? "Cédula"
+        : tipoLimpio.toLowerCase() === "pasaporte"
+          ? "Pasaporte"
+          : tipoLimpio || "Identificación";
+
+    if (!numeroLimpio) return `${etiquetaTipo}: (Sin número)`;
+    return `${etiquetaTipo}: ${numeroLimpio}`;
+  }
+
+  await t.test("Evita 'null: null' o 'Null: Null' ante valores no inicializados", () => {
+    assert.equal(formatoIdentificacion(null, null), "Sin registrar");
+    assert.equal(formatoIdentificacion("null", "null"), "Sin registrar");
+    assert.equal(formatoIdentificacion(undefined, undefined), "Sin registrar");
+    assert.equal(formatoIdentificacion("", ""), "Sin registrar");
+  });
+
+  await t.test("Formatea cédula y pasaporte correctamente", () => {
+    assert.equal(
+      formatoIdentificacion("cedula", "001-010190-0001A"),
+      "Cédula: 001-010190-0001A"
+    );
+    assert.equal(
+      formatoIdentificacion("pasaporte", "N1234567"),
+      "Pasaporte: N1234567"
+    );
+  });
+
+  await t.test("Maneja tipo existente con número faltante", () => {
+    assert.equal(formatoIdentificacion("cedula", null), "Cédula: (Sin número)");
+  });
+});

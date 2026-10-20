@@ -4,7 +4,8 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertCircle, Bell, Mail, MapPin, Phone, User } from "lucide-react";
 import { userService } from "@/services/user.service";
-import { actualizarDatosSesion } from "@/lib/auth";
+import { actualizarDatosSesion, perfilEstaCompleto } from "@/lib/auth";
+import { formatoIdentificacion } from "@/lib/format";
 import type { UsuarioPerfil } from "@/types/usuario";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
@@ -234,37 +235,61 @@ function UserProfileContent() {
             <h3 className="text-lg font-bold text-primary">
               Información Personal
             </h3>
-            <button
-              type="button"
-              onClick={comenzarEdicion}
-              className="text-sm font-semibold text-primary hover:underline"
-            >
-              Editar
-            </button>
+            {perfilEstaCompleto(perfil) ? (
+              <button
+                type="button"
+                onClick={comenzarEdicion}
+                className="text-sm font-semibold text-primary hover:underline"
+              >
+                Editar
+              </button>
+            ) : null}
           </div>
 
-          <div className="space-y-md">
-            <DetailItem
-              icono={<Mail size={18} />}
-              label="Correo Electrónico"
-              value={perfil.correo}
-            />
-            <DetailItem
-              icono={<Phone size={18} />}
-              label="Teléfono"
-              value={perfil.telefono || "—"}
-            />
-            <DetailItem
-              icono={<MapPin size={18} />}
-              label="Nacionalidad"
-              value={perfil.nacionalidad}
-            />
-            <DetailItem
-              icono={<User size={18} />}
-              label="Identificación"
-              value={`${perfil.tipoIdentificacion}: ${perfil.numeroIdentificacion}`}
-            />
-          </div>
+          {perfilEstaCompleto(perfil) ? (
+            <div className="space-y-md">
+              <DetailItem
+                icono={<Mail size={18} />}
+                label="Correo Electrónico"
+                value={perfil.correo}
+              />
+              <DetailItem
+                icono={<Phone size={18} />}
+                label="Teléfono"
+                value={perfil.telefono || "—"}
+              />
+              <DetailItem
+                icono={<MapPin size={18} />}
+                label="Nacionalidad"
+                value={perfil.nacionalidad || "—"}
+              />
+              <DetailItem
+                icono={<User size={18} />}
+                label="Identificación"
+                value={formatoIdentificacion(
+                  perfil.tipoIdentificacion,
+                  perfil.numeroIdentificacion
+                )}
+              />
+            </div>
+          ) : (
+            <div className="space-y-md rounded-md border border-warning/30 bg-warning-bg/40 p-md">
+              <div className="flex items-start gap-sm">
+                <AlertCircle size={20} className="shrink-0 text-warning mt-0.5" />
+                <div className="space-y-1">
+                  <p className="text-sm font-bold text-text-main">
+                    Datos personales incompletos
+                  </p>
+                  <p className="text-xs text-text-muted leading-relaxed">
+                    Aún no has registrado tus datos personales (nombre, apellidos e identificación). Son indispensables para formalizar y validar reservas en las expediciones del club.
+                  </p>
+                </div>
+              </div>
+              <Boton type="button" fullWidth onClick={comenzarEdicion}>
+                Completar mis datos personales
+              </Boton>
+            </div>
+          )}
         </div>
 
         <div className="space-y-md rounded-md border border-neutral-border bg-surface p-md shadow-sm">

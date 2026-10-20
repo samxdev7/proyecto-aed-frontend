@@ -29,3 +29,29 @@ export function formatoFechaCorta(iso: string): string {
     month: "short",
   });
 }
+
+/**
+ * Formatea de forma segura el tipo y número de documento del usuario.
+ * Evita imprimir 'null: null' o 'Null: Null' ante campos vacíos o no inicializados.
+ */
+export function formatoIdentificacion(
+  tipo?: string | null,
+  numero?: string | null
+): string {
+  const tipoLimpio =
+    tipo && tipo !== "null" && tipo !== "undefined" ? tipo.trim() : "";
+  const numeroLimpio =
+    numero && numero !== "null" && numero !== "undefined" ? numero.trim() : "";
+
+  if (!tipoLimpio && !numeroLimpio) return "Sin registrar";
+
+  const etiquetaTipo =
+    tipoLimpio.toLowerCase() === "cedula"
+      ? "Cédula"
+      : tipoLimpio.toLowerCase() === "pasaporte"
+        ? "Pasaporte"
+        : tipoLimpio || "Identificación";
+
+  if (!numeroLimpio) return `${etiquetaTipo}: (Sin número)`;
+  return `${etiquetaTipo}: ${numeroLimpio}`;
+}

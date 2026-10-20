@@ -3,6 +3,7 @@
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import Skeleton from "@/components/ui/Skeleton";
+import { formatoIdentificacion } from "@/lib/format";
 import { opcionesDeCampo } from "@/services/viajes.service";
 import type { Acompanante } from "@/types/reserva";
 import type { UsuarioPerfil } from "@/types/usuario";
@@ -72,7 +73,10 @@ export default function PasoViajeros({
                 Identificación
               </dt>
               <dd className="break-words font-medium text-text-main">
-                {perfil.tipoIdentificacion}: {perfil.numeroIdentificacion}
+                {formatoIdentificacion(
+                  perfil.tipoIdentificacion,
+                  perfil.numeroIdentificacion
+                )}
               </dd>
             </div>
           </dl>

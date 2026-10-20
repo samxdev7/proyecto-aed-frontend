@@ -11,6 +11,7 @@ import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import CompletarPerfilPopup from "@/components/auth/CompletarPerfilPopup";
 import BotonGoogle from "@/components/auth/BotonGoogle";
+import { useMensajes } from "@/contexts/MensajesContext";
 
 /** Solo correo y contraseña — el resto del perfil se completa en el paso siguiente o desde /user/perfil. */
 type FormularioRegistro = {
@@ -28,6 +29,7 @@ function ContenidoRegistro() {
   const searchParams = useSearchParams();
   const destino = searchParams.get("redir");
   const redir = destino && destino.startsWith("/") ? destino : null;
+  const { mostrarInfo } = useMensajes();
 
   const [perfilPopupAbierto, setPerfilPopupAbierto] = useState(false);
   const [form, setForm] = useState<FormularioRegistro>(vacio);
@@ -178,6 +180,11 @@ function ContenidoRegistro() {
         abierto={perfilPopupAbierto}
         onCerrar={() => {
           setPerfilPopupAbierto(false);
+          mostrarInfo(
+            "Perfil pendiente de completar",
+            "Puedes completar tus datos personales en cualquier momento desde tu menú de perfil para poder reservar tus viajes.",
+            7000
+          );
           router.push(redir || "/viajes");
         }}
         alCompletar={() => router.push(redir || "/viajes")}
