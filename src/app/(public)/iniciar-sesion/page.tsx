@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { LogIn } from "lucide-react";
+import { LogIn, ArrowLeft } from "lucide-react";
 import { authService } from "@/services/auth.service";
 import { EVENTO_SESION, esAdministrador, guardarSesion, obtenerSesion } from "@/lib/auth";
 import { ApiError } from "@/lib/api-client";
@@ -138,12 +138,13 @@ function LoginContent() {
             </p>
           ) : null}
 
-          <Boton type="submit" fullWidth loading={enviando}>
-            Iniciar sesión
-          </Boton>
+          <div className="flex flex-col gap-2 pt-1">
+            <Boton type="submit" fullWidth loading={enviando}>
+              Iniciar sesión
+            </Boton>
+            <BotonGoogle redir={redir} />
+          </div>
         </form>
-
-        <BotonGoogle redir={redir} />
 
         <div className="space-y-xs text-center">
           <p className="text-sm text-text-muted">
@@ -159,6 +160,23 @@ function LoginContent() {
               Regístrate aquí
             </Link>
           </p>
+        </div>
+
+        <div className="pt-2 border-t border-neutral-border text-center">
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== "undefined" && window.history.length > 1) {
+                router.back();
+              } else {
+                router.push(redir || "/");
+              }
+            }}
+            className="inline-flex items-center justify-center gap-1.5 text-xs font-medium text-text-muted hover:text-text-main transition-colors py-1.5 px-3 rounded hover:bg-surface-alt"
+          >
+            <ArrowLeft size={14} />
+            <span>Volver a la página anterior</span>
+          </button>
         </div>
       </div>
     </div>

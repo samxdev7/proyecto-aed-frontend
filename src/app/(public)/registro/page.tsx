@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { UserPlus } from "lucide-react";
+import { UserPlus, ArrowLeft } from "lucide-react";
 import { authService } from "@/services/auth.service";
 import { guardarSesion } from "@/lib/auth";
 import type { RegistroRequest } from "@/types/auth";
@@ -137,12 +137,13 @@ function ContenidoRegistro() {
             </p>
           ) : null}
 
-          <Boton type="submit" fullWidth loading={enviando}>
-            Crear mi cuenta
-          </Boton>
+          <div className="flex flex-col gap-2 pt-1">
+            <Boton type="submit" fullWidth loading={enviando}>
+              Crear mi cuenta
+            </Boton>
+            <BotonGoogle redir={redir} texto="Registrarse con Google" />
+          </div>
         </form>
-
-        <BotonGoogle redir={redir} texto="Registrarse con Google" />
 
         <p className="text-center text-sm text-text-muted">
           ¿Ya tienes una cuenta?{" "}
@@ -153,6 +154,23 @@ function ContenidoRegistro() {
             Inicia sesión aquí
           </Link>
         </p>
+
+        <div className="pt-2 border-t border-neutral-border text-center">
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== "undefined" && window.history.length > 1) {
+                router.back();
+              } else {
+                router.push(redir || "/");
+              }
+            }}
+            className="inline-flex items-center justify-center gap-1.5 text-xs font-medium text-text-muted hover:text-text-main transition-colors py-1.5 px-3 rounded hover:bg-surface-alt"
+          >
+            <ArrowLeft size={14} />
+            <span>Volver a la página anterior</span>
+          </button>
+        </div>
       </div>
 
       <CompletarPerfilPopup

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { iniciarSesionConGoogle } from "@/lib/supabase";
 
 interface BotonGoogleProps {
@@ -16,6 +16,33 @@ export default function BotonGoogle({
 }: BotonGoogleProps) {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Restablecer estado de recarga al regresar del selector de Google (bfcache o retorno)
+    const alMostrarPagina = () => {
+      setCargando(false);
+    };
+
+    const alRecuperarFoco = () => {
+      setCargando(false);
+    };
+
+    const alCambiarVisibilidad = () => {
+      if (document.visibilityState === "visible") {
+        setCargando(false);
+      }
+    };
+
+    window.addEventListener("pageshow", alMostrarPagina);
+    window.addEventListener("focus", alRecuperarFoco);
+    document.addEventListener("visibilitychange", alCambiarVisibilidad);
+
+    return () => {
+      window.removeEventListener("pageshow", alMostrarPagina);
+      window.removeEventListener("focus", alRecuperarFoco);
+      document.removeEventListener("visibilitychange", alCambiarVisibilidad);
+    };
+  }, []);
 
   async function manejarClick() {
     setCargando(true);

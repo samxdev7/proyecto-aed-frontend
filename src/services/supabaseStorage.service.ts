@@ -1,16 +1,9 @@
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 
 export const BUCKET_NAME = "cnm-files";
 export const RUTA_BASE_VIAJES = "viajes";
 
-const supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL ||
-  "https://gnotslrwwptblfoofgsx.supabase.co";
-const supabaseKey =
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-  "sb_publishable_R-yNJTs0N1M_Z1-taZQ1fg_R3m187W2";
-
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export { supabase };
 
 export interface ItemCarpeta {
   nombre: string;

@@ -8,11 +8,6 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "gnotslrwwptblfoofgsx.supabase.co",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
         hostname: "**.supabase.co",
         pathname: "/**",
       },

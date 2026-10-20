@@ -10,9 +10,7 @@ type LogoProps = {
  * URL pública del logo oficial en Supabase Storage (bucket: cnm-files).
  * Las dimensiones originales del recurso son 490x383 px (proporción 1.28:1).
  */
-export const LOGO_CNM_URL =
-  process.env.NEXT_PUBLIC_LOGO_URL ||
-  "https://gnotslrwwptblfoofgsx.supabase.co/storage/v1/object/public/cnm-files/cnm-logo.png";
+export const LOGO_CNM_URL = process.env.NEXT_PUBLIC_LOGO_URL || "/icon.png";
 
 export default function Logo({
   className = "h-10 w-auto",
