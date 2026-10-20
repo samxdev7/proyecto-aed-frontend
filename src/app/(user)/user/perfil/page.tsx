@@ -10,6 +10,8 @@ import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import EmptyState from "@/components/ui/EmptyState";
 import Skeleton from "@/components/ui/Skeleton";
+import Modal from "@/components/ui/Modal";
+import { useMensajes } from "@/contexts/MensajesContext";
 
 const clasesSelect =
   "w-full rounded-sm border border-neutral-border bg-surface px-4 py-3 text-sm text-text-main outline-none transition focus:border-primary focus:ring-1 focus:ring-primary";
@@ -45,6 +47,7 @@ function UserProfileContent() {
   const searchParams = useSearchParams();
   const destino = searchParams.get("redir");
   const redir = destino && destino.startsWith("/") ? destino : null;
+  const { mostrarExito } = useMensajes();
 
   const [perfil, setPerfil] = useState<UsuarioPerfil | null>(null);
   const [error, setError] = useState(false);
@@ -141,6 +144,7 @@ function UserProfileContent() {
         actualizarDatosSesion({
           nombreCompleto: actualizado.nombreCompleto,
         });
+        mostrarExito("Perfil actualizado", "Tus datos personales se han guardado correctamente.");
         if (redir && redir.startsWith("/")) {
           router.push(redir);
         }
@@ -230,151 +234,37 @@ function UserProfileContent() {
             <h3 className="text-lg font-bold text-primary">
               Información Personal
             </h3>
-            {editando ? (
-              <button
-                type="button"
-                onClick={() => setEditando(false)}
-                className="text-sm text-text-muted hover:underline"
-              >
-                Cancelar
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={comenzarEdicion}
-                className="text-sm text-primary hover:underline"
-              >
-                Editar
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={comenzarEdicion}
+              className="text-sm font-semibold text-primary hover:underline"
+            >
+              Editar
+            </button>
           </div>
 
-          {editando && form ? (
-            <form className="space-y-md" onSubmit={guardarCambios}>
-              <div className="grid gap-md sm:grid-cols-2">
-                <Campo
-                  label="Primer nombre"
-                  required
-                  valor={form.primerNombre}
-                  alCambiar={(valor) => actualizar("primerNombre", valor)}
-                />
-                <Campo
-                  label="Segundo nombre"
-                  valor={form.segundoNombre}
-                  alCambiar={(valor) => actualizar("segundoNombre", valor)}
-                />
-                <Campo
-                  label="Primer apellido"
-                  required
-                  valor={form.primerApellido}
-                  alCambiar={(valor) => actualizar("primerApellido", valor)}
-                />
-                <Campo
-                  label="Segundo apellido"
-                  valor={form.segundoApellido}
-                  alCambiar={(valor) => actualizar("segundoApellido", valor)}
-                />
-                <Campo
-                  label="Teléfono"
-                  tipo="tel"
-                  placeholder="+505 0000-0000"
-                  valor={form.telefono}
-                  alCambiar={(valor) => actualizar("telefono", valor)}
-                />
-                <div className="flex flex-col gap-1">
-                  <label
-                    htmlFor="perfil-sexo"
-                    className="text-xs font-semibold text-text-muted"
-                  >
-                    Sexo
-                  </label>
-                  <select
-                    id="perfil-sexo"
-                    value={form.sexo}
-                    onChange={(evento) => actualizar("sexo", evento.target.value)}
-                    className={clasesSelect}
-                  >
-                    <option value="">Prefiero no decirlo</option>
-                    <option value="M">Masculino</option>
-                    <option value="F">Femenino</option>
-                    <option value="Otro">Otro</option>
-                  </select>
-                </div>
-                <Campo
-                  label="Nacionalidad"
-                  required
-                  valor={form.nacionalidad}
-                  alCambiar={(valor) => actualizar("nacionalidad", valor)}
-                />
-                <div className="flex flex-col gap-1">
-                  <label
-                    htmlFor="perfil-tipo-id"
-                    className="text-xs font-semibold text-text-muted"
-                  >
-                    Tipo de identificación{" "}
-                    <span className="text-error">*</span>
-                  </label>
-                  <select
-                    id="perfil-tipo-id"
-                    value={form.tipoIdentificacion}
-                    onChange={(evento) =>
-                      actualizar("tipoIdentificacion", evento.target.value)
-                    }
-                    required
-                    className={clasesSelect}
-                  >
-                    <option value="cedula">Cédula</option>
-                    <option value="pasaporte">Pasaporte</option>
-                  </select>
-                </div>
-                <Campo
-                  label="Número de identificación"
-                  required
-                  placeholder="001-000000-0000A"
-                  valor={form.numeroIdentificacion}
-                  alCambiar={(valor) =>
-                    actualizar("numeroIdentificacion", valor)
-                  }
-                />
-              </div>
-
-              {errorGuardado ? (
-                <p
-                  className="rounded-sm bg-estado-rechazada-bg px-md py-sm text-sm text-estado-rechazada-text"
-                  role="alert"
-                >
-                  {errorGuardado}
-                </p>
-              ) : null}
-
-              <Boton type="submit" loading={guardando} fullWidth>
-                Guardar cambios
-              </Boton>
-            </form>
-          ) : (
-            <div className="space-y-md">
-              <DetailItem
-                icono={<Mail size={18} />}
-                label="Correo Electrónico"
-                value={perfil.correo}
-              />
-              <DetailItem
-                icono={<Phone size={18} />}
-                label="Teléfono"
-                value={perfil.telefono || "—"}
-              />
-              <DetailItem
-                icono={<MapPin size={18} />}
-                label="Nacionalidad"
-                value={perfil.nacionalidad}
-              />
-              <DetailItem
-                icono={<User size={18} />}
-                label="Identificación"
-                value={`${perfil.tipoIdentificacion}: ${perfil.numeroIdentificacion}`}
-              />
-            </div>
-          )}
+          <div className="space-y-md">
+            <DetailItem
+              icono={<Mail size={18} />}
+              label="Correo Electrónico"
+              value={perfil.correo}
+            />
+            <DetailItem
+              icono={<Phone size={18} />}
+              label="Teléfono"
+              value={perfil.telefono || "—"}
+            />
+            <DetailItem
+              icono={<MapPin size={18} />}
+              label="Nacionalidad"
+              value={perfil.nacionalidad}
+            />
+            <DetailItem
+              icono={<User size={18} />}
+              label="Identificación"
+              value={`${perfil.tipoIdentificacion}: ${perfil.numeroIdentificacion}`}
+            />
+          </div>
         </div>
 
         <div className="space-y-md rounded-md border border-neutral-border bg-surface p-md shadow-sm">
@@ -406,6 +296,138 @@ function UserProfileContent() {
           </p>
         </div>
       </div>
+
+      <Modal
+        abierto={editando}
+        onCerrar={() => setEditando(false)}
+        titulo="Editar Información Personal"
+        className="max-w-xl p-lg"
+      >
+        <div className="space-y-xs text-center border-b border-neutral-border pb-md">
+          <h2 className="text-xl font-bold text-primary">
+            Editar Información Personal
+          </h2>
+          <p className="text-xs text-text-muted">
+            Modifica tus datos personales para mantener al día tus registros y reservas.
+          </p>
+        </div>
+
+        {form ? (
+          <form className="space-y-md pt-md" onSubmit={guardarCambios} noValidate>
+            <div className="grid gap-md sm:grid-cols-2">
+              <Campo
+                label="Primer nombre"
+                required
+                valor={form.primerNombre}
+                alCambiar={(valor) => actualizar("primerNombre", valor)}
+              />
+              <Campo
+                label="Segundo nombre"
+                valor={form.segundoNombre}
+                alCambiar={(valor) => actualizar("segundoNombre", valor)}
+              />
+              <Campo
+                label="Primer apellido"
+                required
+                valor={form.primerApellido}
+                alCambiar={(valor) => actualizar("primerApellido", valor)}
+              />
+              <Campo
+                label="Segundo apellido"
+                valor={form.segundoApellido}
+                alCambiar={(valor) => actualizar("segundoApellido", valor)}
+              />
+              <Campo
+                label="Teléfono"
+                tipo="tel"
+                placeholder="+505 0000-0000"
+                valor={form.telefono}
+                alCambiar={(valor) => actualizar("telefono", valor)}
+              />
+              <div className="flex flex-col gap-1">
+                <label
+                  htmlFor="perfil-sexo"
+                  className="text-xs font-semibold text-text-muted"
+                >
+                  Sexo
+                </label>
+                <select
+                  id="perfil-sexo"
+                  value={form.sexo}
+                  onChange={(evento) => actualizar("sexo", evento.target.value)}
+                  className={clasesSelect}
+                >
+                  <option value="">Prefiero no decirlo</option>
+                  <option value="M">Masculino</option>
+                  <option value="F">Femenino</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </div>
+              <Campo
+                label="Nacionalidad"
+                required
+                valor={form.nacionalidad}
+                alCambiar={(valor) => actualizar("nacionalidad", valor)}
+              />
+              <div className="flex flex-col gap-1">
+                <label
+                  htmlFor="perfil-tipo-id"
+                  className="text-xs font-semibold text-text-muted"
+                >
+                  Tipo de identificación{" "}
+                  <span className="text-error">*</span>
+                </label>
+                <select
+                  id="perfil-tipo-id"
+                  value={form.tipoIdentificacion}
+                  onChange={(evento) =>
+                    actualizar("tipoIdentificacion", evento.target.value)
+                  }
+                  required
+                  className={clasesSelect}
+                >
+                  <option value="cedula">Cédula</option>
+                  <option value="pasaporte">Pasaporte</option>
+                </select>
+              </div>
+              <div className="sm:col-span-2">
+                <Campo
+                  label="Número de identificación"
+                  required
+                  placeholder="001-000000-0000A"
+                  valor={form.numeroIdentificacion}
+                  alCambiar={(valor) =>
+                    actualizar("numeroIdentificacion", valor)
+                  }
+                />
+              </div>
+            </div>
+
+            {errorGuardado ? (
+              <p
+                className="rounded-sm bg-estado-rechazada-bg px-md py-sm text-sm text-estado-rechazada-text"
+                role="alert"
+              >
+                {errorGuardado}
+              </p>
+            ) : null}
+
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-sm pt-xs border-t border-neutral-border">
+              <Boton
+                type="button"
+                variante="contorno"
+                onClick={() => setEditando(false)}
+                disabled={guardando}
+              >
+                Cancelar
+              </Boton>
+              <Boton type="submit" loading={guardando}>
+                Guardar cambios
+              </Boton>
+            </div>
+          </form>
+        ) : null}
+      </Modal>
     </div>
   );
 }
