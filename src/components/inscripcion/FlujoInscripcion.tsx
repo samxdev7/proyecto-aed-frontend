@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ApiError } from "@/lib/api-client";
+import { ApiError, sanitizarMensajeError } from "@/lib/api-client";
 import { reservaService, type BorradorReserva } from "@/services/reserva.service";
 import { userService } from "@/services/user.service";
 import { opcionesDeCampo, viajesService } from "@/services/viajes.service";
@@ -147,7 +147,10 @@ export default function FlujoInscripcion({ viaje }: { viaje: Viaje }) {
         // p.ej. 409 "cupos insuficientes": el message del backend en español.
         setErrorEnvio(
           error instanceof ApiError
-            ? error.message
+            ? sanitizarMensajeError(
+                error.message,
+                "No pudimos crear tu reserva. Inténtalo de nuevo.",
+              )
             : "No pudimos crear tu reserva. Inténtalo de nuevo.",
         );
         setEnviando(false);

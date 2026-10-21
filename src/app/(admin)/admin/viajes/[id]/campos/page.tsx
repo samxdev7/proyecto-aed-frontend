@@ -2,7 +2,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { viajesService, opcionesDeCampo } from "@/services/viajes.service";
-import { ApiError } from "@/lib/api-client";
+import { ApiError, sanitizarMensajeError } from "@/lib/api-client";
+import { useMensajes } from "@/contexts/MensajesContext";
 import type { CampoFormulario, CrearCampoRequest, TipoCampoFormulario } from "@/types/viaje";
 import {
   Plus,
@@ -27,9 +28,15 @@ const ETIQUETAS_TIPO: Record<TipoCampoFormulario, string> = {
 const INPUT_CLASES =
   "w-full p-sm border border-admin-border rounded-sm outline-none focus:ring-1 focus:ring-admin-accent text-sm";
 
-/** Mensaje del backend (ApiError) o un texto por defecto genérico. */
+/** Mensaje del backend (ApiError) sanitizado o un texto por defecto amigable. */
 function mensajeDeError(e: unknown, porDefecto: string): string {
-  return e instanceof ApiError && e.message ? e.message : porDefecto;
+  if (e instanceof ApiError && e.message) {
+    return sanitizarMensajeError(e.message, porDefecto);
+  }
+  if (e instanceof Error && e.message) {
+    return sanitizarMensajeError(e.message, porDefecto);
+  }
+  return porDefecto;
 }
 
 /* Formulario como strings; se convierte a CrearCampoRequest al guardar. */
@@ -52,6 +59,7 @@ const FORM_VACIO: FormCampo = {
 export default function AdminCampoFormulario() {
   const params = useParams();
   const router = useRouter();
+  const { mostrarExito, mostrarError } = useMensajes();
   const idViaje = Number(params.id);
   const [campos, setCampos] = useState<CampoFormulario[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,6 +137,15 @@ export default function AdminCampoFormulario() {
 
   async function guardar(evento: React.FormEvent) {
     evento.preventDefault();
+    const etiqueta = form.etiquetaPregunta.trim();
+    if (!etiqueta) {
+      setErrorForm("La pregunta no puede estar vacía.");
+      return;
+    }
+    if (etiqueta.length > 300) {
+      setErrorForm("La pregunta no puede exceder los 300 caracteres.");
+      return;
+    }
     const orden = Number(form.orden);
     if (!Number.isFinite(orden) || orden < 1) {
       setErrorForm("El orden debe ser un número mayor que cero.");
@@ -136,7 +153,7 @@ export default function AdminCampoFormulario() {
     }
     const request: CrearCampoRequest = {
       tipoCampo: form.tipoCampo,
-      etiquetaPregunta: form.etiquetaPregunta.trim(),
+      etiquetaPregunta: etiqueta,
       orden,
       obligatorio: form.obligatorio,
     };
@@ -153,13 +170,17 @@ export default function AdminCampoFormulario() {
     try {
       if (editandoCampo) {
         await viajesService.actualizarCampo(idViaje, editandoCampo.idCampo, request);
+        mostrarExito("Pregunta actualizada", `Se guardaron los cambios para "${etiqueta}".`);
       } else {
         await viajesService.crearCampo(idViaje, request);
+        mostrarExito("Pregunta creada", `Se agregó la pregunta "${etiqueta}" al formulario.`);
       }
       cerrarModal();
       await cargarCampos();
     } catch (e) {
-      setErrorForm(mensajeDeError(e, "No se pudo guardar la pregunta."));
+      const msg = mensajeDeError(e, "No se pudo guardar la pregunta. Por favor revisa los datos e inténtalo de nuevo.");
+      setErrorForm(msg);
+      mostrarError("Error al guardar la pregunta", msg);
     } finally {
       setGuardando(false);
     }
@@ -169,9 +190,12 @@ export default function AdminCampoFormulario() {
     if (!window.confirm(`¿Eliminar la pregunta "${campo.etiquetaPregunta}"?`)) return;
     try {
       await viajesService.eliminarCampo(idViaje, campo.idCampo);
+      mostrarExito("Pregunta eliminada", `La pregunta "${campo.etiquetaPregunta}" fue eliminada.`);
       await cargarCampos();
     } catch (e) {
-      setAviso(mensajeDeError(e, "No se pudo eliminar la pregunta."));
+      const msg = mensajeDeError(e, "No se pudo eliminar la pregunta.");
+      setAviso(msg);
+      mostrarError("No se pudo eliminar la pregunta", msg);
     }
   }
 
@@ -317,12 +341,16 @@ export default function AdminCampoFormulario() {
         </h3>
         <form onSubmit={guardar} className="space-y-md">
           <div className="space-y-xs">
-            <label className="text-xs font-bold text-admin-muted uppercase">Pregunta (máx. 100)</label>
+            <div className="flex justify-between items-center">
+              <label className="text-xs font-bold text-admin-muted uppercase">Pregunta (máx. 300)</label>
+              <span className="text-xs text-admin-muted">{form.etiquetaPregunta.length}/300</span>
+            </div>
             <input
               type="text"
               className={INPUT_CLASES}
-              maxLength={100}
+              maxLength={300}
               required
+              placeholder="Ej. ¿Tienes alguna restricción alimenticia o médica?"
               value={form.etiquetaPregunta}
               onChange={(e) => setForm({ ...form, etiquetaPregunta: e.target.value })}
             />
@@ -364,7 +392,7 @@ export default function AdminCampoFormulario() {
                 value={form.opciones}
                 onChange={(e) => setForm({ ...form, opciones: e.target.value })}
               />
-              <p className="text-xs text-admin-muted">Separadas por coma. Mínimo dos.</p>
+              <p className="text-xs text-admin-muted">Separadas por coma. Mínimo dos opciones requeridas.</p>
             </div>
           )}
           <div className="flex items-center gap-xs">

@@ -18,15 +18,25 @@ export function splitLineas(texto: string | null | undefined): string[] {
     .filter((linea) => linea.length > 0);
 }
 
-/** Opciones de un campo: el backend las devuelve como JSON string. */
+/** Opciones de un campo: el backend las devuelve como JSON string o texto separado por comas. */
 export function opcionesDeCampo(campo: CampoFormulario): string[] {
   if (!campo.opcionesRespuesta) return [];
   try {
     const parseado = JSON.parse(campo.opcionesRespuesta) as unknown;
-    return Array.isArray(parseado) ? (parseado as string[]) : [];
+    if (Array.isArray(parseado)) {
+      return (parseado as unknown[])
+        .map((elem) => (typeof elem === "string" ? elem.trim() : String(elem).trim()))
+        .filter(Boolean);
+    }
   } catch {
-    return [];
+    if (typeof campo.opcionesRespuesta === "string") {
+      return campo.opcionesRespuesta
+        .split(",")
+        .map((opcion) => opcion.trim())
+        .filter(Boolean);
+    }
   }
+  return [];
 }
 
 const KEY_MODIFICACIONES = "cnm_viajes_modificaciones_ts";

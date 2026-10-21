@@ -11,6 +11,44 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Sanitiza un mensaje de error proveniente del backend o de una excepción, evitando
+ * mostrar detalles internos de bases de datos, consultas SQL, nombres de esquemas/columnas
+ * o trazas de frameworks al usuario final.
+ */
+export function sanitizarMensajeError(
+  mensaje: string,
+  porDefecto: string = "Ocurrió un error inesperado al procesar la solicitud. Por favor intenta de nuevo."
+): string {
+  if (!mensaje || typeof mensaje !== "string") return porDefecto;
+
+  const patronesTecnicos = [
+    /could not execute statement/i,
+    /sql\s*\[/i,
+    /insert into/i,
+    /update\s+\w+/i,
+    /delete from/i,
+    /select\s+.+from/i,
+    /character varying/i,
+    /psqlexception/i,
+    /hibernateexception/i,
+    /syntax error/i,
+    /violates .* constraint/i,
+    /value too long for type/i,
+    /rewrite or cast the expression/i,
+    /org\.(hibernate|postgresql|springframework)/i,
+    /column ".*" is of type/i,
+    /position:\s*\d+/i,
+    /relation ".*" does not exist/i,
+  ];
+
+  if (patronesTecnicos.some((patron) => patron.test(mensaje))) {
+    return porDefecto;
+  }
+
+  return mensaje;
+}
+
 export class ApiClient {
   private static baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -33,7 +71,7 @@ export class ApiClient {
     if (response.status === 401 && typeof window !== "undefined") {
       cerrarSesion();
     }
-    throw new ApiError(response.status, mensaje);
+    throw new ApiError(response.status, sanitizarMensajeError(mensaje));
   }
 
   /** fetch envuelto: backend caído o sin conexión -> ApiError(0) con mensaje amigable. */
