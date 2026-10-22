@@ -113,6 +113,10 @@ export default function Header() {
     };
   }, []);
 
+  if (ruta === "/iniciar-sesion" || ruta === "/registro") {
+    return null;
+  }
+
   const claseEnlace = (href: string) =>
     ruta === href
       ? "border-b-2 border-ochre pb-0.5 font-medium text-sand"

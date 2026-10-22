@@ -1,3 +1,6 @@
+"use client";
+
+import { usePathname } from "next/navigation";
 import Logo from "./Logo";
 
 const redes = [
@@ -25,6 +28,11 @@ const redes = [
 ];
 
 export default function Footer() {
+  const ruta = usePathname();
+  if (ruta === "/iniciar-sesion" || ruta === "/registro") {
+    return null;
+  }
+
   return (
     <footer className="bg-navy px-4 py-10 md:px-8">
       <div className="flex max-w-6xl flex-col items-center justify-between gap-6 md:flex-row">

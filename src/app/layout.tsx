@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Merriweather } from "next/font/google";
 import "./globals.css";
+import { MensajesProvider } from "@/contexts/MensajesContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -13,6 +14,9 @@ const merriweather = Merriweather({
   variable: "--font-merriweather",
 });
 
+const logoUrl = process.env.NEXT_PUBLIC_LOGO_URL || "/icon.png";
+const appleLogoUrl = process.env.NEXT_PUBLIC_LOGO_URL || "/apple-icon.png";
+
 export const metadata: Metadata = {
   title: "Club Nicaragüense de Montañismo",
   description:
@@ -20,21 +24,14 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "https://gnotslrwwptblfoofgsx.supabase.co/storage/v1/object/public/cnm-files/cnm-logo.png",
-        type: "image/png",
-      },
-      {
-        url: "/icon.png",
+        url: logoUrl,
         type: "image/png",
       },
     ],
     shortcut: ["/favicon.ico"],
     apple: [
       {
-        url: "https://gnotslrwwptblfoofgsx.supabase.co/storage/v1/object/public/cnm-files/cnm-logo.png",
-      },
-      {
-        url: "/apple-icon.png",
+        url: appleLogoUrl,
       },
     ],
   },
@@ -47,7 +44,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={`${inter.variable} ${merriweather.variable} antialiased`}>
-      <body className="min-h-dvh flex flex-col">{children}</body>
+      <body className="min-h-dvh flex flex-col">
+        <MensajesProvider>{children}</MensajesProvider>
+      </body>
     </html>
   );
 }

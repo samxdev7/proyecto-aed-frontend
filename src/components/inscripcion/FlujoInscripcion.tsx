@@ -193,6 +193,10 @@ export default function FlujoInscripcion({ viaje }: { viaje: Viaje }) {
           errorEnvio={errorEnvio}
           alConfirmar={confirmarPago}
           alAtras={() => setPaso(2)}
+          alReiniciar={() => {
+            setBorrador(null);
+            setPaso(1);
+          }}
         />
       ) : null}
     </div>
