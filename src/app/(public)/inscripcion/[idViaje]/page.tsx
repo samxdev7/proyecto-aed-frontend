@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { AlertCircle, Mountain } from "lucide-react";
 import { EVENTO_SESION, obtenerSesion, perfilEstaCompleto, leerPerfilCompleto, marcarPerfilCompleto } from "@/lib/auth";
 import type { Sesion } from "@/types/auth";
@@ -30,6 +30,7 @@ const ESTADOS_BLOQUEANTES: HistorialReservaResumen["estado"][] = [
 ];
 
 export default function InscripcionPage() {
+  const router = useRouter();
   const { idViaje } = useParams<{ idViaje: string }>();
   const idViajeNumero = Number(idViaje);
   const esIdInvalido = Number.isNaN(idViajeNumero);
@@ -171,21 +172,17 @@ export default function InscripcionPage() {
     );
   }
 
+  useEffect(() => {
+    if (sesionLista && !sesion && viaje) {
+      router.replace(`/iniciar-sesion?redir=/inscripcion/${viaje.idViaje}`);
+    }
+  }, [sesionLista, sesion, viaje, router]);
+
   if (!sesion) {
     return (
-      <div className="mx-auto max-w-xl px-lg py-xl text-center">
-        <h1 className="text-3xl font-bold text-primary">
-          Inicia sesión para reservar
-        </h1>
-        <p className="mt-sm text-sm text-text-muted">
-          Necesitas una cuenta de cliente para inscribirte a este viaje.
-        </p>
-        <Boton
-          href={`/iniciar-sesion?redir=/inscripcion/${viaje.idViaje}`}
-          className="mt-md"
-        >
-          Iniciar sesión
-        </Boton>
+      <div className="mx-auto max-w-4xl space-y-lg px-lg py-lg">
+        <Skeleton className="h-52 w-full rounded-md" />
+        <Skeleton className="h-64 w-full rounded-md" />
       </div>
     );
   }
