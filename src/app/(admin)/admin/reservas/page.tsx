@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { adminService } from "@/services/admin.service";
 import { ApiError } from "@/lib/api-client";
 import type { EstadoReserva, ReservaAdminResumen, ReservaDetalle } from "@/types/reserva";
-import { formatoCordobas, formatoFechaCorta } from "@/lib/format";
+import { formatoCordobas, formatoFechaCorta, formatearRespuestaFormulario } from "@/lib/format";
 import {
   CheckCircle,
   Eye,
@@ -508,12 +508,12 @@ function AdminReservas() {
                           href={respuesta.valorRespuesta}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-admin-accent hover:text-admin-accent-hover"
+                          className="text-admin-accent hover:text-admin-accent-hover font-medium underline"
                         >
                           Ver archivo adjunto
                         </a>
                       ) : (
-                        <span className="font-medium text-right">{respuesta.valorRespuesta}</span>
+                        <span className="font-medium text-right">{formatearRespuestaFormulario(respuesta.valorRespuesta)}</span>
                       )}
                     </li>
                   ))}

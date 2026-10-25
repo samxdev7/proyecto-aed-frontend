@@ -147,7 +147,19 @@ export const viajesService = {
 
   async crearViaje(request: ViajeRequest): Promise<ViajeDetalle> {
     const res = await ApiClient.post<ViajeDetalle>("/viajes", request);
-    if (res?.idViaje) registrarModificacionViaje(res.idViaje);
+    if (res?.idViaje) {
+      if (res.estado === "activo") {
+        try {
+          const actualizado = await ApiClient.patch<ViajeDetalle>(`/viajes/${res.idViaje}/estado`, {
+            estado: "cerrado",
+          });
+          res.estado = actualizado.estado;
+        } catch {
+          // backend ya maneja estado cerrado por defecto
+        }
+      }
+      registrarModificacionViaje(res.idViaje);
+    }
     return res;
   },
 

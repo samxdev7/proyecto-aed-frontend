@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { CheckCircle, Flame, Mountain, XCircle } from "lucide-react";
+import { CheckCircle, Flame, Mountain, Users, XCircle } from "lucide-react";
 import { userService } from "@/services/user.service";
 import type { Notificacion } from "@/types/notificacion";
 import { formatoFechaCorta } from "@/lib/format";
@@ -19,6 +19,7 @@ const iconoPorTipo: Record<string, LucideIcon> = {
   pocos_cupos: Flame,
   reserva_aprobada: CheckCircle,
   reserva_rechazada: XCircle,
+  nueva_reserva: Users,
 };
 
 const tituloPorTipo: Record<string, string> = {
@@ -26,6 +27,7 @@ const tituloPorTipo: Record<string, string> = {
   pocos_cupos: "Pocos cupos",
   reserva_aprobada: "Reserva aprobada",
   reserva_rechazada: "Reserva rechazada",
+  nueva_reserva: "Inscripciones al viaje",
 };
 
 export default function NotificacionesDrawer({

@@ -60,9 +60,9 @@ export default function FlujoInscripcion({ viaje }: { viaje: Viaje }) {
     };
   }, [viaje.idViaje]);
 
-  /** Respuesta guardada de un campo, con la primera opción como default. */
+  /** Respuesta guardada de un campo sin valor por defecto forzado. */
   function respuestaDe(campo: CampoFormulario): string {
-    return respuestas[campo.idCampo] ?? opcionesDeCampo(campo)[0] ?? "";
+    return respuestas[campo.idCampo] ?? "";
   }
 
   function cambiarCantidad(nueva: number) {
@@ -103,7 +103,8 @@ export default function FlujoInscripcion({ viaje }: { viaje: Viaje }) {
     campos
       .filter((campo) => campo.obligatorio)
       .forEach((campo) => {
-        if (!respuestaDe(campo).trim()) {
+        const val = respuestaDe(campo).trim();
+        if (!val || val === "[]") {
           nuevos[`resp-${campo.idCampo}`] = "Respuesta obligatoria";
         }
       });

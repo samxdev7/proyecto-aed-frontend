@@ -3,6 +3,7 @@
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import Skeleton from "@/components/ui/Skeleton";
+import CampoFormularioEntrada from "@/components/inscripcion/CampoFormularioEntrada";
 import { formatoIdentificacion } from "@/lib/format";
 import { opcionesDeCampo } from "@/services/viajes.service";
 import type { Acompanante } from "@/types/reserva";
@@ -158,15 +159,10 @@ export default function PasoViajeros({
             Una respuesta por pregunta, válida para toda la reserva.
           </p>
           {campos.map((campo) => (
-            <Campo
+            <CampoFormularioEntrada
               key={campo.idCampo}
-              id={`campo-resp-${campo.idCampo}`}
-              name={`campo-resp-${campo.idCampo}`}
-              label={campo.etiquetaPregunta}
-              required={campo.obligatorio}
-              tipo={campo.tipoCampo === "fecha" ? "date" : "text"}
-              opciones={opcionesDeCampo(campo)}
-              valor={respuestas[campo.idCampo] ?? opcionesDeCampo(campo)[0] ?? ""}
+              campo={campo}
+              valor={respuestas[campo.idCampo] ?? ""}
               alCambiar={(valor) => alCambiarRespuesta(campo.idCampo, valor)}
               error={errores[`resp-${campo.idCampo}`]}
             />

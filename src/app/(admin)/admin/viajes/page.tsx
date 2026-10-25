@@ -2,10 +2,12 @@
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { viajesService } from "@/services/viajes.service";
 import { ApiError } from "@/lib/api-client";
 import type { Dificultad, EstadoViaje, Viaje, ViajeRequest } from "@/types/viaje";
 import { formatoCordobas, formatoFecha } from "@/lib/format";
+import { useMensajes } from "@/contexts/MensajesContext";
 import {
   Plus,
   Edit2,
@@ -13,7 +15,9 @@ import {
   Map,
   ListChecks,
   Power,
-  Image as ImageIcon
+  Image as ImageIcon,
+  AlertTriangle,
+  X,
 } from "lucide-react";
 import Skeleton, { FilaTablaSkeleton } from "@/components/ui/Skeleton";
 import EmptyState from "@/components/ui/EmptyState";
@@ -24,6 +28,7 @@ import SelectorFechaHora from "@/components/ui/SelectorFechaHora";
 import { ChipDificultad } from "@/components/ui/Chip";
 import GaleriaSupabaseModal from "@/components/admin/GaleriaSupabaseModal";
 import ModalViajesArchivados from "@/components/admin/ModalViajesArchivados";
+import MarkdownEditor from "@/components/admin/MarkdownEditor";
 
 const DIFICULTADES = ["Baja", "Media", "Alta", "Extrema"] as const;
 
@@ -31,35 +36,29 @@ const DIFICULTADES = ["Baja", "Media", "Alta", "Extrema"] as const;
 interface FormViaje {
   titulo: string;
   descripcion: string;
-  itinerario: string;
   dificultad: Dificultad;
   fechaIdaLocal: string;
   fechaVueltaLocal: string;
   puntoEncuentro: string;
-  inclusionesAdicionales: string;
   montoTotal: string;
   montoReserva: string;
   cuposMaximos: string;
   enlaceWhatsApp: string;
   imagenUrl: string;
-  equipo: string;
 }
 
 const FORM_VACIO: FormViaje = {
   titulo: "",
   descripcion: "",
-  itinerario: "",
   dificultad: "Baja",
   fechaIdaLocal: "",
   fechaVueltaLocal: "",
   puntoEncuentro: "",
-  inclusionesAdicionales: "",
   montoTotal: "",
   montoReserva: "",
   cuposMaximos: "",
   enlaceWhatsApp: "",
   imagenUrl: "",
-  equipo: "",
 };
 
 const DRAFT_KEY_CREAR = "cnm_admin_viaje_draft_crear";
@@ -121,12 +120,13 @@ function aValorLocal(iso: string): string {
 }
 
 export default function AdminViajes() {
+  const router = useRouter();
+  const { mostrarExito, mostrarError, mostrarAdvertencia } = useMensajes();
   const [viajes, setViajes] = useState<Viaje[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [reintentos, setReintentos] = useState(0);
-  const [aviso, setAviso] = useState<{ tipo: "ok" | "error"; texto: string } | null>(null);
   /* Modal crear/editar. */
   const [modalAbierto, setModalAbierto] = useState(false);
   const [editandoId, setEditandoId] = useState<number | null>(null);
@@ -138,6 +138,8 @@ export default function AdminViajes() {
   const [galeriaAbierta, setGaleriaAbierta] = useState(false);
   /* Modal de viajes archivados. */
   const [modalArchivadosAbierto, setModalArchivadosAbierto] = useState(false);
+  /* Modal de advertencia para viaje sin preguntas */
+  const [viajeSinPreguntas, setViajeSinPreguntas] = useState<Viaje | null>(null);
   /* id del viaje con una mutación de fila en curso (toggle/archivar). */
   const [ocupado, setOcupado] = useState<number | null>(null);
   /** Errores por campo para validación inline. */
@@ -222,18 +224,15 @@ export default function AdminViajes() {
       const nuevoForm: FormViaje = {
         titulo: detalle.titulo,
         descripcion: detalle.descripcion ?? "",
-        itinerario: detalle.itinerario ?? "",
         dificultad: detalle.dificultad,
         fechaIdaLocal: aValorLocal(detalle.fechaHoraIda),
         fechaVueltaLocal: aValorLocal(detalle.fechaHoraVuelta),
         puntoEncuentro: detalle.puntoEncuentro,
-        inclusionesAdicionales: detalle.inclusionesAdicionales ?? "",
         montoTotal: String(detalle.montoTotal),
         montoReserva: String(detalle.montoReserva),
         cuposMaximos: String(detalle.cuposMaximos),
         enlaceWhatsApp: detalle.enlaceWhatsApp ?? "",
         imagenUrl: detalle.imagenUrl ?? "",
-        equipo: detalle.equipo ?? "",
       };
       setForm(nuevoForm);
     } catch (e) {
@@ -369,29 +368,32 @@ export default function AdminViajes() {
     const request: ViajeRequest = {
       titulo: form.titulo.trim(),
       descripcion: form.descripcion.trim() || undefined,
-      itinerario: form.itinerario.trim() || undefined,
       dificultad: form.dificultad,
       fechaHoraIda: new Date(form.fechaIdaLocal).toISOString(),
       fechaHoraVuelta: new Date(form.fechaVueltaLocal).toISOString(),
       puntoEncuentro: form.puntoEncuentro.trim(),
-      inclusionesAdicionales: form.inclusionesAdicionales.trim() || undefined,
       montoTotal: Number(form.montoTotal),
       montoReserva: Number(form.montoReserva),
       cuposMaximos: Number(form.cuposMaximos),
       enlaceWhatsApp: form.enlaceWhatsApp.trim() || undefined,
       imagenUrl: form.imagenUrl.trim() || undefined,
-      equipo: form.equipo.trim() || undefined,
     };
     setGuardando(true);
     setErrorForm("");
     try {
       if (editandoId !== null) {
         await viajesService.actualizarViaje(editandoId, request);
-        setAviso({ tipo: "ok", texto: `Viaje "${request.titulo}" actualizado.` });
+        mostrarExito(
+          "Viaje modificado exitosamente",
+          `Los datos del viaje "${request.titulo}" han sido actualizados correctamente.`
+        );
         eliminarBorradorDeStorage(editandoId);
       } else {
         await viajesService.crearViaje(request);
-        setAviso({ tipo: "ok", texto: `Viaje "${request.titulo}" creado.` });
+        mostrarExito(
+          "Viaje creado exitosamente",
+          `El viaje "${request.titulo}" fue creado en estado cerrado. Agrega preguntas a su formulario antes de activarlo.`
+        );
         eliminarBorradorDeStorage(null);
       }
       cerrarModal();
@@ -406,12 +408,44 @@ export default function AdminViajes() {
 
   async function alternarEstado(viaje: Viaje) {
     const nuevoEstado: EstadoViaje = viaje.estado === "activo" ? "cerrado" : "activo";
+
+    // Si se desea activar el viaje, verificar primero que tenga al menos una pregunta en su formulario
+    if (nuevoEstado === "activo") {
+      setOcupado(viaje.idViaje);
+      try {
+        const campos = await viajesService.listarCampos(viaje.idViaje);
+        if (campos.length === 0) {
+          setViajeSinPreguntas(viaje);
+          return;
+        }
+      } catch (e) {
+        mostrarError(
+          "Error al verificar formulario",
+          mensajeDeError(e, "No se pudo verificar el formulario del viaje.")
+        );
+        return;
+      } finally {
+        setOcupado(null);
+      }
+    }
+
     setOcupado(viaje.idViaje);
     try {
       await viajesService.cambiarEstado(viaje.idViaje, nuevoEstado);
+      mostrarExito(
+        nuevoEstado === "activo" ? "Viaje activado" : "Viaje cerrado",
+        nuevoEstado === "activo"
+          ? `El viaje "${viaje.titulo}" fue activado y ya está disponible para reservas.`
+          : `El viaje "${viaje.titulo}" ha sido cerrado para nuevas reservas.`
+      );
       await cargarViajes();
     } catch (e) {
-      setAviso({ tipo: "error", texto: mensajeDeError(e, "No se pudo cambiar el estado del viaje.") });
+      const msg = mensajeDeError(e, "No se pudo cambiar el estado del viaje.");
+      if (msg.includes("preguntas") || msg.includes("formulario")) {
+        setViajeSinPreguntas(viaje);
+      } else {
+        mostrarError("No se pudo cambiar el estado", msg);
+      }
     } finally {
       setOcupado(null);
     }
@@ -419,10 +453,10 @@ export default function AdminViajes() {
 
   async function archivar(viaje: Viaje) {
     if (viaje.estado !== "cerrado") {
-      setAviso({
-        tipo: "error",
-        texto: "Para archivar un viaje, su estado debe ser 'cerrado'. Ciérralo primero antes de archivar.",
-      });
+      mostrarAdvertencia(
+        "No se puede archivar",
+        "Para archivar un viaje, su estado debe ser 'cerrado'. Ciérralo primero antes de archivar."
+      );
       return;
     }
     if (
@@ -435,10 +469,16 @@ export default function AdminViajes() {
     setOcupado(viaje.idViaje);
     try {
       await viajesService.archivarViaje(viaje.idViaje);
-      setAviso({ tipo: "ok", texto: `Viaje "${viaje.titulo}" archivado correctamente.` });
+      mostrarExito(
+        "Viaje archivado exitosamente",
+        `El viaje "${viaje.titulo}" fue archivado. Puedes consultarlo o restaurarlo desde Viajes Archivados.`
+      );
       await cargarViajes();
     } catch (e) {
-      setAviso({ tipo: "error", texto: mensajeDeError(e, "No se pudo archivar el viaje.") });
+      mostrarError(
+        "Error al archivar el viaje",
+        mensajeDeError(e, "No se pudo archivar el viaje.")
+      );
     } finally {
       setOcupado(null);
     }
@@ -500,19 +540,6 @@ export default function AdminViajes() {
           </button>
         </div>
       </div>
-
-      {aviso && (
-        <div
-          role="status"
-          className={`rounded-sm px-md py-sm text-sm font-medium ${
-            aviso.tipo === "ok"
-              ? "bg-estado-aprobada-bg text-estado-aprobada-text"
-              : "bg-estado-rechazada-bg text-estado-rechazada-text"
-          }`}
-        >
-          {aviso.texto}
-        </div>
-      )}
 
       {viajes.length === 0 ? (
         <EmptyState
@@ -656,7 +683,7 @@ export default function AdminViajes() {
             <Skeleton className="h-24 w-full rounded-sm" />
           </div>
         ) : (
-          <form onSubmit={guardar} className="grid grid-cols-1 md:grid-cols-2 gap-md" noValidate>
+          <form onSubmit={guardar} className="grid grid-cols-1 md:grid-cols-2 gap-md pb-12" noValidate>
             <div className="md:col-span-2">
               <Campo
                 label="Título del viaje"
@@ -669,9 +696,7 @@ export default function AdminViajes() {
               />
             </div>
             <div className="md:col-span-2">
-              <Campo
-                label="Descripción"
-                multilinea
+              <MarkdownEditor
                 valor={form.descripcion}
                 alCambiar={(v) => cambiarCampo("descripcion", v)}
               />
@@ -813,33 +838,6 @@ export default function AdminViajes() {
                 </div>
               </div>
             </div>
-            <div className="md:col-span-2">
-              <Campo
-                label="Itinerario"
-                multilinea
-                hint="Una línea por paso."
-                valor={form.itinerario}
-                alCambiar={(v) => cambiarCampo("itinerario", v)}
-              />
-            </div>
-            <div className="md:col-span-2">
-              <Campo
-                label="Inclusiones adicionales"
-                multilinea
-                hint="Una línea por inclusión."
-                valor={form.inclusionesAdicionales}
-                alCambiar={(v) => cambiarCampo("inclusionesAdicionales", v)}
-              />
-            </div>
-            <div className="md:col-span-2">
-              <Campo
-                label="Equipo requerido"
-                multilinea
-                hint="Una línea por elemento."
-                valor={form.equipo}
-                alCambiar={(v) => cambiarCampo("equipo", v)}
-              />
-            </div>
             {errorForm && (
               <p className="md:col-span-2 text-sm text-error" role="alert">
                 {errorForm}
@@ -883,6 +881,54 @@ export default function AdminViajes() {
         onCerrar={() => setModalArchivadosAbierto(false)}
         onViajeDesarchivado={cargarViajes}
       />
+
+      {/* Modal Advertencia: Viaje sin preguntas */}
+      <Modal
+        abierto={viajeSinPreguntas !== null}
+        onCerrar={() => setViajeSinPreguntas(null)}
+        titulo="No se puede activar el viaje"
+        className="max-w-md p-lg relative"
+      >
+        <button
+          type="button"
+          onClick={() => setViajeSinPreguntas(null)}
+          aria-label="Cerrar advertencia"
+          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition hover:bg-surface-alt hover:text-error"
+        >
+          <X size={18} aria-hidden="true" />
+        </button>
+
+        <div className="flex flex-col items-center gap-md text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-warning-bg text-warning">
+            <AlertTriangle size={36} aria-hidden="true" />
+          </div>
+
+          <div className="space-y-xs">
+            <h3 className="text-xl font-bold text-admin-text">
+              No puedes activar este viaje todavía
+            </h3>
+            <p className="text-sm text-admin-muted leading-relaxed">
+              El viaje <strong className="text-admin-text font-semibold">&ldquo;{viajeSinPreguntas?.titulo}&rdquo;</strong> aún no tiene preguntas personalizadas en su formulario de inscripción. Debes agregar al menos una pregunta antes de poder activarlo para que los viajeros completen la información requerida al reservar.
+            </p>
+          </div>
+
+          <div className="w-full pt-xs">
+            <Boton
+              type="button"
+              fullWidth
+              onClick={() => {
+                const id = viajeSinPreguntas?.idViaje;
+                setViajeSinPreguntas(null);
+                if (id) {
+                  router.push(`/admin/viajes/${id}/campos`);
+                }
+              }}
+            >
+              Agregar preguntas
+            </Boton>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

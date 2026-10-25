@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
-import { Calendar, Check, ChevronLeft, MapPin, Users } from "lucide-react";
-import { splitLineas, viajesService } from "@/services/viajes.service";
+import { Calendar, ChevronLeft, MapPin, Users } from "lucide-react";
+import { viajesService } from "@/services/viajes.service";
 import GaleriaViaje from "@/components/viajes/GaleriaViaje";
 import BotonReservar from "@/components/viajes/BotonReservar";
 import Boton from "@/components/ui/Boton";
 import { ChipDificultad } from "@/components/ui/Chip";
+import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
 import { formatoCordobas, formatoFecha, formatoHora } from "@/lib/format";
 
 interface ViajeDetallePageProps {
@@ -18,10 +19,6 @@ export default async function ViajeDetallePage({ params }: ViajeDetallePageProps
   const viaje = await viajesService.obtenerViaje(Number(id));
   if (!viaje) notFound();
 
-  const itinerario = splitLineas(viaje.itinerario);
-  const equipo = splitLineas(viaje.equipo);
-  // Las inclusiones vienen del backend (inclusionesAdicionales), sin fallback.
-  const inclusiones = splitLineas(viaje.inclusionesAdicionales);
   const inscripcionAbierta =
     viaje.estado === "activo" && viaje.cuposDisponibles > 0;
   const ultimosCupos = inscripcionAbierta && viaje.cuposDisponibles <= 2;
@@ -50,69 +47,9 @@ export default async function ViajeDetallePage({ params }: ViajeDetallePageProps
               <ChipDificultad dificultad={viaje.dificultad} />
             </div>
             {viaje.descripcion ? (
-              <p className="text-base leading-relaxed text-text-muted">
-                {viaje.descripcion}
-              </p>
-            ) : null}
-          </div>
-
-          {itinerario.length > 0 ? (
-            <section className="space-y-md">
-              <h2 className="text-xl font-bold text-primary">Itinerario</h2>
-              <ol className="space-y-sm">
-                {itinerario.map((paso, i) => (
-                  <li
-                    key={paso}
-                    className="flex gap-sm rounded-sm border-l-4 border-primary bg-surface-alt p-sm"
-                  >
-                    <span className="min-w-[1.5rem] text-sm font-bold text-primary">
-                      {i + 1}.
-                    </span>
-                    <span className="text-sm text-text-main">{paso}</span>
-                  </li>
-                ))}
-              </ol>
-            </section>
-          ) : null}
-
-          <div className="grid grid-cols-1 gap-md md:grid-cols-2">
-            {inclusiones.length > 0 ? (
-              <section className="space-y-md">
-                <h2 className="text-xl font-bold text-primary">Qué incluye</h2>
-                <ul className="space-y-xs">
-                  {inclusiones.map((item) => (
-                    <li
-                      key={item}
-                      className="flex items-start gap-xs text-sm text-text-main"
-                    >
-                      <Check
-                        size={16}
-                        className="mt-0.5 shrink-0 text-success"
-                        aria-hidden="true"
-                      />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ) : null}
-            {equipo.length > 0 ? (
-              <section className="space-y-md">
-                <h2 className="text-xl font-bold text-primary">
-                  Equipo recomendado
-                </h2>
-                <ul className="space-y-xs">
-                  {equipo.map((item) => (
-                    <li
-                      key={item}
-                      className="flex items-start gap-xs text-sm text-text-main"
-                    >
-                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </section>
+              <div className="pt-2">
+                <MarkdownRenderer contenido={viaje.descripcion} />
+              </div>
             ) : null}
           </div>
         </div>

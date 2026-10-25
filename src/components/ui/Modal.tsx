@@ -10,6 +10,8 @@ interface ModalProps {
   children: React.ReactNode;
   /** Clases extra del panel (ancho, padding). Sin padding por defecto. */
   className?: string;
+  /** Clase de orden de apilamiento (z-index). Por defecto z-[70] */
+  zIndex?: string;
 }
 
 export default function Modal({
@@ -18,6 +20,7 @@ export default function Modal({
   titulo,
   children,
   className = "max-w-2xl",
+  zIndex = "z-[70]",
 }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const onCerrarRef = useRef(onCerrar);
@@ -64,7 +67,7 @@ export default function Modal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-md backdrop-blur-sm"
+      className={`fixed inset-0 ${zIndex} flex items-center justify-center bg-black/50 p-md backdrop-blur-sm`}
       style={{ backdropFilter: "blur(4px)" }}
       onClick={onCerrar}
     >

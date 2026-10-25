@@ -7,11 +7,11 @@ export interface UsuarioPerfil {
   nombreCompleto: string;
   correo: string;
   rol: "cliente" | "administrador";
-  telefono: string;
-  sexo: string;
-  nacionalidad: string;
-  tipoIdentificacion: string;
-  numeroIdentificacion: string;
+  telefono?: string | null;
+  sexo?: string | null;
+  nacionalidad?: string | null;
+  tipoIdentificacion?: string | null;
+  numeroIdentificacion?: string | null;
   notificacionesHabilitadas: boolean;
   fechaRegistro: string;
 }

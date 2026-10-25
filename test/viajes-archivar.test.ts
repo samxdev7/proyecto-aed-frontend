@@ -185,6 +185,29 @@ test("Regla de Negocio - Validación de Estado para Archivado", () => {
   assert.equal(resultadoCerrado.razon, undefined);
 });
 
+test("Regla de Negocio - Activación de Viaje Requiere Preguntas", () => {
+  function validarPuedeActivarse(cantidadPreguntas: number): { puede: boolean; razon?: string } {
+    if (cantidadPreguntas === 0) {
+      return {
+        puede: false,
+        razon: "Para activar este viaje debes agregar al menos una pregunta al formulario de inscripción.",
+      };
+    }
+    return { puede: true };
+  }
+
+  const sinPreguntas = validarPuedeActivarse(0);
+  assert.equal(sinPreguntas.puede, false);
+  assert.match(sinPreguntas.razon ?? "", /al menos una pregunta/);
+
+  const conUnaPregunta = validarPuedeActivarse(1);
+  assert.equal(conUnaPregunta.puede, true);
+  assert.equal(conUnaPregunta.razon, undefined);
+
+  const conMuchasPreguntas = validarPuedeActivarse(5);
+  assert.equal(conMuchasPreguntas.puede, true);
+});
+
 test("Paginación de Viajes Archivados", () => {
   const ITEMS_POR_PAGINA = 5;
 

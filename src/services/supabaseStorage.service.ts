@@ -3,6 +3,9 @@ import { supabase } from "@/lib/supabase";
 export const BUCKET_NAME = "cnm-files";
 export const RUTA_BASE_VIAJES = "viajes";
 
+export const BUCKET_COMPROBANTES = "capturas-comprobantes";
+export const RUTA_BASE_COMPROBANTES = "images";
+
 export { supabase };
 
 export interface ItemCarpeta {
@@ -325,4 +328,32 @@ export const supabaseStorageService = {
 
     return rutaDestino;
   },
+
+  /**
+   * Sube una captura de comprobante de pago al bucket 'capturas-comprobantes' bajo la ruta 'images/'.
+   * Genera un nombre de archivo único para evitar colisiones y retorna la URL pública directa.
+   */
+  async subirComprobantePago(archivo: Blob | File): Promise<string> {
+    const timestamp = Date.now();
+    const uuid = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID().slice(0, 8) : Math.random().toString(36).substring(2, 10);
+    const extension = archivo.type === "image/png" ? "png" : "jpg";
+    const nombreArchivo = `comprobante-${timestamp}-${uuid}.${extension}`;
+    const rutaCompleta = `${RUTA_BASE_COMPROBANTES}/${nombreArchivo}`;
+
+    const { error } = await supabase.storage
+      .from(BUCKET_COMPROBANTES)
+      .upload(rutaCompleta, archivo, {
+        upsert: true,
+        contentType: archivo.type || "image/jpeg",
+      });
+
+    if (error) {
+      throw new Error(`Error al subir comprobante de pago: ${error.message}`);
+    }
+
+    const { data } = supabase.storage.from(BUCKET_COMPROBANTES).getPublicUrl(rutaCompleta);
+    return data.publicUrl;
+  },
 };
+
+export const subirComprobantePago = supabaseStorageService.subirComprobantePago.bind(supabaseStorageService);

@@ -5,12 +5,11 @@ import { useParams } from "next/navigation";
 import { CalendarX, Eye, EyeOff, FileText, User, Users } from "lucide-react";
 import { reservaService } from "@/services/reserva.service";
 import type { ReservaDetalle } from "@/types/reserva";
-import { formatoCordobas, formatoFecha } from "@/lib/format";
+import { formatoCordobas, formatoFecha, formatearRespuestaFormulario } from "@/lib/format";
 import Boton from "@/components/ui/Boton";
 import Chip from "@/components/ui/Chip";
 import EmptyState from "@/components/ui/EmptyState";
 import Skeleton from "@/components/ui/Skeleton";
-import TemporizadorRetencion from "@/components/inscripcion/TemporizadorRetencion";
 import Image from "next/image";
 
 export default function ReservaDetallePage() {
@@ -131,15 +130,6 @@ export default function ReservaDetallePage() {
             </p>
           </div>
         </div>
-
-        {reserva.estado === "pendiente" ? (
-          <div className="space-y-xs">
-            <p className="text-xs text-text-muted">
-              La reserva queda pendiente de pago/revisión hasta:
-            </p>
-            <TemporizadorRetencion fechaLimite={reserva.fechaLimitePago} />
-          </div>
-        ) : null}
 
         {reserva.estado === "rechazada" && reserva.motivoRechazo ? (
           <p className="rounded-md bg-estado-rechazada-bg px-md py-sm text-sm text-estado-rechazada-text">
@@ -282,7 +272,20 @@ export default function ReservaDetallePage() {
                 <dt className="text-xs font-bold uppercase text-text-muted">
                   {respuesta.etiquetaPregunta ?? `Pregunta ${respuesta.idCampo}`}
                 </dt>
-                <dd className="text-sm">{respuesta.valorRespuesta}</dd>
+                <dd className="text-sm">
+                  {respuesta.valorRespuesta.startsWith("data:") ? (
+                    <a
+                      href={respuesta.valorRespuesta}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-primary hover:underline font-medium"
+                    >
+                      Ver archivo adjunto
+                    </a>
+                  ) : (
+                    formatearRespuestaFormulario(respuesta.valorRespuesta)
+                  )}
+                </dd>
               </div>
             ))}
           </dl>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Merriweather } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { MensajesProvider } from "@/contexts/MensajesContext";
 
@@ -45,6 +46,7 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${inter.variable} ${merriweather.variable} antialiased`}>
       <body className="min-h-dvh flex flex-col">
+        <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" />
         <MensajesProvider>{children}</MensajesProvider>
       </body>
     </html>

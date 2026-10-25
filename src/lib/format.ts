@@ -55,3 +55,20 @@ export function formatoIdentificacion(
   if (!numeroLimpio) return `${etiquetaTipo}: (Sin número)`;
   return `${etiquetaTipo}: ${numeroLimpio}`;
 }
+
+/**
+ * Formatea respuestas de formulario dinámico para visualización.
+ * Si es un arreglo JSON (opción múltiple), lo muestra unido por ' · '.
+ */
+export function formatearRespuestaFormulario(valor?: string | null): string {
+  if (!valor) return "—";
+  if (valor.startsWith("[") && valor.endsWith("]")) {
+    try {
+      const parsed = JSON.parse(valor) as unknown;
+      if (Array.isArray(parsed)) return parsed.join(" · ");
+    } catch {
+      /* fallback */
+    }
+  }
+  return valor;
+}

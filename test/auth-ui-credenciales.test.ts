@@ -8,6 +8,8 @@ test("Aislamiento de Credenciales - Verificación Estática", async (t) => {
     "src/lib/supabase.ts",
     "src/services/supabaseStorage.service.ts",
     "src/components/layout/Logo.tsx",
+    "src/components/auth/BotonGoogle.tsx",
+    "src/types/google.d.ts",
     "src/app/layout.tsx",
     "next.config.ts",
   ];
@@ -18,6 +20,7 @@ test("Aislamiento de Credenciales - Verificación Estática", async (t) => {
     assert.ok(contenido.includes("NEXT_PUBLIC_API_URL"));
     assert.ok(contenido.includes("NEXT_PUBLIC_SUPABASE_URL"));
     assert.ok(contenido.includes("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"));
+    assert.ok(contenido.includes("NEXT_PUBLIC_GOOGLE_CLIENT_ID"));
     assert.ok(!contenido.includes("gnotslrwwptblfoofgsx"), "No debe contener el project ref de supabase");
     assert.ok(!contenido.includes("sb_publishable_"), "No debe contener claves reales");
   });
@@ -152,5 +155,94 @@ test("Formato Seguro de Identificación y Detección de Perfil Incompleto", asyn
 
   await t.test("Maneja tipo existente con número faltante", () => {
     assert.equal(formatoIdentificacion("cedula", null), "Cédula: (Sin número)");
+  });
+});
+
+test("Regla de Visibilidad de Pestaña Mis Inscripciones y Reservas", async (t) => {
+  function debeMostrarPestanaReservas(sesion: { rol?: string } | null): boolean {
+    const conSesion = Boolean(sesion);
+    const esAdmin = conSesion && sesion?.rol === "administrador";
+    return conSesion && !esAdmin;
+  }
+
+  await t.test("Oculta 'Mis Inscripciones y Reservas' para usuarios sin sesión", () => {
+    assert.equal(debeMostrarPestanaReservas(null), false);
+  });
+
+  await t.test("Muestra 'Mis Inscripciones y Reservas' para usuarios cliente", () => {
+    assert.equal(debeMostrarPestanaReservas({ rol: "cliente" }), true);
+  });
+
+  await t.test("Oculta 'Mis Inscripciones y Reservas' si la cuenta es administrador", () => {
+    assert.equal(debeMostrarPestanaReservas({ rol: "administrador" }), false);
+  });
+});
+
+test("DatoSensible - Manejo Seguro de Valores Nulos y Enmascaramiento", async (t) => {
+  function enmascararDato(
+    valor?: string | null,
+    ultimos = 4,
+    fallback = "—"
+  ): { enmascarado: string; esValido: boolean; valorLimpio: string } {
+    if (valor == null) {
+      return { enmascarado: fallback, esValido: false, valorLimpio: "" };
+    }
+    const valorLimpio = typeof valor === "string" ? valor.trim() : String(valor).trim();
+    if (!valorLimpio || valorLimpio === "null" || valorLimpio === "undefined") {
+      return { enmascarado: fallback, esValido: false, valorLimpio: "" };
+    }
+
+    const digitos = Math.max(0, ultimos);
+    const enmascarado = digitos > 0 ? `••••${valorLimpio.slice(-digitos)}` : "••••";
+    return { enmascarado, esValido: true, valorLimpio };
+  }
+
+  await t.test("Maneja valores nulos e indefinidos sin lanzar TypeError (.slice)", () => {
+    assert.deepEqual(enmascararDato(null), {
+      enmascarado: "—",
+      esValido: false,
+      valorLimpio: "",
+    });
+    assert.deepEqual(enmascararDato(undefined), {
+      enmascarado: "—",
+      esValido: false,
+      valorLimpio: "",
+    });
+    assert.deepEqual(enmascararDato(""), {
+      enmascarado: "—",
+      esValido: false,
+      valorLimpio: "",
+    });
+    assert.deepEqual(enmascararDato("   "), {
+      enmascarado: "—",
+      esValido: false,
+      valorLimpio: "",
+    });
+    assert.deepEqual(enmascararDato("null"), {
+      enmascarado: "—",
+      esValido: false,
+      valorLimpio: "",
+    });
+    assert.deepEqual(enmascararDato("undefined"), {
+      enmascarado: "—",
+      esValido: false,
+      valorLimpio: "",
+    });
+  });
+
+  await t.test("Respeta fallback personalizado ante valores nulos", () => {
+    assert.equal(enmascararDato(null, 4, "N/A").enmascarado, "N/A");
+  });
+
+  await t.test("Enmascara cédula o número de identificación mostrando últimos caracteres", () => {
+    const res = enmascararDato("001-010190-0001A", 4);
+    assert.equal(res.esValido, true);
+    assert.equal(res.enmascarado, "••••001A");
+  });
+
+  await t.test("Enmascara monto completamente cuando ultimos = 0", () => {
+    const res = enmascararDato("C$ 1,500.00", 0);
+    assert.equal(res.esValido, true);
+    assert.equal(res.enmascarado, "••••");
   });
 });

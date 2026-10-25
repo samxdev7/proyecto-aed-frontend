@@ -5,7 +5,7 @@ import { Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight, Check } fro
 
 interface SelectorFechaHoraProps {
   label: string;
-  valor: string; // Formato YYYY-MM-DDTHH:mm
+  valor: string; // Formato YYYY-MM-DDTHH:mm o YYYY-MM-DD
   alCambiar: (nuevoValor: string) => void;
   error?: string;
   hint?: string;
@@ -14,6 +14,7 @@ interface SelectorFechaHoraProps {
   disabled?: boolean;
   onBlur?: () => void;
   id?: string;
+  soloFecha?: boolean;
 }
 
 const MESES = [
@@ -30,15 +31,21 @@ function pad(n: number): string {
   return String(n).padStart(2, "0");
 }
 
-/** Formatea una fecha local para mostrar al usuario (ej. "25 oct 2026, 14:30") */
-function formatearParaMostrar(isoLocal: string): string {
+/** Formatea una fecha local para mostrar al usuario en formato dd/mm/yyyy */
+function formatearParaMostrar(isoLocal: string, soloFecha = false): string {
   if (!isoLocal) return "";
   const [fechaParte, horaParte] = isoLocal.split("T");
   if (!fechaParte) return "";
-  const [y, m, d] = fechaParte.split("-").map(Number);
-  const mesCorto = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"][m - 1] ?? "";
-  const horaTexto = horaParte ? `, ${horaParte}` : "";
-  return `${d} ${mesCorto} ${y}${horaTexto}`;
+  const partes = fechaParte.split("-").map(Number);
+  if (partes.length < 3) return isoLocal;
+  const [y, m, d] = partes;
+  if (!y || !m || !d) return isoLocal;
+  const diaPad = pad(d);
+  const mesPad = pad(m);
+  if (soloFecha || !horaParte) {
+    return `${diaPad}/${mesPad}/${y}`;
+  }
+  return `${diaPad}/${mesPad}/${y}, ${horaParte}`;
 }
 
 export default function SelectorFechaHora({
@@ -52,11 +59,13 @@ export default function SelectorFechaHora({
   disabled = false,
   onBlur,
   id,
+  soloFecha = false,
 }: SelectorFechaHoraProps) {
   const idGenerado = useId();
   const campoId = id ?? idGenerado;
 
   const [abierto, setAbierto] = useState(false);
+  const [abrirHaciaArriba, setAbrirHaciaArriba] = useState(false);
   const contenedorRef = useRef<HTMLDivElement>(null);
   const horaListaRef = useRef<HTMLDivElement>(null);
   const minutoListaRef = useRef<HTMLDivElement>(null);
@@ -73,6 +82,8 @@ export default function SelectorFechaHora({
     const [hh, mm] = (h || "12:00").split(":");
     horaSeleccionada = hh.padStart(2, "0");
     minutoSeleccionado = (mm || "00").slice(0, 2).padStart(2, "0");
+  } else if (valor) {
+    fechaSeleccionada = valor;
   }
 
   // Estado para el mes y año en visualización del calendario
@@ -92,9 +103,16 @@ export default function SelectorFechaHora({
     return ahora.getFullYear();
   });
 
-  // Manejar clic fuera para cerrar el selector
+  // Manejar clic fuera para cerrar el selector y evaluar orientación de apertura
   useEffect(() => {
     if (!abierto) return;
+
+    if (contenedorRef.current) {
+      const rect = contenedorRef.current.getBoundingClientRect();
+      const espacioAbajo = window.innerHeight - rect.bottom;
+      // El calendario mide ~350px de altura; si no cabe abajo pero sí arriba, desplegar hacia arriba
+      setAbrirHaciaArriba(espacioAbajo < 360 && rect.top > 350);
+    }
 
     function manejarClicFuera(evento: MouseEvent) {
       if (contenedorRef.current && !contenedorRef.current.contains(evento.target as Node)) {
@@ -160,6 +178,12 @@ export default function SelectorFechaHora({
 
   function actualizarValor(nuevaFecha: string, nuevaHora: string, nuevoMinuto: string) {
     if (!nuevaFecha) return;
+    if (soloFecha) {
+      alCambiar(nuevaFecha);
+      setAbierto(false);
+      onBlur?.();
+      return;
+    }
     const finalValor = `${nuevaFecha}T${nuevaHora}:${nuevoMinuto}`;
     alCambiar(finalValor);
   }
@@ -190,7 +214,7 @@ export default function SelectorFechaHora({
   }
 
   const hoyStr = `${ahora.getFullYear()}-${pad(ahora.getMonth() + 1)}-${pad(ahora.getDate())}`;
-  const textoMostrado = formatearParaMostrar(valor);
+  const textoMostrado = formatearParaMostrar(valor, soloFecha);
 
   return (
     <div className="relative flex flex-col gap-1" ref={contenedorRef}>
@@ -224,10 +248,10 @@ export default function SelectorFechaHora({
         <div className="flex items-center gap-2 truncate">
           <CalendarIcon size={16} className={valor ? "text-primary" : "text-text-muted"} />
           <span className={textoMostrado ? "text-text-main font-medium" : "text-text-muted"}>
-            {textoMostrado || "Seleccionar fecha y hora..."}
+            {textoMostrado || (soloFecha ? "dd/mm/yyyy" : "dd/mm/yyyy, --:--")}
           </span>
         </div>
-        <Clock size={15} className="text-text-muted shrink-0" />
+        {!soloFecha && <Clock size={15} className="text-text-muted shrink-0" />}
       </button>
 
       {error ? (
@@ -242,8 +266,10 @@ export default function SelectorFechaHora({
       {abierto && (
         <div
           role="dialog"
-          aria-label={`Selector de fecha y hora para ${label}`}
-          className="absolute top-full left-0 mt-1 z-50 w-full sm:w-[350px] rounded-lg border border-admin-border bg-white p-3 shadow-xl ring-1 ring-black/5"
+          aria-label={`Selector de fecha ${soloFecha ? "" : "y hora "}para ${label}`}
+          className={`absolute ${
+            abrirHaciaArriba ? "bottom-full mb-1" : "top-full mt-1"
+          } left-0 z-[80] w-full ${soloFecha ? "sm:w-[280px]" : "sm:w-[350px]"} rounded-lg border border-admin-border bg-white p-3 shadow-xl ring-1 ring-black/5`}
         >
           <div className="flex flex-col sm:flex-row gap-3">
             {/* Sección Calendario */}
@@ -318,70 +344,73 @@ export default function SelectorFechaHora({
               </div>
             </div>
 
-            {/* Separador vertical en desktop */}
-            <div className="hidden sm:block w-px bg-admin-border self-stretch" />
+            {/* Separador vertical en desktop y Sección Roller de Tiempo */}
+            {!soloFecha && (
+              <>
+                <div className="hidden sm:block w-px bg-admin-border self-stretch" />
 
-            {/* Sección Roller de Tiempo (Hora y Minuto) */}
-            <div className="flex flex-col items-center">
-              <div className="flex items-center gap-1 text-[11px] font-semibold text-admin-muted pb-1 mb-1 border-b border-admin-border w-full justify-around">
-                <span>Hora</span>
-                <span>Min</span>
-              </div>
+                <div className="flex flex-col items-center">
+                  <div className="flex items-center gap-1 text-[11px] font-semibold text-admin-muted pb-1 mb-1 border-b border-admin-border w-full justify-around">
+                    <span>Hora</span>
+                    <span>Min</span>
+                  </div>
 
-              <div className="flex gap-1.5 h-44">
-                {/* Columna de Horas (00 a 23) - Espaciado idéntico y uniforme */}
-                <div
-                  ref={horaListaRef}
-                  className="flex flex-col gap-0.5 overflow-y-auto w-12 px-0.5 py-0.5 border border-admin-border rounded bg-neutral-50 scroll-smooth"
-                  style={{ scrollbarWidth: "thin" }}
-                >
-                  {HORAS.map((h) => {
-                    const activa = h === horaSeleccionada;
-                    return (
-                      <button
-                        key={`hora-${h}`}
-                        type="button"
-                        data-activo={activa}
-                        onClick={() => seleccionarHora(h)}
-                        className={`h-6 w-full shrink-0 flex items-center justify-center rounded text-[11px] font-mono transition-colors ${
-                          activa
-                            ? "bg-admin-accent text-white font-bold"
-                            : "text-admin-text hover:bg-admin-bg"
-                        }`}
-                      >
-                        {h}
-                      </button>
-                    );
-                  })}
+                  <div className="flex gap-1.5 h-44">
+                    {/* Columna de Horas (00 a 23) - Espaciado idéntico y uniforme */}
+                    <div
+                      ref={horaListaRef}
+                      className="flex flex-col gap-0.5 overflow-y-auto w-12 px-0.5 py-0.5 border border-admin-border rounded bg-neutral-50 scroll-smooth"
+                      style={{ scrollbarWidth: "thin" }}
+                    >
+                      {HORAS.map((h) => {
+                        const activa = h === horaSeleccionada;
+                        return (
+                          <button
+                            key={`hora-${h}`}
+                            type="button"
+                            data-activo={activa}
+                            onClick={() => seleccionarHora(h)}
+                            className={`h-6 w-full shrink-0 flex items-center justify-center rounded text-[11px] font-mono transition-colors ${
+                              activa
+                                ? "bg-admin-accent text-white font-bold"
+                                : "text-admin-text hover:bg-admin-bg"
+                            }`}
+                          >
+                            {h}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Columna de Minutos (00 a 59) - Espaciado idéntico y uniforme */}
+                    <div
+                      ref={minutoListaRef}
+                      className="flex flex-col gap-0.5 overflow-y-auto w-12 px-0.5 py-0.5 border border-admin-border rounded bg-neutral-50 scroll-smooth"
+                      style={{ scrollbarWidth: "thin" }}
+                    >
+                      {MINUTOS.map((m) => {
+                        const activo = m === minutoSeleccionado;
+                        return (
+                          <button
+                            key={`min-${m}`}
+                            type="button"
+                            data-activo={activo}
+                            onClick={() => seleccionarMinuto(m)}
+                            className={`h-6 w-full shrink-0 flex items-center justify-center rounded text-[11px] font-mono transition-colors ${
+                              activo
+                                ? "bg-admin-accent text-white font-bold"
+                                : "text-admin-text hover:bg-admin-bg"
+                            }`}
+                          >
+                            {m}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
-
-                {/* Columna de Minutos (00 a 59) - Espaciado idéntico y uniforme */}
-                <div
-                  ref={minutoListaRef}
-                  className="flex flex-col gap-0.5 overflow-y-auto w-12 px-0.5 py-0.5 border border-admin-border rounded bg-neutral-50 scroll-smooth"
-                  style={{ scrollbarWidth: "thin" }}
-                >
-                  {MINUTOS.map((m) => {
-                    const activo = m === minutoSeleccionado;
-                    return (
-                      <button
-                        key={`min-${m}`}
-                        type="button"
-                        data-activo={activo}
-                        onClick={() => seleccionarMinuto(m)}
-                        className={`h-6 w-full shrink-0 flex items-center justify-center rounded text-[11px] font-mono transition-colors ${
-                          activo
-                            ? "bg-admin-accent text-white font-bold"
-                            : "text-admin-text hover:bg-admin-bg"
-                        }`}
-                      >
-                        {m}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
+              </>
+            )}
           </div>
 
           {/* Pie de acciones del selector */}
@@ -391,7 +420,7 @@ export default function SelectorFechaHora({
               onClick={seleccionarHoyYAhora}
               className="text-[11px] font-medium text-admin-accent hover:underline"
             >
-              Hoy y ahora
+              {soloFecha ? "Hoy" : "Hoy y ahora"}
             </button>
             <button
               type="button"
