@@ -113,6 +113,10 @@ export default function Header() {
     };
   }, []);
 
+  if (ruta === "/iniciar-sesion" || ruta === "/registro") {
+    return null;
+  }
+
   const claseEnlace = (href: string) =>
     ruta === href
       ? "border-b-2 border-ochre pb-0.5 font-medium text-sand"
@@ -182,7 +186,7 @@ export default function Header() {
                   {enlace.label}
                 </Link>
               ))}
-              {conSesion ? (
+              {conSesion && !esAdmin ? (
                 <Link
                   href="/user/reservas"
                   className={
@@ -467,13 +471,15 @@ export default function Header() {
                       {enlace.label}
                     </Link>
                   ))}
-                  <Link
-                    href="/user/reservas"
-                    onClick={() => setAbierto(false)}
-                    className={claseEnlace("/user/reservas")}
-                  >
-                    Mis Inscripciones y Reservas
-                  </Link>
+                  {!esAdmin ? (
+                    <Link
+                      href="/user/reservas"
+                      onClick={() => setAbierto(false)}
+                      className={claseEnlace("/user/reservas")}
+                    >
+                      Mis Inscripciones y Reservas
+                    </Link>
+                  ) : null}
                   <div className="mt-2 flex flex-col gap-3">
                     <button
                       type="button"

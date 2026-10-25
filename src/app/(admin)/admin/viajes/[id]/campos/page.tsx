@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { viajesService, opcionesDeCampo } from "@/services/viajes.service";
 import { ApiError } from "@/lib/api-client";
+import { useMensajes } from "@/contexts/MensajesContext";
 import type { CampoFormulario, CrearCampoRequest, TipoCampoFormulario } from "@/types/viaje";
 import {
   Plus,
@@ -10,7 +11,10 @@ import {
   ArrowLeft,
   GripVertical,
   ListChecks,
-  Edit2
+  Edit2,
+  ChevronUp,
+  ChevronDown,
+  Loader2,
 } from "lucide-react";
 import { FilaTablaSkeleton } from "@/components/ui/Skeleton";
 import EmptyState from "@/components/ui/EmptyState";
@@ -37,7 +41,6 @@ interface FormCampo {
   etiquetaPregunta: string;
   tipoCampo: TipoCampoFormulario;
   opciones: string;
-  orden: string;
   obligatorio: boolean;
 }
 
@@ -45,26 +48,29 @@ const FORM_VACIO: FormCampo = {
   etiquetaPregunta: "",
   tipoCampo: "texto",
   opciones: "",
-  orden: "1",
   obligatorio: false,
 };
 
 export default function AdminCampoFormulario() {
   const params = useParams();
   const router = useRouter();
+  const { mostrarExito, mostrarError } = useMensajes();
   const idViaje = Number(params.id);
   const [campos, setCampos] = useState<CampoFormulario[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [reintentos, setReintentos] = useState(0);
-  const [aviso, setAviso] = useState<string | null>(null);
   /* Modal crear/editar. */
   const [modalAbierto, setModalAbierto] = useState(false);
   const [editandoCampo, setEditandoCampo] = useState<CampoFormulario | null>(null);
   const [form, setForm] = useState<FormCampo>(FORM_VACIO);
   const [guardando, setGuardando] = useState(false);
   const [errorForm, setErrorForm] = useState("");
+  /* Drag and drop & reordenamiento con flechas. */
+  const [reordenando, setReordenando] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   async function cargarCampos() {
     setLoading(true);
@@ -103,7 +109,7 @@ export default function AdminCampoFormulario() {
 
   function abrirCrear() {
     setEditandoCampo(null);
-    setForm({ ...FORM_VACIO, orden: String(campos.length + 1) });
+    setForm(FORM_VACIO);
     setErrorForm("");
     setModalAbierto(true);
   }
@@ -113,8 +119,7 @@ export default function AdminCampoFormulario() {
     setForm({
       etiquetaPregunta: campo.etiquetaPregunta,
       tipoCampo: campo.tipoCampo,
-      opciones: opcionesDeCampo(campo).join(", "),
-      orden: String(campo.orden),
+      opciones: opcionesDeCampo(campo).join("\n"),
       obligatorio: campo.obligatorio,
     });
     setErrorForm("");
@@ -129,11 +134,7 @@ export default function AdminCampoFormulario() {
 
   async function guardar(evento: React.FormEvent) {
     evento.preventDefault();
-    const orden = Number(form.orden);
-    if (!Number.isFinite(orden) || orden < 1) {
-      setErrorForm("El orden debe ser un número mayor que cero.");
-      return;
-    }
+    const orden = editandoCampo ? editandoCampo.orden : campos.length + 1;
     const request: CrearCampoRequest = {
       tipoCampo: form.tipoCampo,
       etiquetaPregunta: form.etiquetaPregunta.trim(),
@@ -141,9 +142,15 @@ export default function AdminCampoFormulario() {
       obligatorio: form.obligatorio,
     };
     if (form.tipoCampo === "seleccion_unica" || form.tipoCampo === "seleccion_multiple") {
-      const lista = form.opciones.split(",").map((opcion) => opcion.trim()).filter(Boolean);
+      const lineas = form.opciones.split("\n").map((opcion) => opcion.trim()).filter(Boolean);
+      // Soporte retrocompatible si se pegan opciones separadas por coma en una línea
+      const lista =
+        lineas.length === 1 && lineas[0].includes(",")
+          ? lineas[0].split(",").map((opcion) => opcion.trim()).filter(Boolean)
+          : lineas;
+
       if (lista.length < 2) {
-        setErrorForm("Ingresa al menos dos opciones separadas por coma.");
+        setErrorForm("Ingresa al menos dos opciones (una por línea).");
         return;
       }
       request.opcionesRespuesta = JSON.stringify(lista);
@@ -153,8 +160,10 @@ export default function AdminCampoFormulario() {
     try {
       if (editandoCampo) {
         await viajesService.actualizarCampo(idViaje, editandoCampo.idCampo, request);
+        mostrarExito("Pregunta modificada", "Los cambios de la pregunta se guardaron correctamente.");
       } else {
         await viajesService.crearCampo(idViaje, request);
+        mostrarExito("Pregunta creada", "La pregunta fue agregada exitosamente al formulario.");
       }
       cerrarModal();
       await cargarCampos();
@@ -165,13 +174,106 @@ export default function AdminCampoFormulario() {
     }
   }
 
+  async function aplicarNuevoOrden(nuevaLista: CampoFormulario[]) {
+    const listaConNuevoOrden = nuevaLista.map((campo, index) => ({
+      ...campo,
+      orden: index + 1,
+    }));
+
+    const camposAnteriores = campos;
+    setCampos(listaConNuevoOrden);
+
+    const camposCambiados = listaConNuevoOrden.filter((campo) => {
+      const original = camposAnteriores.find((c) => c.idCampo === campo.idCampo);
+      return !original || original.orden !== campo.orden;
+    });
+
+    if (camposCambiados.length === 0) return;
+
+    setReordenando(true);
+    try {
+      await Promise.all(
+        camposCambiados.map((campo) => {
+          const req: CrearCampoRequest = {
+            tipoCampo: campo.tipoCampo,
+            etiquetaPregunta: campo.etiquetaPregunta,
+            opcionesRespuesta: campo.opcionesRespuesta ?? undefined,
+            orden: campo.orden,
+            obligatorio: campo.obligatorio,
+          };
+          return viajesService.actualizarCampo(idViaje, campo.idCampo, req);
+        })
+      );
+    } catch (e) {
+      setCampos(camposAnteriores);
+      mostrarError("Error al ordenar preguntas", mensajeDeError(e, "No se pudo actualizar el orden de las preguntas."));
+    } finally {
+      setReordenando(false);
+    }
+  }
+
+  function moverArriba(index: number) {
+    if (index <= 0 || reordenando) return;
+    const nuevaLista = [...campos];
+    const temp = nuevaLista[index];
+    nuevaLista[index] = nuevaLista[index - 1];
+    nuevaLista[index - 1] = temp;
+    aplicarNuevoOrden(nuevaLista);
+  }
+
+  function moverAbajo(index: number) {
+    if (index >= campos.length - 1 || reordenando) return;
+    const nuevaLista = [...campos];
+    const temp = nuevaLista[index];
+    nuevaLista[index] = nuevaLista[index + 1];
+    nuevaLista[index + 1] = temp;
+    aplicarNuevoOrden(nuevaLista);
+  }
+
+  function handleDragStart(e: React.DragEvent<HTMLTableRowElement>, index: number) {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(index));
+  }
+
+  function handleDragOver(e: React.DragEvent<HTMLTableRowElement>, index: number) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (dragOverIndex !== index) {
+      setDragOverIndex(index);
+    }
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLTableRowElement>, targetIndex: number) {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === targetIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    const nuevaLista = [...campos];
+    const [elementoRemovido] = nuevaLista.splice(draggedIndex, 1);
+    nuevaLista.splice(targetIndex, 0, elementoRemovido);
+
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+    aplicarNuevoOrden(nuevaLista);
+  }
+
+  function handleDragEnd() {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  }
+
   async function eliminar(campo: CampoFormulario) {
     if (!window.confirm(`¿Eliminar la pregunta "${campo.etiquetaPregunta}"?`)) return;
     try {
       await viajesService.eliminarCampo(idViaje, campo.idCampo);
+      mostrarExito("Pregunta eliminada", `La pregunta "${campo.etiquetaPregunta}" fue eliminada.`);
       await cargarCampos();
     } catch (e) {
-      setAviso(mensajeDeError(e, "No se pudo eliminar la pregunta."));
+      mostrarError("Error al eliminar", mensajeDeError(e, "No se pudo eliminar la pregunta."));
     }
   }
 
@@ -181,11 +283,11 @@ export default function AdminCampoFormulario() {
         <table className="w-full text-left">
           <thead className="bg-admin-bg text-xs text-admin-muted border-b border-admin-border uppercase tracking-wider">
             <tr>
-              <th className="p-md w-12"></th>
+              <th className="p-md w-28 font-medium">Orden</th>
               <th className="p-md font-medium">Pregunta</th>
               <th className="p-md font-medium">Tipo</th>
               <th className="p-md font-medium">Opciones</th>
-              <th className="p-md font-medium">Obligatoria</th>
+              <th className="p-md font-medium text-center">Obligatoria</th>
               <th className="p-md font-medium text-right">Acciones</th>
             </tr>
           </thead>
@@ -217,7 +319,14 @@ export default function AdminCampoFormulario() {
             <ArrowLeft size={16} />
           </button>
           <div className="ml-sm">
-            <h2 className="text-2xl font-bold text-admin-text">Preguntas Personalizadas</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-bold text-admin-text">Preguntas Personalizadas</h2>
+              {reordenando && (
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-admin-accent bg-admin-bg px-2 py-0.5 rounded-sm animate-pulse">
+                  <Loader2 size={12} className="animate-spin" /> Guardando orden...
+                </span>
+              )}
+            </div>
             <p className="text-sm text-admin-muted">Define la información adicional requerida para este viaje.</p>
           </div>
         </div>
@@ -228,12 +337,6 @@ export default function AdminCampoFormulario() {
           <Plus size={16} /> Agregar Pregunta
         </button>
       </div>
-
-      {aviso && (
-        <div role="status" className="rounded-sm bg-estado-rechazada-bg px-md py-sm text-sm font-medium text-estado-rechazada-text">
-          {aviso}
-        </div>
-      )}
 
       {campos.length === 0 ? (
         <EmptyState
@@ -247,59 +350,103 @@ export default function AdminCampoFormulario() {
           <table className="w-full text-left">
             <thead className="bg-admin-bg text-xs text-admin-muted border-b border-admin-border uppercase tracking-wider">
               <tr>
-                <th className="p-md w-12"></th>
+                <th className="p-md w-28 font-medium">Orden</th>
                 <th className="p-md font-medium">Pregunta</th>
                 <th className="p-md font-medium">Tipo</th>
                 <th className="p-md font-medium">Opciones</th>
-                <th className="p-md font-medium">Obligatoria</th>
+                <th className="p-md font-medium text-center">Obligatoria</th>
                 <th className="p-md font-medium text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-admin-border">
-              {campos.map((campo) => (
-                <tr key={campo.idCampo} className="hover:bg-admin-bg transition-colors">
-                  <td className="p-md text-admin-muted">
-                    <div className="flex items-center">
-                      <GripVertical size={16} />
-                      <span className="text-xs ml-xs">{campo.orden}</span>
-                    </div>
-                  </td>
-                  <td className="p-md text-sm font-medium">{campo.etiquetaPregunta}</td>
-                  <td className="p-md">
-                    <span className="px-2 py-1 rounded-sm bg-admin-bg text-admin-muted text-xs font-medium">
-                      {ETIQUETAS_TIPO[campo.tipoCampo]}
-                    </span>
-                  </td>
-                  <td className="p-md text-sm text-admin-muted">
-                    {opcionesDeCampo(campo).length > 0 ? opcionesDeCampo(campo).join(" · ") : "—"}
-                  </td>
-                  <td className="p-md text-center">
-                    {campo.obligatorio ? (
-                      <span className="text-error text-xs font-bold">SÍ</span>
-                    ) : (
-                      <span className="text-admin-muted text-xs font-bold">NO</span>
-                    )}
-                  </td>
-                  <td className="p-md text-right">
-                    <div className="flex justify-end gap-xs">
-                      <button
-                        onClick={() => abrirEditar(campo)}
-                        className="p-xs text-admin-accent hover:bg-admin-bg rounded-sm transition-colors"
-                        title="Editar"
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                      <button
-                        onClick={() => eliminar(campo)}
-                        className="p-xs text-error hover:bg-estado-rechazada-bg rounded-sm transition-colors"
-                        title="Eliminar"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {campos.map((campo, index) => {
+                const esArrastrado = draggedIndex === index;
+                const esSobreEl = dragOverIndex === index && draggedIndex !== index;
+
+                return (
+                  <tr
+                    key={campo.idCampo}
+                    draggable={!reordenando}
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDrop={(e) => handleDrop(e, index)}
+                    onDragEnd={handleDragEnd}
+                    className={`transition-colors ${
+                      esArrastrado ? "opacity-30 bg-admin-bg" : "hover:bg-admin-bg"
+                    } ${esSobreEl ? "border-t-2 border-admin-accent bg-admin-bg/50" : ""}`}
+                  >
+                    <td className="p-md text-admin-muted">
+                      <div className="flex items-center gap-1.5">
+                        <div
+                          className="cursor-grab active:cursor-grabbing p-1 text-admin-muted hover:text-admin-text transition-colors"
+                          title="Arrastrar para reordenar"
+                        >
+                          <GripVertical size={16} />
+                        </div>
+                        <span className="text-xs font-semibold text-admin-text w-4 text-center">
+                          {index + 1}
+                        </span>
+                        <div className="flex flex-col gap-0.5 ml-1">
+                          <button
+                            type="button"
+                            onClick={() => moverArriba(index)}
+                            disabled={index === 0 || reordenando}
+                            className="p-0.5 text-admin-muted hover:text-admin-accent disabled:opacity-20 disabled:hover:text-admin-muted transition-colors rounded hover:bg-admin-border/40"
+                            title="Mover pregunta arriba"
+                            aria-label="Mover pregunta arriba"
+                          >
+                            <ChevronUp size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => moverAbajo(index)}
+                            disabled={index === campos.length - 1 || reordenando}
+                            className="p-0.5 text-admin-muted hover:text-admin-accent disabled:opacity-20 disabled:hover:text-admin-muted transition-colors rounded hover:bg-admin-border/40"
+                            title="Mover pregunta abajo"
+                            aria-label="Mover pregunta abajo"
+                          >
+                            <ChevronDown size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-md text-sm font-medium">{campo.etiquetaPregunta}</td>
+                    <td className="p-md">
+                      <span className="px-2 py-1 rounded-sm bg-admin-bg text-admin-muted text-xs font-medium">
+                        {ETIQUETAS_TIPO[campo.tipoCampo]}
+                      </span>
+                    </td>
+                    <td className="p-md text-sm text-admin-muted">
+                      {opcionesDeCampo(campo).length > 0 ? opcionesDeCampo(campo).join(" · ") : "—"}
+                    </td>
+                    <td className="p-md text-center">
+                      {campo.obligatorio ? (
+                        <span className="text-error text-xs font-bold">SÍ</span>
+                      ) : (
+                        <span className="text-admin-muted text-xs font-bold">NO</span>
+                      )}
+                    </td>
+                    <td className="p-md text-right">
+                      <div className="flex justify-end gap-xs">
+                        <button
+                          onClick={() => abrirEditar(campo)}
+                          className="p-xs text-admin-accent hover:bg-admin-bg rounded-sm transition-colors"
+                          title="Editar"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button
+                          onClick={() => eliminar(campo)}
+                          className="p-xs text-error hover:bg-estado-rechazada-bg rounded-sm transition-colors"
+                          title="Eliminar"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -327,44 +474,33 @@ export default function AdminCampoFormulario() {
               onChange={(e) => setForm({ ...form, etiquetaPregunta: e.target.value })}
             />
           </div>
-          <div className="grid grid-cols-2 gap-md">
-            <div className="space-y-xs">
-              <label className="text-xs font-bold text-admin-muted uppercase">Tipo de respuesta</label>
-              <select
-                className={INPUT_CLASES}
-                value={form.tipoCampo}
-                onChange={(e) => setForm({ ...form, tipoCampo: e.target.value as TipoCampoFormulario })}
-              >
-                {Object.entries(ETIQUETAS_TIPO).map(([valor, etiqueta]) => (
-                  <option key={valor} value={valor}>
-                    {etiqueta}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-xs">
-              <label className="text-xs font-bold text-admin-muted uppercase">Orden</label>
-              <input
-                type="number"
-                min={1}
-                className={INPUT_CLASES}
-                required
-                value={form.orden}
-                onChange={(e) => setForm({ ...form, orden: e.target.value })}
-              />
-            </div>
+          <div className="space-y-xs">
+            <label className="text-xs font-bold text-admin-muted uppercase">Tipo de respuesta</label>
+            <select
+              className={INPUT_CLASES}
+              value={form.tipoCampo}
+              onChange={(e) => setForm({ ...form, tipoCampo: e.target.value as TipoCampoFormulario })}
+            >
+              {Object.entries(ETIQUETAS_TIPO).map(([valor, etiqueta]) => (
+                <option key={valor} value={valor}>
+                  {etiqueta}
+                </option>
+              ))}
+            </select>
           </div>
           {(form.tipoCampo === "seleccion_unica" || form.tipoCampo === "seleccion_multiple") && (
             <div className="space-y-xs">
               <label className="text-xs font-bold text-admin-muted uppercase">Opciones</label>
-              <input
-                type="text"
-                className={INPUT_CLASES}
-                placeholder="Sí, No, Tal vez"
+              <textarea
+                rows={4}
+                className={INPUT_CLASES + " resize-y font-normal"}
+                placeholder={`Opción 1\nOpción 2 con comas o detalles\nOpción 3`}
                 value={form.opciones}
                 onChange={(e) => setForm({ ...form, opciones: e.target.value })}
               />
-              <p className="text-xs text-admin-muted">Separadas por coma. Mínimo dos.</p>
+              <p className="text-xs text-admin-muted">
+                Ingresa una opción por línea (Enter para nueva opción). Mínimo dos opciones requeridas.
+              </p>
             </div>
           )}
           <div className="flex items-center gap-xs">

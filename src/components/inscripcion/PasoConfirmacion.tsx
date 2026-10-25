@@ -3,7 +3,6 @@
 import { Clock } from "lucide-react";
 import Boton from "@/components/ui/Boton";
 import Chip from "@/components/ui/Chip";
-import TemporizadorRetencion from "@/components/inscripcion/TemporizadorRetencion";
 import { formatoCordobas } from "@/lib/format";
 import type { ReservaDetalle } from "@/types/reserva";
 
@@ -33,8 +32,6 @@ export default function PasoConfirmacion({
       <div className="flex justify-center">
         <Chip estado={reserva.estado} />
       </div>
-
-      <TemporizadorRetencion fechaLimite={reserva.fechaLimitePago} />
 
       <dl className="grid gap-md rounded-md bg-sand p-md text-left text-sm sm:grid-cols-3">
         <div>

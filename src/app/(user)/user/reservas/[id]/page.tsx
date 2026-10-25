@@ -5,12 +5,11 @@ import { useParams } from "next/navigation";
 import { CalendarX, Eye, EyeOff, FileText, User, Users } from "lucide-react";
 import { reservaService } from "@/services/reserva.service";
 import type { ReservaDetalle } from "@/types/reserva";
-import { formatoCordobas, formatoFecha } from "@/lib/format";
+import { formatoCordobas, formatoFecha, formatearRespuestaFormulario } from "@/lib/format";
 import Boton from "@/components/ui/Boton";
 import Chip from "@/components/ui/Chip";
 import EmptyState from "@/components/ui/EmptyState";
 import Skeleton from "@/components/ui/Skeleton";
-import TemporizadorRetencion from "@/components/inscripcion/TemporizadorRetencion";
 import Image from "next/image";
 
 export default function ReservaDetallePage() {
@@ -132,19 +131,32 @@ export default function ReservaDetallePage() {
           </div>
         </div>
 
-        {reserva.estado === "pendiente" ? (
-          <div className="space-y-xs">
-            <p className="text-xs text-text-muted">
-              La reserva queda pendiente de pago/revisión hasta:
+        {reserva.estado === "aprobada" ? (
+          <div className="rounded-md border border-emerald-300 bg-emerald-50/80 p-md text-emerald-950">
+            <p className="font-bold text-emerald-900">
+              ¡Tu cupo ha sido aceptado!
             </p>
-            <TemporizadorRetencion fechaLimite={reserva.fechaLimitePago} />
+            <p className="mt-xs text-sm leading-relaxed text-emerald-800">
+              Hemos validado tu comprobante de pago y tu lugar en la expedición está confirmado.
+              Por favor dirígete a tu correo electrónico ({reserva.correoUsuario}) para unirte al grupo oficial de WhatsApp y consultar las recomendaciones del viaje.
+            </p>
           </div>
         ) : null}
 
-        {reserva.estado === "rechazada" && reserva.motivoRechazo ? (
-          <p className="rounded-md bg-estado-rechazada-bg px-md py-sm text-sm text-estado-rechazada-text">
-            Motivo del rechazo: {reserva.motivoRechazo}
-          </p>
+        {reserva.estado === "rechazada" ? (
+          <div className="rounded-md border border-rose-300 bg-rose-50/80 p-md text-rose-950">
+            <p className="font-bold text-rose-900">
+              Tu cupo ha sido rechazado
+            </p>
+            <p className="mt-xs text-sm leading-relaxed text-rose-800">
+              Tu solicitud de reserva no pudo ser aceptada. Por favor revisa tu correo electrónico ({reserva.correoUsuario}) para conocer los detalles y la justificación del rechazo.
+            </p>
+            {reserva.motivoRechazo ? (
+              <p className="mt-sm rounded bg-rose-100 px-sm py-xs text-sm font-medium text-rose-900">
+                Motivo: {reserva.motivoRechazo}
+              </p>
+            ) : null}
+          </div>
         ) : null}
 
         {reserva.estado === "expirada" ? (
@@ -282,7 +294,20 @@ export default function ReservaDetallePage() {
                 <dt className="text-xs font-bold uppercase text-text-muted">
                   {respuesta.etiquetaPregunta ?? `Pregunta ${respuesta.idCampo}`}
                 </dt>
-                <dd className="text-sm">{respuesta.valorRespuesta}</dd>
+                <dd className="text-sm">
+                  {respuesta.valorRespuesta.startsWith("data:") ? (
+                    <a
+                      href={respuesta.valorRespuesta}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-primary hover:underline font-medium"
+                    >
+                      Ver archivo adjunto
+                    </a>
+                  ) : (
+                    formatearRespuestaFormulario(respuesta.valorRespuesta)
+                  )}
+                </dd>
               </div>
             ))}
           </dl>

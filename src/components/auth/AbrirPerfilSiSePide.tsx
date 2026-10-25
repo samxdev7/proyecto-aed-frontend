@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { obtenerSesion } from "@/lib/auth";
+import { useMensajes } from "@/contexts/MensajesContext";
 import CompletarPerfilPopup from "./CompletarPerfilPopup";
 
 /**
@@ -11,6 +12,7 @@ import CompletarPerfilPopup from "./CompletarPerfilPopup";
  */
 export default function AbrirPerfilSiSePide() {
   const [abierto, setAbierto] = useState(false);
+  const { mostrarInfo } = useMensajes();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -32,5 +34,17 @@ export default function AbrirPerfilSiSePide() {
     setAbierto(true);
   }, []);
 
-  return <CompletarPerfilPopup abierto={abierto} onCerrar={() => setAbierto(false)} />;
+  return (
+    <CompletarPerfilPopup
+      abierto={abierto}
+      onCerrar={() => {
+        setAbierto(false);
+        mostrarInfo(
+          "Perfil pendiente de completar",
+          "Puedes completar tus datos personales en cualquier momento desde tu menú de perfil para poder reservar tus viajes.",
+          7000
+        );
+      }}
+    />
+  );
 }

@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { UserPlus } from "lucide-react";
+import { UserPlus, ArrowLeft } from "lucide-react";
 import { authService } from "@/services/auth.service";
 import { guardarSesion } from "@/lib/auth";
 import type { RegistroRequest } from "@/types/auth";
@@ -11,6 +11,7 @@ import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import CompletarPerfilPopup from "@/components/auth/CompletarPerfilPopup";
 import BotonGoogle from "@/components/auth/BotonGoogle";
+import { useMensajes } from "@/contexts/MensajesContext";
 
 /** Solo correo y contraseña — el resto del perfil se completa en el paso siguiente o desde /user/perfil. */
 type FormularioRegistro = {
@@ -28,6 +29,7 @@ function ContenidoRegistro() {
   const searchParams = useSearchParams();
   const destino = searchParams.get("redir");
   const redir = destino && destino.startsWith("/") ? destino : null;
+  const { mostrarInfo } = useMensajes();
 
   const [perfilPopupAbierto, setPerfilPopupAbierto] = useState(false);
   const [form, setForm] = useState<FormularioRegistro>(vacio);
@@ -137,12 +139,13 @@ function ContenidoRegistro() {
             </p>
           ) : null}
 
-          <Boton type="submit" fullWidth loading={enviando}>
-            Crear mi cuenta
-          </Boton>
+          <div className="flex flex-col gap-2 pt-1">
+            <Boton type="submit" fullWidth loading={enviando}>
+              Crear mi cuenta
+            </Boton>
+            <BotonGoogle redir={redir} texto="Registrarse con Google" />
+          </div>
         </form>
-
-        <BotonGoogle redir={redir} texto="Registrarse con Google" />
 
         <p className="text-center text-sm text-text-muted">
           ¿Ya tienes una cuenta?{" "}
@@ -153,12 +156,35 @@ function ContenidoRegistro() {
             Inicia sesión aquí
           </Link>
         </p>
+
+        <div className="pt-3 border-t border-neutral-border">
+          <Boton
+            type="button"
+            variante="contorno"
+            fullWidth
+            onClick={() => {
+              if (typeof window !== "undefined" && window.history.length > 1) {
+                router.back();
+              } else {
+                router.push(redir || "/");
+              }
+            }}
+          >
+            <ArrowLeft size={16} aria-hidden="true" />
+            <span>Volver a la página principal</span>
+          </Boton>
+        </div>
       </div>
 
       <CompletarPerfilPopup
         abierto={perfilPopupAbierto}
         onCerrar={() => {
           setPerfilPopupAbierto(false);
+          mostrarInfo(
+            "Perfil pendiente de completar",
+            "Puedes completar tus datos personales en cualquier momento desde tu menú de perfil para poder reservar tus viajes.",
+            7000
+          );
           router.push(redir || "/viajes");
         }}
         alCompletar={() => router.push(redir || "/viajes")}

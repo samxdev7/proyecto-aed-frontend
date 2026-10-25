@@ -3,6 +3,8 @@
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import Skeleton from "@/components/ui/Skeleton";
+import CampoFormularioEntrada from "@/components/inscripcion/CampoFormularioEntrada";
+import { formatoIdentificacion } from "@/lib/format";
 import { opcionesDeCampo } from "@/services/viajes.service";
 import type { Acompanante } from "@/types/reserva";
 import type { UsuarioPerfil } from "@/types/usuario";
@@ -72,7 +74,10 @@ export default function PasoViajeros({
                 Identificación
               </dt>
               <dd className="break-words font-medium text-text-main">
-                {perfil.tipoIdentificacion}: {perfil.numeroIdentificacion}
+                {formatoIdentificacion(
+                  perfil.tipoIdentificacion,
+                  perfil.numeroIdentificacion
+                )}
               </dd>
             </div>
           </dl>
@@ -154,15 +159,10 @@ export default function PasoViajeros({
             Una respuesta por pregunta, válida para toda la reserva.
           </p>
           {campos.map((campo) => (
-            <Campo
+            <CampoFormularioEntrada
               key={campo.idCampo}
-              id={`campo-resp-${campo.idCampo}`}
-              name={`campo-resp-${campo.idCampo}`}
-              label={campo.etiquetaPregunta}
-              required={campo.obligatorio}
-              tipo={campo.tipoCampo === "fecha" ? "date" : "text"}
-              opciones={opcionesDeCampo(campo)}
-              valor={respuestas[campo.idCampo] ?? opcionesDeCampo(campo)[0] ?? ""}
+              campo={campo}
+              valor={respuestas[campo.idCampo] ?? ""}
               alCambiar={(valor) => alCambiarRespuesta(campo.idCampo, valor)}
               error={errores[`resp-${campo.idCampo}`]}
             />

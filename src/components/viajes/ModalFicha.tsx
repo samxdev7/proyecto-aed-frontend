@@ -4,6 +4,7 @@ import Image from "next/image";
 import { ChipDificultad } from "@/components/ui/Chip";
 import Boton from "@/components/ui/Boton";
 import Modal from "@/components/ui/Modal";
+import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
 import {
   formatoCordobas,
   formatoFecha,
@@ -75,7 +76,9 @@ export default function ModalFicha({ viaje, onCerrar }: ModalFichaProps) {
             {viaje.titulo}
           </h2>
           {viaje.descripcion ? (
-            <p className="mt-2 text-sm text-ink/65">{viaje.descripcion}</p>
+            <div className="mt-3 max-h-60 overflow-y-auto pr-1">
+              <MarkdownRenderer contenido={viaje.descripcion} />
+            </div>
           ) : null}
 
           <div className="mt-6 flex flex-wrap gap-3">

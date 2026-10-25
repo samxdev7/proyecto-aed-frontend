@@ -8,12 +8,15 @@ interface TemporizadorRetencionProps {
   fechaLimite: string;
   /** Opcional: avisa al padre para deshabilitar acciones al llegar a 0. */
   alExpirar?: () => void;
+  /** Si es true, oculta el aviso inline genérico al expirar para que un Pop Up tome el control. */
+  ocultarAlExpirar?: boolean;
 }
 
-/** Cuenta regresiva de la ventana de pago; al llegar a 0 muestra "Tiempo agotado". */
+/** Cuenta regresiva de la ventana de pago; al llegar a 0 muestra "Tiempo agotado" o delega al Pop Up. */
 export default function TemporizadorRetencion({
   fechaLimite,
   alExpirar,
+  ocultarAlExpirar = false,
 }: TemporizadorRetencionProps) {
   const [restanteMs, setRestanteMs] = useState(
     () => new Date(fechaLimite).getTime() - Date.now(),
@@ -44,6 +47,7 @@ export default function TemporizadorRetencion({
   }, [fechaLimite, expirado]);
 
   if (expirado) {
+    if (ocultarAlExpirar) return null;
     return (
       <p
         role="alert"

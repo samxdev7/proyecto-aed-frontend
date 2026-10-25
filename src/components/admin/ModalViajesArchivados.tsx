@@ -16,6 +16,7 @@ import { ChipDificultad } from "@/components/ui/Chip";
 import { FilaTablaSkeleton } from "@/components/ui/Skeleton";
 import { viajesService } from "@/services/viajes.service";
 import { formatoCordobas, formatoFecha } from "@/lib/format";
+import { useMensajes } from "@/contexts/MensajesContext";
 import type { Viaje } from "@/types/viaje";
 
 interface ModalViajesArchivadosProps {
@@ -33,12 +34,12 @@ function ModalViajesArchivadosContent({
   onCerrar: () => void;
   onViajeDesarchivado?: () => void;
 }) {
+  const { mostrarExito, mostrarError } = useMensajes();
   const [viajes, setViajes] = useState<Viaje[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pagina, setPagina] = useState(1);
   const [desarchivandoId, setDesarchivandoId] = useState<number | null>(null);
-  const [aviso, setAviso] = useState<{ tipo: "ok" | "error"; texto: string } | null>(null);
 
   useEffect(() => {
     let activo = true;
@@ -66,7 +67,6 @@ function ModalViajesArchivadosContent({
   async function cargarArchivados() {
     setCargando(true);
     setError(null);
-    setAviso(null);
     try {
       const lista = await viajesService.listarViajesArchivados();
       setViajes(lista);
@@ -92,13 +92,12 @@ function ModalViajesArchivadosContent({
     }
 
     setDesarchivandoId(viaje.idViaje);
-    setAviso(null);
     try {
       await viajesService.desarchivarViaje(viaje.idViaje);
-      setAviso({
-        tipo: "ok",
-        texto: `Viaje "${viaje.titulo}" desarchivado exitosamente.`,
-      });
+      mostrarExito(
+        "Viaje desarchivado exitosamente",
+        `El viaje "${viaje.titulo}" fue restaurado al catálogo principal de viajes.`
+      );
 
       // Actualizar lista local
       const nuevaLista = viajes.filter((v) => v.idViaje !== viaje.idViaje);
@@ -113,13 +112,12 @@ function ModalViajesArchivadosContent({
       // Notificar al componente padre para que refresque los viajes principales
       onViajeDesarchivado?.();
     } catch (e) {
-      setAviso({
-        tipo: "error",
-        texto:
-          e instanceof Error
-            ? e.message
-            : "No se pudo desarchivar el viaje. Inténtalo de nuevo.",
-      });
+      mostrarError(
+        "Error al desarchivar el viaje",
+        e instanceof Error
+          ? e.message
+          : "No se pudo desarchivar el viaje. Inténtalo de nuevo."
+      );
     } finally {
       setDesarchivandoId(null);
     }
@@ -153,19 +151,6 @@ function ModalViajesArchivadosContent({
             Actualizar
           </button>
         </div>
-
-        {aviso && (
-          <div
-            role="status"
-            className={`rounded-sm px-md py-sm text-sm font-medium ${
-              aviso.tipo === "ok"
-                ? "bg-estado-aprobada-bg text-estado-aprobada-text"
-                : "bg-estado-rechazada-bg text-estado-rechazada-text"
-            }`}
-          >
-            {aviso.texto}
-          </div>
-        )}
 
         {error && (
           <div

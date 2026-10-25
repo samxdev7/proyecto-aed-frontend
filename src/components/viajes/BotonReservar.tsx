@@ -2,31 +2,40 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { LogIn } from "lucide-react";
 import { leerPerfilCompleto, obtenerSesion } from "@/lib/auth";
 import Boton from "@/components/ui/Boton";
 import Modal from "@/components/ui/Modal";
 import CompletarPerfilPopup from "@/components/auth/CompletarPerfilPopup";
 
 /**
- * Botón "Reservar" del detalle de viaje. Sin navegar a otra pantalla:
+ * Botón "Reservar" del detalle de viaje:
+ * - no autenticado → modal central invitando a iniciar sesión para reservar.
  * - admin → alerta de que no puede reservar.
  * - perfil incompleto → popup para completarlo.
- * - resto → flujo de inscripción.
+ * - cliente listo → flujo de inscripción.
  */
 export default function BotonReservar({ idViaje }: { idViaje: number }) {
   const router = useRouter();
   const [adminBloqueado, setAdminBloqueado] = useState(false);
+  const [loginModalAbierto, setLoginModalAbierto] = useState(false);
   const [perfilPopupAbierto, setPerfilPopupAbierto] = useState(false);
 
   function reservar() {
     const sesion = obtenerSesion();
 
-    if (sesion?.rol === "administrador") {
+    if (!sesion) {
+      setLoginModalAbierto(true);
+      return;
+    }
+
+    if (sesion.rol === "administrador") {
       setAdminBloqueado(true);
       return;
     }
 
-    if (sesion && leerPerfilCompleto(sesion.idUsuario) === false) {
+    if (leerPerfilCompleto(sesion.idUsuario) === false) {
       setPerfilPopupAbierto(true);
       return;
     }
@@ -49,6 +58,66 @@ export default function BotonReservar({ idViaje }: { idViaje: number }) {
         }}
         textoOmitir="Omitir y seguir viendo"
       />
+
+      {/* Modal central: iniciar sesión antes de reservar */}
+      <Modal
+        abierto={loginModalAbierto}
+        onCerrar={() => setLoginModalAbierto(false)}
+        titulo="Inicia sesión para reservar"
+        className="max-w-md p-lg"
+      >
+        <button
+          type="button"
+          onClick={() => setLoginModalAbierto(false)}
+          aria-label="Cerrar ventana"
+          className="absolute right-sm top-sm flex h-8 w-8 items-center justify-center rounded-full text-text-muted transition hover:bg-surface-alt hover:text-text-main"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            className="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </button>
+
+        <div className="flex flex-col items-center gap-md text-center py-sm">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-sand text-primary">
+            <LogIn size={26} aria-hidden="true" />
+          </div>
+          <div className="space-y-xs">
+            <h2 className="text-xl font-bold text-text-main">
+              Inicia sesión para reservar
+            </h2>
+            <p className="text-sm text-text-muted leading-relaxed">
+              Para reservar tu cupo en esta expedición necesitas iniciar sesión en tu cuenta.
+            </p>
+          </div>
+
+          <div className="w-full space-y-sm pt-xs">
+            <Boton
+              href={`/iniciar-sesion?redir=/inscripcion/${idViaje}`}
+              fullWidth
+              className="font-medium"
+            >
+              Iniciar sesión
+            </Boton>
+            <p className="text-xs text-text-muted">
+              ¿No tienes cuenta aún?{" "}
+              <Link
+                href={`/registro?redir=/inscripcion/${idViaje}`}
+                className="font-semibold text-primary underline underline-offset-2 hover:text-primary-dark"
+              >
+                Regístrate aquí
+              </Link>
+            </p>
+          </div>
+        </div>
+      </Modal>
 
       <Modal
         abierto={adminBloqueado}

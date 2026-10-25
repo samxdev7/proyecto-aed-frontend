@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ApiError } from "@/lib/api-client";
+import { ApiError, sanitizarMensajeError } from "@/lib/api-client";
 import { reservaService, type BorradorReserva } from "@/services/reserva.service";
 import { userService } from "@/services/user.service";
 import { opcionesDeCampo, viajesService } from "@/services/viajes.service";
@@ -60,9 +60,9 @@ export default function FlujoInscripcion({ viaje }: { viaje: Viaje }) {
     };
   }, [viaje.idViaje]);
 
-  /** Respuesta guardada de un campo, con la primera opción como default. */
+  /** Respuesta guardada de un campo sin valor por defecto forzado. */
   function respuestaDe(campo: CampoFormulario): string {
-    return respuestas[campo.idCampo] ?? opcionesDeCampo(campo)[0] ?? "";
+    return respuestas[campo.idCampo] ?? "";
   }
 
   function cambiarCantidad(nueva: number) {
@@ -103,7 +103,8 @@ export default function FlujoInscripcion({ viaje }: { viaje: Viaje }) {
     campos
       .filter((campo) => campo.obligatorio)
       .forEach((campo) => {
-        if (!respuestaDe(campo).trim()) {
+        const val = respuestaDe(campo).trim();
+        if (!val || val === "[]") {
           nuevos[`resp-${campo.idCampo}`] = "Respuesta obligatoria";
         }
       });
@@ -147,7 +148,10 @@ export default function FlujoInscripcion({ viaje }: { viaje: Viaje }) {
         // p.ej. 409 "cupos insuficientes": el message del backend en español.
         setErrorEnvio(
           error instanceof ApiError
-            ? error.message
+            ? sanitizarMensajeError(
+                error.message,
+                "No pudimos crear tu reserva. Inténtalo de nuevo.",
+              )
             : "No pudimos crear tu reserva. Inténtalo de nuevo.",
         );
         setEnviando(false);
@@ -193,6 +197,10 @@ export default function FlujoInscripcion({ viaje }: { viaje: Viaje }) {
           errorEnvio={errorEnvio}
           alConfirmar={confirmarPago}
           alAtras={() => setPaso(2)}
+          alReiniciar={() => {
+            setBorrador(null);
+            setPaso(1);
+          }}
         />
       ) : null}
     </div>
