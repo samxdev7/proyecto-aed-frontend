@@ -149,6 +149,13 @@ export default function InscripcionPage() {
     };
   }, [sesion, viaje, idViajeNumero]);
 
+  /* Redirección automática si no hay sesión activa */
+  useEffect(() => {
+    if (sesionLista && !sesion && viaje) {
+      router.replace(`/iniciar-sesion?redir=/inscripcion/${viaje.idViaje}`);
+    }
+  }, [sesionLista, sesion, viaje, router]);
+
   if (viaje === undefined || !sesionLista) {
     return (
       <div className="mx-auto max-w-4xl space-y-lg px-lg py-lg">
@@ -171,12 +178,6 @@ export default function InscripcionPage() {
       </div>
     );
   }
-
-  useEffect(() => {
-    if (sesionLista && !sesion && viaje) {
-      router.replace(`/iniciar-sesion?redir=/inscripcion/${viaje.idViaje}`);
-    }
-  }, [sesionLista, sesion, viaje, router]);
 
   if (!sesion) {
     return (
