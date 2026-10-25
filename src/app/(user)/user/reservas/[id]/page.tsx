@@ -131,10 +131,32 @@ export default function ReservaDetallePage() {
           </div>
         </div>
 
-        {reserva.estado === "rechazada" && reserva.motivoRechazo ? (
-          <p className="rounded-md bg-estado-rechazada-bg px-md py-sm text-sm text-estado-rechazada-text">
-            Motivo del rechazo: {reserva.motivoRechazo}
-          </p>
+        {reserva.estado === "aprobada" ? (
+          <div className="rounded-md border border-emerald-300 bg-emerald-50/80 p-md text-emerald-950">
+            <p className="font-bold text-emerald-900">
+              ¡Tu cupo ha sido aceptado!
+            </p>
+            <p className="mt-xs text-sm leading-relaxed text-emerald-800">
+              Hemos validado tu comprobante de pago y tu lugar en la expedición está confirmado.
+              Por favor dirígete a tu correo electrónico ({reserva.correoUsuario}) para unirte al grupo oficial de WhatsApp y consultar las recomendaciones del viaje.
+            </p>
+          </div>
+        ) : null}
+
+        {reserva.estado === "rechazada" ? (
+          <div className="rounded-md border border-rose-300 bg-rose-50/80 p-md text-rose-950">
+            <p className="font-bold text-rose-900">
+              Tu cupo ha sido rechazado
+            </p>
+            <p className="mt-xs text-sm leading-relaxed text-rose-800">
+              Tu solicitud de reserva no pudo ser aceptada. Por favor revisa tu correo electrónico ({reserva.correoUsuario}) para conocer los detalles y la justificación del rechazo.
+            </p>
+            {reserva.motivoRechazo ? (
+              <p className="mt-sm rounded bg-rose-100 px-sm py-xs text-sm font-medium text-rose-900">
+                Motivo: {reserva.motivoRechazo}
+              </p>
+            ) : null}
+          </div>
         ) : null}
 
         {reserva.estado === "expirada" ? (
