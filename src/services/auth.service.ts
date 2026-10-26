@@ -17,4 +17,22 @@ export const authService = {
   async loginGoogle(idToken: string): Promise<Sesion> {
     return ApiClient.post<Sesion>("/auth/google", { idToken });
   },
+
+  /** Solicita el enlace de recuperación de contraseña por correo electrónico. */
+  async solicitarRecuperacion(correo: string): Promise<{ mensaje: string }> {
+    return ApiClient.post<{ mensaje: string }>("/auth/recuperar-contrasena", {
+      correo,
+    });
+  },
+
+  /** Restablece la contraseña utilizando el token temporal recibido por correo. */
+  async restablecerContrasena(
+    token: string,
+    nuevaContrasena: string,
+  ): Promise<{ mensaje: string }> {
+    return ApiClient.post<{ mensaje: string }>("/auth/restablecer-contrasena", {
+      token,
+      nuevaContrasena,
+    });
+  },
 };

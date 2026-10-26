@@ -4,6 +4,8 @@ import { useId } from "react";
 
 interface CampoProps {
   label: string;
+  /** Elemento o enlace adicional en el encabezado a la derecha del label (p.ej. '¿Olvidaste tu contraseña?') */
+  accionLabel?: React.ReactNode;
   tipo?: string;
   placeholder?: string;
   multilinea?: boolean;
@@ -27,6 +29,7 @@ interface CampoProps {
 
 export default function Campo({
   label,
+  accionLabel,
   tipo = "text",
   placeholder,
   multilinea = false,
@@ -69,18 +72,21 @@ export default function Campo({
 
   return (
     <div className="flex flex-col gap-1">
-      <label
-        htmlFor={campoId}
-        className="text-xs font-semibold text-text-muted"
-      >
-        {label}
-        {required && !ocultarAsterisco ? (
-          <span className="text-error" aria-hidden="true">
-            {" "}
-            *
-          </span>
-        ) : null}
-      </label>
+      <div className="flex items-center justify-between gap-2">
+        <label
+          htmlFor={campoId}
+          className="text-xs font-semibold text-text-muted"
+        >
+          {label}
+          {required && !ocultarAsterisco ? (
+            <span className="text-error" aria-hidden="true">
+              {" "}
+              *
+            </span>
+          ) : null}
+        </label>
+        {accionLabel}
+      </div>
       {opciones ? (
         <select {...controlProps} className={clases}>
           {opciones.map((opcion) => (

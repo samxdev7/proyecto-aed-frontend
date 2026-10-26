@@ -127,6 +127,14 @@ function LoginContent() {
             ocultarAsterisco
             valor={contrasena}
             alCambiar={setContrasena}
+            accionLabel={
+              <Link
+                href="/recuperar-contrasena"
+                className="text-xs font-semibold text-primary transition hover:underline"
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
+            }
           />
 
           {error ? (
