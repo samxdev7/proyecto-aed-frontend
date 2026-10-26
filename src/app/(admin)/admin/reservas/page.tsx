@@ -93,8 +93,6 @@ function AdminReservas() {
   const [error, setError] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [reintentos, setReintentos] = useState(0);
-  /* Aviso global (banner) de resultado de aprobar/rechazar. */
-  const [aviso, setAviso] = useState<{ tipo: "ok" | "error"; texto: string } | null>(null);
   /* Modal de detalle: se carga con obtenerReserva al abrirlo. */
   const [detalleId, setDetalleId] = useState<number | null>(null);
   const [detalle, setDetalle] = useState<ReservaDetalle | null>(null);
@@ -151,7 +149,6 @@ function AdminReservas() {
   }, [estadoFiltro, reintentos]);
 
   function cambiarFiltro(estado: "" | EstadoReserva) {
-    setAviso(null);
     setLoading(true);
     router.replace(estado ? `/admin/reservas?estado=${estado}` : "/admin/reservas", { scroll: false });
   }
@@ -187,11 +184,9 @@ function AdminReservas() {
     try {
       await adminService.aprobarReserva(idReserva);
       const exitoTexto = `Reserva #${idReserva} aprobada exitosamente. Se envió el correo de confirmación al cliente.`;
-      setAviso({ tipo: "ok", texto: exitoTexto });
       mostrarExito("Reserva aprobada", exitoTexto);
     } catch (e) {
       const errorTexto = mensajeDeError(e, `No se pudo aprobar la reserva #${idReserva}.`);
-      setAviso({ tipo: "error", texto: errorTexto });
       mostrarError("Error al aprobar reserva", errorTexto);
     } finally {
       setProcesando(false);
@@ -211,11 +206,9 @@ function AdminReservas() {
     try {
       await adminService.rechazarReserva(detalleId, { motivoRechazo: motivo.trim() });
       const rechazoTexto = `Reserva #${detalleId} rechazada. Se notificó al cliente con la justificación.`;
-      setAviso({ tipo: "ok", texto: rechazoTexto });
       mostrarInfo("Reserva rechazada", rechazoTexto);
     } catch (e) {
       const errorTexto = mensajeDeError(e, `No se pudo rechazar la reserva #${detalleId}.`);
-      setAviso({ tipo: "error", texto: errorTexto });
       mostrarError("Error al rechazar reserva", errorTexto);
     } finally {
       setProcesando(false);
@@ -262,19 +255,6 @@ function AdminReservas() {
           ))}
         </div>
       </div>
-
-      {aviso && (
-        <div
-          role="status"
-          className={`rounded-sm px-md py-sm text-sm font-medium ${
-            aviso.tipo === "ok"
-              ? "bg-estado-aprobada-bg text-estado-aprobada-text"
-              : "bg-estado-rechazada-bg text-estado-rechazada-text"
-          }`}
-        >
-          {aviso.texto}
-        </div>
-      )}
 
       {reservas.length === 0 ? (
         <EmptyState
