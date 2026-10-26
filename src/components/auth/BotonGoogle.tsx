@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { iniciarSesionConGoogle } from "@/lib/supabase";
 import { authService } from "@/services/auth.service";
 import { userService } from "@/services/user.service";
-import { guardarSesion, perfilEstaCompleto } from "@/lib/auth";
+import { esAdministrador, guardarSesion, perfilEstaCompleto } from "@/lib/auth";
 
 interface BotonGoogleProps {
   redir?: string | null;
@@ -90,6 +90,10 @@ export default function BotonGoogle({
             try {
               const sesionBackend = await authService.loginGoogle(response.credential);
               guardarSesion(sesionBackend);
+              if (esAdministrador(sesionBackend)) {
+                router.replace("/admin");
+                return;
+              }
               const perfil = await userService.getMyProfile();
               if (!perfilEstaCompleto(perfil)) {
                 const destino = redir || "/viajes";

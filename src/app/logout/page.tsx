@@ -9,7 +9,7 @@ export default function LogoutPage() {
 
   useEffect(() => {
     cerrarSesion();
-    router.replace("/");
+    router.replace("/iniciar-sesion");
   }, [router]);
 
   return (

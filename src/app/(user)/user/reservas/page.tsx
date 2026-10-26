@@ -81,9 +81,6 @@ export default function UserReservas() {
             Gestiona tus inscripciones a los viajes.
           </p>
         </div>
-        <Boton href="/viajes" tamano="sm">
-          <Calendar size={18} /> Nueva Reserva
-        </Boton>
       </div>
 
       {reservas.length === 0 ? (
