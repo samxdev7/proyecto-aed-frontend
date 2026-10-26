@@ -6,6 +6,9 @@ export const RUTA_BASE_VIAJES = "viajes";
 export const BUCKET_COMPROBANTES = "capturas-comprobantes";
 export const RUTA_BASE_COMPROBANTES = "images";
 
+export const BUCKET_USER_ENTRIES = "user-entries-files";
+export const RUTA_BASE_USER_ENTRIES = "files";
+
 export { supabase };
 
 export interface ItemCarpeta {
@@ -354,6 +357,58 @@ export const supabaseStorageService = {
     const { data } = supabase.storage.from(BUCKET_COMPROBANTES).getPublicUrl(rutaCompleta);
     return data.publicUrl;
   },
+
+  /**
+   * Sube un archivo adjunto de los campos dinámicos de formularios de usuario al bucket 'user-entries-files'
+   * bajo la ruta 'files/'.
+   * Genera un nombre de archivo seguro y único para evitar colisiones y retorna la URL pública directa.
+   */
+  async subirArchivoEntrada(
+    archivo: Blob | File,
+    nombreOriginal?: string,
+  ): Promise<{ urlPublica: string; nombreArchivo: string }> {
+    const timestamp = Date.now();
+    const uuid =
+      typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID().slice(0, 8)
+        : Math.random().toString(36).substring(2, 10);
+
+    const nombreReal =
+      nombreOriginal || ("name" in archivo ? (archivo as File).name : "archivo");
+    const partes = nombreReal.split(".");
+    const extension = partes.length > 1 ? partes.pop()! : "bin";
+    const nombreBase = sanitizarNombre(partes.join("."));
+    const nombreFinal = `entrada-${timestamp}-${uuid}-${nombreBase}.${extension}`;
+    const rutaCompleta = `${RUTA_BASE_USER_ENTRIES}/${nombreFinal}`;
+
+    const { error } = await supabase.storage
+      .from(BUCKET_USER_ENTRIES)
+      .upload(rutaCompleta, archivo, {
+        upsert: true,
+        contentType: archivo.type || "application/octet-stream",
+      });
+
+    if (error) {
+      if (
+        error.message?.toLowerCase().includes("security") ||
+        error.message?.toLowerCase().includes("policy") ||
+        error.message?.toLowerCase().includes("row-level") ||
+        (error as { statusCode?: string }).statusCode === "403"
+      ) {
+        throw new Error(
+          `Permisos insuficientes en Supabase Storage (RLS): Asegúrate de que el bucket '${BUCKET_USER_ENTRIES}' tenga configurada la política de subida (INSERT) pública. Detalle: ${error.message}`
+        );
+      }
+      throw new Error(`Error al subir archivo a '${BUCKET_USER_ENTRIES}': ${error.message}`);
+    }
+
+    const { data } = supabase.storage.from(BUCKET_USER_ENTRIES).getPublicUrl(rutaCompleta);
+    return {
+      urlPublica: data.publicUrl,
+      nombreArchivo: nombreReal,
+    };
+  },
 };
 
 export const subirComprobantePago = supabaseStorageService.subirComprobantePago.bind(supabaseStorageService);
+export const subirArchivoEntrada = supabaseStorageService.subirArchivoEntrada.bind(supabaseStorageService);

@@ -3,15 +3,43 @@ import assert from "node:assert/strict";
 import {
   BUCKET_COMPROBANTES,
   RUTA_BASE_COMPROBANTES,
+  BUCKET_USER_ENTRIES,
+  RUTA_BASE_USER_ENTRIES,
 } from "@/services/supabaseStorage.service";
 
-test("Supabase Storage - Configuración de Bucket para Comprobantes de Pago", async (t) => {
+test("Supabase Storage - Configuración de Buckets y Rutas", async (t) => {
   await t.test("Bucket de comprobantes apunta a capturas-comprobantes", () => {
     assert.equal(BUCKET_COMPROBANTES, "capturas-comprobantes");
   });
 
-  await t.test("Ruta base dentro del bucket apunta a images", () => {
+  await t.test("Ruta base de comprobantes dentro del bucket apunta a images", () => {
     assert.equal(RUTA_BASE_COMPROBANTES, "images");
+  });
+
+  await t.test("Bucket de respuestas de usuario apunta a user-entries-files", () => {
+    assert.equal(BUCKET_USER_ENTRIES, "user-entries-files");
+  });
+
+  await t.test("Ruta base de respuestas de usuario dentro del bucket apunta a files", () => {
+    assert.equal(RUTA_BASE_USER_ENTRIES, "files");
+  });
+
+  await t.test("Detección de URL de archivo subido a Supabase Storage vs texto plano", () => {
+    function esArchivoUrl(valor: string): boolean {
+      return (
+        valor.startsWith("http://") ||
+        valor.startsWith("https://") ||
+        valor.startsWith("data:")
+      );
+    }
+
+    const urlSupabase = "https://gnotslrwwptblfoofgsx.supabase.co/storage/v1/object/public/user-entries-files/files/entrada-12345.pdf";
+    const base64Legacy = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD...";
+    const textoRespuesta = "Respuesta textual de prueba";
+
+    assert.equal(esArchivoUrl(urlSupabase), true);
+    assert.equal(esArchivoUrl(base64Legacy), true);
+    assert.equal(esArchivoUrl(textoRespuesta), false);
   });
 });
 

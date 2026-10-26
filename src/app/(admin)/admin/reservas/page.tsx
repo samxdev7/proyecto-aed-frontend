@@ -12,7 +12,10 @@ import {
   Eye,
   CalendarX,
   Download,
-  Users as UsersIcon
+  Users as UsersIcon,
+  FileText,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import Skeleton, { FilaTablaSkeleton } from "@/components/ui/Skeleton";
 import EmptyState from "@/components/ui/EmptyState";
@@ -101,6 +104,7 @@ function AdminReservas() {
   const [motivo, setMotivo] = useState("");
   const [errorMotivo, setErrorMotivo] = useState("");
   const [procesando, setProcesando] = useState(false);
+  const [seccionDetalle, setSeccionDetalle] = useState<1 | 2>(1);
 
   async function cargarReservas() {
     setLoading(true);
@@ -159,6 +163,7 @@ function AdminReservas() {
     setErrorDetalle("");
     setMotivo("");
     setErrorMotivo("");
+    setSeccionDetalle(1);
     setCargandoDetalle(true);
     try {
       setDetalle(await adminService.obtenerReserva(idReserva));
@@ -177,6 +182,7 @@ function AdminReservas() {
     setErrorDetalle("");
     setMotivo("");
     setErrorMotivo("");
+    setSeccionDetalle(1);
   }
 
   async function aprobar(idReserva: number) {
@@ -372,166 +378,273 @@ function AdminReservas() {
           </div>
         ) : detalle ? (
           <>
-            <div className="flex justify-between items-start mb-md">
-              <h3 className="text-xl font-bold text-admin-text">
-                Detalle de Reserva
-              </h3>
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-xl font-bold text-admin-text">
+                  Detalle de Reserva #{detalle.idReserva}
+                </h3>
+                <p className="text-xs text-admin-muted mt-0.5">
+                  Inspección organizada en 2 secciones para evitar saturación de información.
+                </p>
+              </div>
               <Chip estado={detalle.estado} />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-lg mb-md">
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs font-bold text-admin-muted uppercase">Usuario</label>
-                  <p className="font-medium">{detalle.nombreUsuario}</p>
-                  <p className="text-sm text-admin-muted">
-                    <DatoSensible valor={detalle.correoUsuario} interactivo />
-                  </p>
+            {/* Paginador / Selector de secciones */}
+            <div className="flex border-b border-admin-border mb-5" role="tablist" aria-label="Secciones de la reserva">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={seccionDetalle === 1}
+                onClick={() => setSeccionDetalle(1)}
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition-all ${
+                  seccionDetalle === 1
+                    ? "border-admin-accent text-admin-accent bg-admin-accent/5"
+                    : "border-transparent text-admin-muted hover:text-admin-text hover:bg-admin-bg"
+                }`}
+              >
+                <span>1. Información General y Pago</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={seccionDetalle === 2}
+                onClick={() => setSeccionDetalle(2)}
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition-all ${
+                  seccionDetalle === 2
+                    ? "border-admin-accent text-admin-accent bg-admin-accent/5"
+                    : "border-transparent text-admin-muted hover:text-admin-text hover:bg-admin-bg"
+                }`}
+              >
+                <span>2. Acompañantes y Formularios</span>
+                <span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-admin-bg text-admin-muted font-normal">
+                  {detalle.acompanantes.length + (detalle.respuestasFormulario.length > 0 ? detalle.respuestasFormulario.length : 0)}
+                </span>
+              </button>
+            </div>
+
+            {/* SECCIÓN 1: INFORMACIÓN GENERAL Y PAGO */}
+            {seccionDetalle === 1 && (
+              <div className="space-y-md">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-lg mb-md">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-xs font-bold text-admin-muted uppercase">Usuario</label>
+                      <p className="font-medium">{detalle.nombreUsuario}</p>
+                      <p className="text-sm text-admin-muted">
+                        <DatoSensible valor={detalle.correoUsuario} interactivo />
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-admin-muted uppercase">Viaje</label>
+                      <p className="font-medium">{detalle.tituloViaje}</p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-admin-muted uppercase">Abono por persona</label>
+                      <p className="font-bold text-lg">
+                        <DatoSensible valor={formatoCordobas(detalle.montoReserva)} ultimos={0} interactivo />
+                      </p>
+                      <p className="text-xs text-admin-muted">
+                        {detalle.acompanantes.length + 1} persona(s) · Total{" "}
+                        <DatoSensible
+                          valor={formatoCordobas(detalle.montoReserva * (detalle.acompanantes.length + 1))}
+                          ultimos={0}
+                        />
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-admin-muted uppercase">Ref. Pago</label>
+                      {detalle.numeroReferenciaPago ? (
+                        <p className="font-mono text-sm">
+                          <DatoSensible valor={detalle.numeroReferenciaPago} interactivo />
+                        </p>
+                      ) : (
+                        <p className="font-mono text-sm text-admin-muted">N/A</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-xs font-bold text-admin-muted uppercase">Comprobante de Pago</label>
+                      <div className="relative mt-2 border border-admin-border rounded-lg overflow-hidden bg-admin-bg h-40 flex items-center justify-center">
+                        {detalle.capturaComprobanteUrl ? (
+                          <Image
+                            src={detalle.capturaComprobanteUrl}
+                            alt={`Comprobante de la reserva #${detalle.idReserva}`}
+                            fill
+                            unoptimized
+                            sizes="(max-width: 768px) 100vw, 33vw"
+                            className="object-contain"
+                          />
+                        ) : (
+                          <span className="text-admin-muted text-sm">Sin comprobante adjunto</span>
+                        )}
+                      </div>
+                      {detalle.capturaComprobanteUrl && (
+                        <a
+                          href={detalle.capturaComprobanteUrl}
+                          download="comprobante-pago"
+                          className="mt-2 inline-flex items-center gap-2 text-sm text-admin-accent hover:text-admin-accent-hover transition-colors"
+                        >
+                          <Download size={16} /> Descargar comprobante
+                        </a>
+                      )}
+                    </div>
+                    <div className="bg-admin-bg p-4 rounded-md space-y-2 text-sm">
+                      <div className="flex justify-between gap-sm">
+                        <span className="text-admin-muted">Reservada</span>
+                        <span>{fechaHora(detalle.fechaReserva)}</span>
+                      </div>
+                      <div className="flex justify-between gap-sm">
+                        <span className="text-admin-muted">Límite de pago</span>
+                        <span className={detalle.estado === "pendiente" ? "font-medium text-warning-text" : ""}>
+                          {fechaHora(detalle.fechaLimitePago)}
+                        </span>
+                      </div>
+                      {detalle.fechaPago && (
+                        <div className="flex justify-between gap-sm">
+                          <span className="text-admin-muted">Pagada</span>
+                          <span>{fechaHora(detalle.fechaPago)}</span>
+                        </div>
+                      )}
+                      {detalle.fechaRevision && (
+                        <div className="flex justify-between gap-sm">
+                          <span className="text-admin-muted">Revisada</span>
+                          <span>{fechaHora(detalle.fechaRevision)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-bold text-admin-muted uppercase">Viaje</label>
-                  <p className="font-medium">{detalle.tituloViaje}</p>
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-admin-muted uppercase">Abono por persona</label>
-                  <p className="font-bold text-lg">
-                    <DatoSensible valor={formatoCordobas(detalle.montoReserva)} ultimos={0} interactivo />
-                  </p>
-                  <p className="text-xs text-admin-muted">
-                    {detalle.acompanantes.length + 1} persona(s) · Total{" "}
-                    <DatoSensible
-                      valor={formatoCordobas(detalle.montoReserva * (detalle.acompanantes.length + 1))}
-                      ultimos={0}
-                    />
-                  </p>
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-admin-muted uppercase">Ref. Pago</label>
-                  {detalle.numeroReferenciaPago ? (
-                    <p className="font-mono text-sm">
-                      <DatoSensible valor={detalle.numeroReferenciaPago} interactivo />
-                    </p>
-                  ) : (
-                    <p className="font-mono text-sm text-admin-muted">N/A</p>
-                  )}
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs font-bold text-admin-muted uppercase">Comprobante de Pago</label>
-                  <div className="relative mt-2 border border-admin-border rounded-lg overflow-hidden bg-admin-bg h-40 flex items-center justify-center">
-                    {detalle.capturaComprobanteUrl ? (
-                      <Image
-                        src={detalle.capturaComprobanteUrl}
-                        alt={`Comprobante de la reserva #${detalle.idReserva}`}
-                        fill
-                        unoptimized
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                        className="object-contain"
-                      />
-                    ) : (
-                      <span className="text-admin-muted text-sm">Sin comprobante adjunto</span>
+
+                {/* Trazabilidad del rechazo */}
+                {detalle.estado === "rechazada" && detalle.motivoRechazo && (
+                  <div className="bg-estado-rechazada-bg p-4 rounded-md mb-md">
+                    <h4 className="font-bold text-sm text-estado-rechazada-text">Motivo del Rechazo</h4>
+                    <p className="text-sm text-estado-rechazada-text mt-1">{detalle.motivoRechazo}</p>
+                    {detalle.fechaRevision && (
+                      <p className="text-xs text-estado-rechazada-text/70 mt-2">
+                        Rechazada el {fechaHora(detalle.fechaRevision)}
+                      </p>
                     )}
                   </div>
-                  {detalle.capturaComprobanteUrl && (
-                    <a
-                      href={detalle.capturaComprobanteUrl}
-                      download="comprobante-pago"
-                      className="mt-2 inline-flex items-center gap-2 text-sm text-admin-accent hover:text-admin-accent-hover transition-colors"
-                    >
-                      <Download size={16} /> Descargar comprobante
-                    </a>
-                  )}
+                )}
+
+                {/* Botón para avanzar a la sección 2 */}
+                <div className="flex justify-between items-center pt-2 border-t border-admin-border/60">
+                  <span className="text-xs text-admin-muted">Sección 1 de 2</span>
+                  <button
+                    type="button"
+                    onClick={() => setSeccionDetalle(2)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md border border-admin-accent text-admin-accent hover:bg-admin-accent/10 transition-colors"
+                  >
+                    <span>Ver Acompañantes y Formularios</span>
+                    <ChevronRight size={14} />
+                  </button>
                 </div>
-                <div className="bg-admin-bg p-4 rounded-md space-y-2 text-sm">
-                  <div className="flex justify-between gap-sm">
-                    <span className="text-admin-muted">Reservada</span>
-                    <span>{fechaHora(detalle.fechaReserva)}</span>
-                  </div>
-                  <div className="flex justify-between gap-sm">
-                    <span className="text-admin-muted">Límite de pago</span>
-                    <span className={detalle.estado === "pendiente" ? "font-medium text-warning-text" : ""}>
-                      {fechaHora(detalle.fechaLimitePago)}
+              </div>
+            )}
+
+            {/* SECCIÓN 2: ACOMPAÑANTES Y RESPUESTAS DE FORMULARIOS */}
+            {seccionDetalle === 2 && (
+              <div className="space-y-md">
+                {/* Acompañantes */}
+                <div className="bg-admin-bg p-4 rounded-md space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-bold text-sm text-admin-muted flex items-center gap-2">
+                      <UsersIcon size={16} />
+                      <span>Acompañantes registrados ({detalle.acompanantes.length})</span>
+                    </h4>
+                    <span className="text-xs text-admin-muted">
+                      {detalle.acompanantes.length === 0 ? "Titular viaja solo" : `${detalle.acompanantes.length} persona(s) adicional(es)`}
                     </span>
                   </div>
-                  {detalle.fechaPago && (
-                    <div className="flex justify-between gap-sm">
-                      <span className="text-admin-muted">Pagada</span>
-                      <span>{fechaHora(detalle.fechaPago)}</span>
-                    </div>
-                  )}
-                  {detalle.fechaRevision && (
-                    <div className="flex justify-between gap-sm">
-                      <span className="text-admin-muted">Revisada</span>
-                      <span>{fechaHora(detalle.fechaRevision)}</span>
-                    </div>
+                  {detalle.acompanantes.length > 0 ? (
+                    <ul className="text-sm space-y-2">
+                      {detalle.acompanantes.map((acc, i) => (
+                        <li key={i} className="flex justify-between items-center border-b border-admin-border pb-2 last:border-b-0 last:pb-0">
+                          <div>
+                            <span className="font-medium text-admin-text">
+                              {acc.primerNombre} {acc.segundoNombre ? `${acc.segundoNombre} ` : ""}{acc.primerApellido} {acc.segundoApellido ? ` ${acc.segundoApellido}` : ""}
+                            </span>
+                            <span className="text-admin-muted text-xs ml-2 uppercase font-medium">
+                              ({acc.tipoIdentificacion})
+                            </span>
+                          </div>
+                          <DatoSensible valor={acc.numeroIdentificacion} interactivo className="text-admin-muted font-mono" />
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-admin-muted italic">Esta reserva no incluye acompañantes adicionales.</p>
                   )}
                 </div>
-              </div>
-            </div>
 
-            <div className="bg-admin-bg p-4 rounded-md mb-md space-y-4">
-              <h4 className="font-bold text-sm text-admin-muted">
-                Acompañantes ({detalle.acompanantes.length})
-              </h4>
-              {detalle.acompanantes.length > 0 ? (
-                <ul className="text-sm space-y-1">
-                  {detalle.acompanantes.map((acc, i) => (
-                    <li key={i} className="flex justify-between border-b border-admin-border pb-1">
-                      <span>
-                        {acc.primerNombre} {acc.primerApellido}
-                        <span className="text-admin-muted text-xs ml-sm">
-                          ({acc.tipoIdentificacion})
-                        </span>
-                      </span>
-                      <DatoSensible valor={acc.numeroIdentificacion} interactivo className="text-admin-muted" />
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-admin-muted italic">Sin acompañantes</p>
-              )}
-            </div>
+                {/* Respuestas del Formulario */}
+                <div className="bg-admin-bg p-4 rounded-md space-y-3">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-bold text-sm text-admin-muted flex items-center gap-2">
+                      <FileText size={16} />
+                      <span>Respuestas del formulario ({detalle.respuestasFormulario.length})</span>
+                    </h4>
+                    <span className="text-xs text-admin-muted">Una respuesta por campo</span>
+                  </div>
+                  {detalle.respuestasFormulario.length > 0 ? (
+                    <ul className="text-sm space-y-2">
+                      {detalle.respuestasFormulario.map((respuesta) => {
+                        const esArchivo =
+                          respuesta.valorRespuesta.startsWith("http://") ||
+                          respuesta.valorRespuesta.startsWith("https://") ||
+                          respuesta.valorRespuesta.startsWith("data:");
+                        return (
+                          <li
+                            key={respuesta.idCampo}
+                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-4 border-b border-admin-border pb-2 last:border-b-0 last:pb-0"
+                          >
+                            <span className="text-admin-muted font-medium">
+                              {respuesta.etiquetaPregunta ?? `Pregunta #${respuesta.idCampo}`}
+                            </span>
+                            {esArchivo ? (
+                              <a
+                                href={respuesta.valorRespuesta}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 text-admin-accent hover:text-admin-accent-hover font-semibold underline text-sm"
+                              >
+                                <FileText size={15} />
+                                Ver / Descargar archivo adjunto
+                              </a>
+                            ) : (
+                              <span className="font-medium text-right text-admin-text">
+                                {formatearRespuestaFormulario(respuesta.valorRespuesta)}
+                              </span>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-admin-muted italic">Este viaje no requirió preguntas adicionales en la inscripción.</p>
+                  )}
+                </div>
 
-            {detalle.respuestasFormulario.length > 0 && (
-              <div className="bg-admin-bg p-4 rounded-md mb-md space-y-2">
-                <h4 className="font-bold text-sm text-admin-muted">Respuestas del formulario</h4>
-                <ul className="text-sm space-y-1">
-                  {detalle.respuestasFormulario.map((respuesta) => (
-                    <li key={respuesta.idCampo} className="flex justify-between gap-md border-b border-admin-border pb-1">
-                      <span className="text-admin-muted">{respuesta.etiquetaPregunta ?? `Pregunta #${respuesta.idCampo}`}</span>
-                      {respuesta.valorRespuesta.startsWith("data:") ? (
-                        <a
-                          href={respuesta.valorRespuesta}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-admin-accent hover:text-admin-accent-hover font-medium underline"
-                        >
-                          Ver archivo adjunto
-                        </a>
-                      ) : (
-                        <span className="font-medium text-right">{formatearRespuestaFormulario(respuesta.valorRespuesta)}</span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
+                {/* Botón para volver a la sección 1 */}
+                <div className="flex justify-between items-center pt-2 border-t border-admin-border/60">
+                  <button
+                    type="button"
+                    onClick={() => setSeccionDetalle(1)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md border border-admin-border text-admin-muted hover:text-admin-text hover:bg-admin-bg transition-colors"
+                  >
+                    <ChevronLeft size={14} />
+                    <span>Volver a Datos y Pago</span>
+                  </button>
+                  <span className="text-xs text-admin-muted">Sección 2 de 2</span>
+                </div>
               </div>
             )}
 
-            {/* Trazabilidad del rechazo */}
-            {detalle.estado === "rechazada" && detalle.motivoRechazo && (
-              <div className="bg-estado-rechazada-bg p-4 rounded-md mb-md">
-                <h4 className="font-bold text-sm text-estado-rechazada-text">Motivo del Rechazo</h4>
-                <p className="text-sm text-estado-rechazada-text mt-1">{detalle.motivoRechazo}</p>
-                {detalle.fechaRevision && (
-                  <p className="text-xs text-estado-rechazada-text/70 mt-2">
-                    Rechazada el {fechaHora(detalle.fechaRevision)}
-                  </p>
-                )}
-              </div>
-            )}
-
-            <div className="flex flex-col gap-4">
+            {/* ÁREA DE DECISIÓN Y ACCIONES DEL ADMINISTRADOR */}
+            <div className="flex flex-col gap-4 mt-6 pt-4 border-t border-admin-border">
               {detalle.estado === "pendiente" && (
                 <div className="space-y-1">
                   <label className="text-sm font-medium text-admin-muted">
