@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { adminService } from "@/services/admin.service";
 import { ApiError } from "@/lib/api-client";
+import { useMensajes } from "@/contexts/MensajesContext";
 import type { EstadoReserva, ReservaAdminResumen, ReservaDetalle } from "@/types/reserva";
 import { formatoCordobas, formatoFechaCorta, formatearRespuestaFormulario } from "@/lib/format";
 import {
@@ -82,6 +83,7 @@ export default function AdminReservasPage() {
 function AdminReservas() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { mostrarExito, mostrarError, mostrarAdvertencia, mostrarInfo } = useMensajes();
   const estadoFiltro: "" | EstadoReserva = esEstado(searchParams.get("estado"))
     ? (searchParams.get("estado") as EstadoReserva)
     : "";
@@ -113,8 +115,10 @@ function AdminReservas() {
       );
       setReservas(respuesta.content);
     } catch (e) {
-      setMensaje(mensajeDeError(e, "Ocurrió un error al obtener la bandeja. Inténtalo de nuevo."));
+      const msg = mensajeDeError(e, "Ocurrió un error al obtener la bandeja. Inténtalo de nuevo.");
+      setMensaje(msg);
       setError(true);
+      mostrarError("Error al cargar reservas", msg);
     } finally {
       setLoading(false);
     }
@@ -135,8 +139,10 @@ function AdminReservas() {
       })
       .catch((e) => {
         if (!activo) return;
-        setMensaje(mensajeDeError(e, "Ocurrió un error al obtener la bandeja. Inténtalo de nuevo."));
+        const msg = mensajeDeError(e, "Ocurrió un error al obtener la bandeja. Inténtalo de nuevo.");
+        setMensaje(msg);
         setError(true);
+        mostrarError("Error al cargar reservas", msg);
         setLoading(false);
       });
     return () => {
@@ -160,7 +166,9 @@ function AdminReservas() {
     try {
       setDetalle(await adminService.obtenerReserva(idReserva));
     } catch (e) {
-      setErrorDetalle(mensajeDeError(e, "No pudimos cargar el detalle de la reserva."));
+      const msg = mensajeDeError(e, "No pudimos cargar el detalle de la reserva.");
+      setErrorDetalle(msg);
+      mostrarError("Error al cargar detalle", msg);
     } finally {
       setCargandoDetalle(false);
     }
@@ -178,9 +186,13 @@ function AdminReservas() {
     setProcesando(true);
     try {
       await adminService.aprobarReserva(idReserva);
-      setAviso({ tipo: "ok", texto: `Reserva #${idReserva} aprobada.` });
+      const exitoTexto = `Reserva #${idReserva} aprobada exitosamente. Se envió el correo de confirmación al cliente.`;
+      setAviso({ tipo: "ok", texto: exitoTexto });
+      mostrarExito("Reserva aprobada", exitoTexto);
     } catch (e) {
-      setAviso({ tipo: "error", texto: mensajeDeError(e, `No se pudo aprobar la reserva #${idReserva}.`) });
+      const errorTexto = mensajeDeError(e, `No se pudo aprobar la reserva #${idReserva}.`);
+      setAviso({ tipo: "error", texto: errorTexto });
+      mostrarError("Error al aprobar reserva", errorTexto);
     } finally {
       setProcesando(false);
       cerrarModal();
@@ -192,14 +204,19 @@ function AdminReservas() {
     if (detalleId === null) return;
     if (!motivo.trim()) {
       setErrorMotivo("El motivo del rechazo es obligatorio.");
+      mostrarAdvertencia("Motivo requerido", "Debes ingresar el motivo del rechazo de la reserva.");
       return;
     }
     setProcesando(true);
     try {
       await adminService.rechazarReserva(detalleId, { motivoRechazo: motivo.trim() });
-      setAviso({ tipo: "ok", texto: `Reserva #${detalleId} rechazada.` });
+      const rechazoTexto = `Reserva #${detalleId} rechazada. Se notificó al cliente con la justificación.`;
+      setAviso({ tipo: "ok", texto: rechazoTexto });
+      mostrarInfo("Reserva rechazada", rechazoTexto);
     } catch (e) {
-      setAviso({ tipo: "error", texto: mensajeDeError(e, `No se pudo rechazar la reserva #${detalleId}.`) });
+      const errorTexto = mensajeDeError(e, `No se pudo rechazar la reserva #${detalleId}.`);
+      setAviso({ tipo: "error", texto: errorTexto });
+      mostrarError("Error al rechazar reserva", errorTexto);
     } finally {
       setProcesando(false);
       cerrarModal();

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useSyncExternalStore } from "react";
+import React, { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -10,6 +10,7 @@ import {
   CalendarCheck,
   LogOut,
   Globe,
+  Bell,
 } from "lucide-react";
 import {
   EVENTO_SESION,
@@ -17,6 +18,8 @@ import {
   esAdministrador,
   obtenerSesion
 } from "@/lib/auth";
+import { userService } from "@/services/user.service";
+import NotificacionesDrawer from "@/components/clientes/NotificacionesDrawer";
 
 /* localStorage es un store externo: serverSnapshot=null evita mismatch de
    hidratación y el valor real se resuelve en el primer render del cliente. */
@@ -45,6 +48,28 @@ export default function AdminLayout({
   const router = useRouter();
   const sesion = useSyncExternalStore(suscribirSesion, obtenerSesion, () => null);
   const esAdmin = esAdministrador(sesion);
+  const [noLeidas, setNoLeidas] = useState(0);
+  const [notisAbierta, setNotisAbierta] = useState(false);
+
+  const cargarNoLeidas = useCallback(async () => {
+    if (!sesion) {
+      setNoLeidas(0);
+      return;
+    }
+    try {
+      const pagina = await userService.getMyNotifications(0, 50);
+      const pendientes = pagina.content.filter((n) => !n.leida).length;
+      setNoLeidas(pendientes);
+    } catch {
+      // Ignorar error no bloqueante
+    }
+  }, [sesion]);
+
+  useEffect(() => {
+    if (esAdmin) {
+      void cargarNoLeidas();
+    }
+  }, [esAdmin, cargarNoLeidas]);
 
   /* El redirect se decide en el efecto (post-hidratación); mientras no haya
      sesión admin válida no se renderiza nada de /admin. */
@@ -105,6 +130,19 @@ export default function AdminLayout({
               <Globe className="h-3.5 w-3.5 text-admin-accent" aria-hidden="true" />
               <span>Sitio Web</span>
             </Link>
+            <button
+              type="button"
+              onClick={() => setNotisAbierta(true)}
+              aria-label={`Notificaciones${noLeidas > 0 ? `, ${noLeidas} sin leer` : ""}`}
+              className="relative rounded-md p-2 text-admin-muted transition hover:bg-admin-bg hover:text-admin-text"
+            >
+              <Bell size={20} aria-hidden="true" />
+              {noLeidas > 0 ? (
+                <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+                  {noLeidas > 9 ? "9+" : noLeidas}
+                </span>
+              ) : null}
+            </button>
             <div className="flex items-center gap-sm border-l border-admin-border pl-md">
               <span className="text-sm text-admin-muted">{sesion.nombreCompleto}</span>
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-admin-accent text-xs font-bold text-white">
@@ -117,6 +155,12 @@ export default function AdminLayout({
           {children}
         </div>
       </main>
+
+      <NotificacionesDrawer
+        abierta={notisAbierta}
+        onCerrar={() => setNotisAbierta(false)}
+        onCambio={cargarNoLeidas}
+      />
     </div>
   );
 }
