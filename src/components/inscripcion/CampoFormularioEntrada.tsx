@@ -2,6 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import { Paperclip, UploadCloud, X, Check, FileText } from "lucide-react";
+import { subirArchivoEntrada } from "@/services/supabaseStorage.service";
 import SelectorFechaHora from "@/components/ui/SelectorFechaHora";
 import { opcionesDeCampo } from "@/services/viajes.service";
 import type { CampoFormulario } from "@/types/viaje";
@@ -11,30 +12,6 @@ interface CampoFormularioEntradaProps {
   valor: string;
   error?: string;
   alCambiar: (nuevoValor: string) => void;
-}
-
-/** Comprime una imagen a un data URL ligero */
-async function procesarArchivo(archivo: File): Promise<string> {
-  if (archivo.type.startsWith("image/")) {
-    try {
-      const bitmap = await createImageBitmap(archivo);
-      const escala = Math.min(1, 1200 / Math.max(bitmap.width, bitmap.height));
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.round(bitmap.width * escala);
-      canvas.height = Math.round(bitmap.height * escala);
-      canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-      return canvas.toDataURL("image/jpeg", 0.75);
-    } catch {
-      // Fallback a FileReader si createImageBitmap falla
-    }
-  }
-
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(archivo);
-  });
 }
 
 function parsearSeleccionMultiple(v: string): string[] {
@@ -57,6 +34,15 @@ export default function CampoFormularioEntrada({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [nombreArchivo, setNombreArchivo] = useState<string>(() => {
     if (campo.tipoCampo === "archivo" && valor) {
+      if (valor.startsWith("http://") || valor.startsWith("https://")) {
+        try {
+          const pathname = new URL(valor).pathname;
+          const parts = pathname.split("/");
+          return decodeURIComponent(parts[parts.length - 1]);
+        } catch {
+          return "Archivo adjunto";
+        }
+      }
       return valor.startsWith("data:") ? "Archivo adjunto" : valor;
     }
     return "";
@@ -193,25 +179,29 @@ export default function CampoFormularioEntrada({
     );
   }
 
-  // 5. SUBE UN ARCHIVO (Attach elegante)
+  // 5. SUBE UN ARCHIVO (Almacenamiento directo en Supabase Storage)
   if (campo.tipoCampo === "archivo") {
     async function manejarArchivo(e: React.ChangeEvent<HTMLInputElement>) {
       const archivo = e.target.files?.[0];
       if (!archivo) return;
 
-      if (archivo.size > 5 * 1024 * 1024) {
-        setErrorLocal("El archivo no debe exceder 5 MB.");
+      if (archivo.size > 10 * 1024 * 1024) {
+        setErrorLocal("El archivo no debe exceder 10 MB.");
         return;
       }
 
       setErrorLocal("");
       setCargandoArchivo(true);
       try {
-        const dataUrl = await procesarArchivo(archivo);
+        const resultado = await subirArchivoEntrada(archivo, archivo.name);
         setNombreArchivo(archivo.name);
-        alCambiar(dataUrl);
-      } catch {
-        setErrorLocal("No se pudo procesar el archivo seleccionado.");
+        alCambiar(resultado.urlPublica);
+      } catch (err) {
+        setErrorLocal(
+          err instanceof Error
+            ? err.message
+            : "No se pudo subir el archivo a Supabase Storage."
+        );
       } finally {
         setCargandoArchivo(false);
       }
@@ -250,7 +240,19 @@ export default function CampoFormularioEntrada({
                 <p className="text-xs font-medium text-primary truncate">
                   {nombreArchivo || "Archivo adjunto"}
                 </p>
-                <p className="text-[10px] text-text-muted">Listo para enviar</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-[10px] text-text-muted">Almacenado en Supabase</span>
+                  {(valor.startsWith("http://") || valor.startsWith("https://") || valor.startsWith("data:")) && (
+                    <a
+                      href={valor}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] font-medium text-primary hover:underline"
+                    >
+                      Ver archivo
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
             <button
@@ -273,11 +275,14 @@ export default function CampoFormularioEntrada({
             }`}
           >
             {cargandoArchivo ? (
-              <span>Procesando archivo...</span>
+              <span className="inline-flex items-center gap-2 text-primary font-medium">
+                <UploadCloud size={16} className="animate-pulse" />
+                Subiendo a Supabase Storage...
+              </span>
             ) : (
               <>
                 <UploadCloud size={16} />
-                <span>Adjuntar archivo (JPG, PNG o PDF máx. 5MB)</span>
+                <span>Adjuntar archivo (JPG, PNG o PDF máx. 10MB)</span>
               </>
             )}
           </button>

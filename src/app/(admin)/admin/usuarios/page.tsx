@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { adminService } from "@/services/admin.service";
 import { ApiError } from "@/lib/api-client";
+import { useMensajes } from "@/contexts/MensajesContext";
 import type { UsuarioPerfil } from "@/types/usuario";
 import type { HistorialReservaResumen } from "@/types/reserva";
 import { formatoCordobas, formatoFechaCorta } from "@/lib/format";
@@ -18,6 +19,7 @@ function mensajeDeError(e: unknown, porDefecto: string): string {
 }
 
 export default function AdminUsuarios() {
+  const { mostrarError, mostrarInfo } = useMensajes();
   const [usuarios, setUsuarios] = useState<UsuarioPerfil[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -36,8 +38,10 @@ export default function AdminUsuarios() {
       .listarUsuarios(0, 50)
       .then((respuesta) => setUsuarios(respuesta.content))
       .catch((e) => {
-        setMensaje(mensajeDeError(e, "Ocurrió un error al obtener la lista. Inténtalo de nuevo."));
+        const msg = mensajeDeError(e, "Ocurrió un error al obtener la lista. Inténtalo de nuevo.");
+        setMensaje(msg);
         setError(true);
+        mostrarError("Error al cargar usuarios", msg);
       })
       .finally(() => setLoading(false));
   }, [reintentos]);
@@ -45,6 +49,7 @@ export default function AdminUsuarios() {
   function reintentar() {
     setLoading(true);
     setError(false);
+    mostrarInfo("Actualizando lista", "Obteniendo datos de usuarios...");
     setReintentos((n) => n + 1);
   }
 
@@ -68,7 +73,9 @@ export default function AdminUsuarios() {
       const respuesta = await adminService.historialUsuario(usuario.idUsuario, 0, 20);
       setHistorial(respuesta.content);
     } catch (e) {
-      setErrorHistorial(mensajeDeError(e, "No pudimos cargar el historial del usuario."));
+      const msg = mensajeDeError(e, "No pudimos cargar el historial del usuario.");
+      setErrorHistorial(msg);
+      mostrarError("Error al cargar historial", msg);
     } finally {
       setCargandoHistorial(false);
     }

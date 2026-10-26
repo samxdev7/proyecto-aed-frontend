@@ -295,13 +295,16 @@ export default function ReservaDetallePage() {
                   {respuesta.etiquetaPregunta ?? `Pregunta ${respuesta.idCampo}`}
                 </dt>
                 <dd className="text-sm">
-                  {respuesta.valorRespuesta.startsWith("data:") ? (
+                  {respuesta.valorRespuesta.startsWith("data:") ||
+                  respuesta.valorRespuesta.startsWith("http://") ||
+                  respuesta.valorRespuesta.startsWith("https://") ? (
                     <a
                       href={respuesta.valorRespuesta}
                       target="_blank"
-                      rel="noreferrer"
-                      className="text-primary hover:underline font-medium"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline font-medium inline-flex items-center gap-1.5"
                     >
+                      <FileText size={15} aria-hidden="true" />
                       Ver archivo adjunto
                     </a>
                   ) : (

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { adminService } from "@/services/admin.service";
 import { ApiError } from "@/lib/api-client";
+import { useMensajes } from "@/contexts/MensajesContext";
 import { EstadisticasPanel } from "@/types/estadistica";
 import {
   Users,
@@ -15,6 +16,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import { ChipDificultad } from "@/components/ui/Chip";
 
 export default function AdminDashboard() {
+  const { mostrarError, mostrarInfo } = useMensajes();
   const [stats, setStats] = useState<EstadisticasPanel | null>(null);
   const [pendientes, setPendientes] = useState(0);
   const [error, setError] = useState(false);
@@ -34,12 +36,13 @@ export default function AdminDashboard() {
       })
       .catch((e) => {
         if (!activo) return;
-        setMensaje(
+        const msg =
           e instanceof ApiError && e.message
             ? e.message
-            : "Ocurrió un error al obtener el panel. Inténtalo de nuevo.",
-        );
+            : "Ocurrió un error al obtener el panel. Inténtalo de nuevo.";
+        setMensaje(msg);
         setError(true);
+        mostrarError("Error al cargar estadísticas", msg);
       });
     return () => {
       activo = false;
@@ -49,6 +52,7 @@ export default function AdminDashboard() {
   function reintentar() {
     setStats(null);
     setError(false);
+    mostrarInfo("Actualizando panel", "Cargando métricas y estadísticas...");
     setReintentos((n) => n + 1);
   }
 
