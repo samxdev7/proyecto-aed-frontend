@@ -10,7 +10,7 @@ export default function Skeleton({ className = "" }: SkeletonProps) {
 export function TarjetaViajeSkeleton() {
   return (
     <div className="overflow-hidden rounded-md border border-neutral-border bg-surface">
-      <Skeleton className="aspect-[4/3] rounded-none" />
+      <Skeleton className="aspect-[16/9] rounded-none" />
       <div className="space-y-sm p-md">
         <Skeleton className="h-5 w-3/4" />
         <Skeleton className="h-4 w-full" />

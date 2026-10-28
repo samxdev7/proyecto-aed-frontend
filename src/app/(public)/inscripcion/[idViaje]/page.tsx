@@ -268,14 +268,14 @@ export default function InscripcionPage() {
                 </h2>
                 <Chip estado={reservaExistente.estado} />
                 <p className="text-sm text-text-muted">
-                  Registramos la reserva #{reservaExistente.idReserva} a tu
-                  nombre. Puedes seguir su estado desde tu área de cliente.
+                  Ya registramos una reserva para este viaje a tu nombre.
+                  Puedes seguir su estado desde tu área de cliente.
                 </p>
                 <Boton
                   href={`/user/reservas/${reservaExistente.idReserva}`}
                   tamano="sm"
                 >
-                  Ver estado de mi reserva
+                  Ver el estado de mi reserva
                 </Boton>
               </div>
             ) : perfil === undefined ? (

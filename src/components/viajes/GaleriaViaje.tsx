@@ -24,7 +24,14 @@ export default function GaleriaViaje({ imagenes, titulo }: GaleriaViajeProps) {
 
   return (
     <div className="space-y-sm">
-      <div className="relative aspect-[16/9] overflow-hidden rounded-lg border border-neutral-border bg-sand">
+      <div className="relative aspect-[16/9] overflow-hidden rounded-lg border border-neutral-border bg-neutral-900">
+        <Image
+          src={principal}
+          alt=""
+          fill
+          aria-hidden="true"
+          className="object-cover blur-md scale-110 opacity-50 pointer-events-none"
+        />
         <Image
           src={principal}
           alt={titulo}
@@ -33,7 +40,7 @@ export default function GaleriaViaje({ imagenes, titulo }: GaleriaViajeProps) {
           priority
           placeholder="blur"
           blurDataURL={BLUR_DATA_URL}
-          className="object-cover"
+          className="relative z-10 object-contain"
         />
       </div>
       {secundarias.length > 0 ? (

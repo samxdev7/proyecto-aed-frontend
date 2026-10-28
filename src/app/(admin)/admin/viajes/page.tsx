@@ -18,6 +18,7 @@ import {
   Image as ImageIcon,
   AlertTriangle,
   X,
+  Info,
 } from "lucide-react";
 import Skeleton, { FilaTablaSkeleton } from "@/components/ui/Skeleton";
 import EmptyState from "@/components/ui/EmptyState";
@@ -786,22 +787,30 @@ export default function AdminViajes() {
                 </label>
               </div>
 
+              {/* Mensaje de recomendación conciso */}
+              <div className="flex items-center gap-2 rounded-md border border-admin-border bg-admin-bg px-3 py-1.5 text-xs text-admin-muted">
+                <Info className="h-3.5 w-3.5 shrink-0 text-admin-accent" />
+                <span>
+                  Resolución sugerida 1920 × 1080 px. Evita fotos verticales para que no se recorten.
+                </span>
+              </div>
+
               {/* Widget visual de portada con integracion a Supabase Storage */}
               <div className="flex flex-col sm:flex-row items-center gap-4 rounded-lg border border-admin-border bg-admin-bg p-3">
                 {form.imagenUrl ? (
-                  <div className="relative h-28 w-44 shrink-0 overflow-hidden rounded-md border border-admin-border bg-white shadow-xs">
+                  <div className="relative aspect-[16/9] w-48 shrink-0 overflow-hidden rounded-md border border-admin-border bg-white shadow-xs">
                     <Image
                       src={form.imagenUrl}
                       alt="Portada del viaje"
                       fill
                       unoptimized
-                      className="object-cover"
+                      className="object-contain"
                     />
                   </div>
                 ) : (
-                  <div className="flex h-28 w-44 shrink-0 flex-col items-center justify-center rounded-md border border-dashed border-admin-border bg-white text-admin-muted">
+                  <div className="flex aspect-[16/9] w-48 shrink-0 flex-col items-center justify-center rounded-md border border-dashed border-admin-border bg-white text-admin-muted">
                     <ImageIcon className="h-8 w-8 mb-1 text-admin-muted/40" />
-                    <span className="text-[11px]">Sin portada</span>
+                    <span className="text-[11px]">Sin portada (16:9)</span>
                   </div>
                 )}
 

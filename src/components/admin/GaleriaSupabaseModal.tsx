@@ -19,7 +19,8 @@ import {
   FileImage,
   AlertCircle,
   Loader2,
-  HardDrive
+  HardDrive,
+  Info,
 } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import {
@@ -436,6 +437,14 @@ export default function GaleriaSupabaseModal({
           </div>
         </div>
 
+        {/* Banner de recomendación conciso */}
+        <div className="border-b border-admin-border bg-admin-bg/80 px-6 py-1.5 text-xs text-admin-muted flex items-center gap-2">
+          <Info className="h-3.5 w-3.5 text-admin-accent shrink-0" />
+          <span>
+            Resolución sugerida 1920 × 1080 px (16:9). Evita fotos verticales para que no se recorten.
+          </span>
+        </div>
+
         {/* Notificación de aviso / estado */}
         {aviso && (
           <div
@@ -482,6 +491,7 @@ export default function GaleriaSupabaseModal({
               <Upload className="h-12 w-12 mb-2 animate-bounce" />
               <p className="text-base">Suelta tus imágenes aquí para subirlas a la carpeta actual</p>
               <p className="text-xs text-admin-muted mt-1 font-mono">{rutaActual}</p>
+              <p className="text-xs text-admin-accent/90 mt-1 font-medium">Recomendado: fotos horizontales 16:9 (1920 × 1080 px)</p>
             </div>
           )}
 
@@ -495,7 +505,7 @@ export default function GaleriaSupabaseModal({
               <FileImage className="h-12 w-12 text-admin-muted/40 mb-3" />
               <h3 className="font-semibold text-admin-text text-sm">Carpeta vacía</h3>
               <p className="text-xs text-admin-muted mt-1 max-w-sm">
-                No hay imágenes ni subcarpetas aquí. Sube una foto o arrástrala a este panel.
+                No hay imágenes ni subcarpetas aquí. Sube una foto horizontal (16:9) o arrástrala a este panel.
               </p>
               <button
                 type="button"
@@ -587,14 +597,14 @@ export default function GaleriaSupabaseModal({
                             }`}
                           >
                             {/* Miniatura de imagen */}
-                            <div className="relative aspect-4/3 w-full bg-admin-bg overflow-hidden">
+                            <div className="relative aspect-[16/9] w-full bg-admin-bg overflow-hidden">
                               <Image
                                 src={archivo.urlPublica}
                                 alt={archivo.nombre}
                                 fill
                                 unoptimized
                                 sizes="(max-width: 768px) 50vw, 20vw"
-                                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                className="object-contain transition-transform duration-500 ease-out group-hover:scale-105"
                               />
 
                               {/* Badge de seleccionada */}
