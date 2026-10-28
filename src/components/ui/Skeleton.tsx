@@ -50,16 +50,16 @@ export function FilaTablaSkeleton({
 /** Esqueleto de detalle con galería: imagen grande + panel lateral. */
 export function DetalleShowcaseSkeleton() {
   return (
-    <div className="mx-auto max-w-5xl space-y-lg px-lg py-lg">
+    <div className="mx-auto max-w-6xl space-y-lg px-4 py-md sm:px-6 md:px-lg md:py-lg">
       <Skeleton className="h-4 w-32" />
-      <div className="grid grid-cols-1 gap-lg lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
         <div className="space-y-md lg:col-span-2">
           <Skeleton className="h-10 w-2/3" />
           <Skeleton className="aspect-[16/9] w-full" />
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-5/6" />
         </div>
-        <div className="space-y-md rounded-md border border-neutral-border bg-surface p-lg">
+        <div className="space-y-md rounded-md border border-neutral-border bg-surface p-5 sm:p-6">
           <Skeleton className="h-8 w-1/2" />
           <Skeleton className="h-16 w-full" />
           <Skeleton className="h-10 w-full" />

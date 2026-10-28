@@ -244,7 +244,7 @@ export default function InscripcionPage() {
                 </div>
                 <div className="flex items-start justify-between gap-md">
                   <dt className="text-text-muted">Abono por persona</dt>
-                  <dd className="font-medium text-text-main">
+                  <dd className="font-medium text-text-main whitespace-nowrap shrink-0">
                     {formatoPrecio(viaje.montoReserva)}
                   </dd>
                 </div>

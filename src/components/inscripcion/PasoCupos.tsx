@@ -85,15 +85,15 @@ export default function PasoCupos({
       </div>
 
       <dl className="space-y-sm rounded-md bg-sand p-md text-sm">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <dt className="text-ink/70">Abono por persona</dt>
-          <dd className="font-medium text-navy">
+          <dd className="font-medium text-navy whitespace-nowrap shrink-0">
             {formatoCordobas(viaje.montoReserva)}
           </dd>
         </div>
-        <div className="flex items-center justify-between border-t border-ink/10 pt-sm">
+        <div className="flex items-center justify-between gap-3 border-t border-ink/10 pt-sm">
           <dt className="font-semibold text-navy">Total a transferir</dt>
-          <dd className="font-bold text-navy">
+          <dd className="font-bold text-navy whitespace-nowrap shrink-0">
             {formatoCordobas(viaje.montoReserva * cantidad)}
           </dd>
         </div>

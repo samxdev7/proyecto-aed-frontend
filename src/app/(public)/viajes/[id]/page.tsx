@@ -24,7 +24,7 @@ export default async function ViajeDetallePage({ params }: ViajeDetallePageProps
   const ultimosCupos = inscripcionAbierta && viaje.cuposDisponibles <= 2;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-lg px-lg py-lg">
+    <div className="mx-auto max-w-6xl space-y-lg px-4 py-md sm:px-6 md:px-lg md:py-lg">
       <Link
         href="/viajes"
         className="inline-flex items-center gap-xs text-sm font-medium text-text-muted transition-colors hover:text-primary"
@@ -32,7 +32,7 @@ export default async function ViajeDetallePage({ params }: ViajeDetallePageProps
         <ChevronLeft size={16} /> Volver al catálogo
       </Link>
 
-      <div className="grid grid-cols-1 gap-lg lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
         <div className="space-y-lg lg:col-span-2">
           <GaleriaViaje
             imagenes={viaje.imagenUrl ? [viaje.imagenUrl] : []}
@@ -54,26 +54,26 @@ export default async function ViajeDetallePage({ params }: ViajeDetallePageProps
           </div>
         </div>
 
-        <aside className="self-start space-y-md rounded-md border border-neutral-border bg-surface p-lg shadow-sm lg:sticky lg:top-lg">
+        <aside className="self-start space-y-md rounded-md border border-neutral-border bg-surface p-5 sm:p-6 shadow-sm lg:sticky lg:top-lg">
           <div className="space-y-xs">
-            <span className="text-xs font-bold uppercase text-text-muted">
+            <span className="text-xs font-bold uppercase tracking-wide text-text-muted">
               Costo Total
             </span>
-            <p className="text-3xl font-bold text-primary">
+            <p className="text-3xl font-bold text-primary whitespace-nowrap">
               {formatoCordobas(viaje.montoTotal)}
             </p>
           </div>
 
-          <div className="space-y-xs rounded-sm border border-neutral-border bg-sand p-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-primary">
+          <div className="space-y-1.5 rounded-sm border border-neutral-border bg-sand p-3.5 sm:p-4">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-semibold text-primary">
                 Abono para reservar
               </span>
-              <span className="text-sm font-bold text-primary">
+              <span className="text-base sm:text-lg font-bold text-primary whitespace-nowrap shrink-0">
                 {formatoCordobas(viaje.montoReserva)}
               </span>
             </div>
-            <p className="text-[10px] leading-tight text-text-muted">
+            <p className="text-xs leading-normal text-text-muted">
               El monto restante se cancela antes de la salida.
             </p>
           </div>

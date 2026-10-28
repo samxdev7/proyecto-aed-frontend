@@ -97,15 +97,15 @@ export default function ModalFicha({ viaje, onCerrar }: ModalFichaProps) {
             <h3 className="text-xs font-semibold uppercase tracking-wider text-ink/60">
               Costo
             </h3>
-            <div className="mt-3 flex items-center justify-between text-sm">
+            <div className="mt-3 flex items-center justify-between gap-3 text-sm">
               <span className="text-ink/70">Abono para apartar tu cupo</span>
-              <span className="font-semibold text-navy">
+              <span className="font-semibold text-navy whitespace-nowrap shrink-0">
                 {formatoCordobas(viaje.montoReserva)}
               </span>
             </div>
-            <div className="mt-2 flex items-center justify-between text-sm">
+            <div className="mt-2 flex items-center justify-between gap-3 text-sm">
               <span className="text-ink/70">Monto total del viaje</span>
-              <span className="font-semibold text-navy">
+              <span className="font-semibold text-navy whitespace-nowrap shrink-0">
                 {formatoPrecio(viaje.montoTotal)}
               </span>
             </div>
