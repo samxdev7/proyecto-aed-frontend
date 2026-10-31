@@ -103,28 +103,40 @@ export default function TripCatalog() {
                 aria-label={`Ver detalles de ${viaje.titulo}`}
                 className="absolute inset-0 z-10"
               />
-              <div className="relative aspect-[4/3] overflow-hidden bg-surface-alt">
+              <div className="relative aspect-[16/9] overflow-hidden bg-neutral-900">
                 {viaje.imagenUrl ? (
-                  <Image
-                    src={viaje.imagenUrl}
-                    alt={viaje.titulo}
-                    fill
-                    sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
+                  <>
+                    {/* Capa de fondo difuminada que rellena los extremos laterales o verticales evitando bandas blancas */}
+                    <Image
+                      src={viaje.imagenUrl}
+                      alt=""
+                      fill
+                      aria-hidden="true"
+                      sizes="33vw"
+                      className="object-cover blur-md scale-110 opacity-60 pointer-events-none"
+                    />
+                    {/* Imagen principal nítida y completa (fit) con zoom suave en hover */}
+                    <Image
+                      src={viaje.imagenUrl}
+                      alt={viaje.titulo}
+                      fill
+                      sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                      className="relative z-10 object-contain transition-transform duration-500 ease-out group-hover:scale-105"
+                    />
+                  </>
                 ) : (
                   <div className="flex h-full items-center justify-center text-text-muted">
                     <Mountain size={40} aria-hidden="true" />
                   </div>
                 )}
-                <div className="absolute left-sm top-sm flex items-center gap-1.5">
+                <div className="absolute left-sm top-sm z-20 flex items-center gap-1.5">
                   <span className="text-[11px] font-semibold uppercase tracking-wide text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
                     Dificultad:
                   </span>
                   <ChipDificultad dificultad={viaje.dificultad} />
                 </div>
                 {viaje.cuposDisponibles <= 2 ? (
-                  <span className="absolute right-sm top-sm rounded-sm bg-warning-bg px-2 py-1 text-xs font-medium text-warning-text">
+                  <span className="absolute right-sm top-sm z-20 rounded-sm bg-warning-bg px-2 py-1 text-xs font-medium text-warning-text">
                     ¡Últimos cupos!
                   </span>
                 ) : null}

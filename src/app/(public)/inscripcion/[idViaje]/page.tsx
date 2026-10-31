@@ -244,7 +244,7 @@ export default function InscripcionPage() {
                 </div>
                 <div className="flex items-start justify-between gap-md">
                   <dt className="text-text-muted">Abono por persona</dt>
-                  <dd className="font-medium text-text-main">
+                  <dd className="font-medium text-text-main whitespace-nowrap shrink-0">
                     {formatoPrecio(viaje.montoReserva)}
                   </dd>
                 </div>
@@ -268,14 +268,14 @@ export default function InscripcionPage() {
                 </h2>
                 <Chip estado={reservaExistente.estado} />
                 <p className="text-sm text-text-muted">
-                  Registramos la reserva #{reservaExistente.idReserva} a tu
-                  nombre. Puedes seguir su estado desde tu área de cliente.
+                  Ya registramos una reserva para este viaje a tu nombre.
+                  Puedes seguir su estado desde tu área de cliente.
                 </p>
                 <Boton
                   href={`/user/reservas/${reservaExistente.idReserva}`}
                   tamano="sm"
                 >
-                  Ver estado de mi reserva
+                  Ver el estado de mi reserva
                 </Boton>
               </div>
             ) : perfil === undefined ? (
