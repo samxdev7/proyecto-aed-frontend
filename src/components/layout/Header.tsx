@@ -114,7 +114,12 @@ export default function Header() {
     };
   }, []);
 
-  if (ruta === "/iniciar-sesion" || ruta === "/registro") {
+  if (
+    ruta === "/iniciar-sesion" ||
+    ruta === "/registro" ||
+    ruta === "/recuperar-contrasena" ||
+    ruta === "/restablecer-contrasena"
+  ) {
     return null;
   }
 

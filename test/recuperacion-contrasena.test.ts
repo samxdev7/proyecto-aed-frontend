@@ -87,6 +87,24 @@ test("Recuperación de Contraseña - Verificación Estática en Frontend", async
       "restablecer-contrasena debe solicitar y confirmar la nueva clave",
     );
   });
+
+  await t.test("Header.tsx y Footer.tsx se ocultan en pantallas de recuperación de contraseña", () => {
+    const headerPath = path.resolve("src/components/layout/Header.tsx");
+    const footerPath = path.resolve("src/components/layout/Footer.tsx");
+    const headerCode = fs.readFileSync(headerPath, "utf-8");
+    const footerCode = fs.readFileSync(footerPath, "utf-8");
+
+    assert.ok(
+      headerCode.includes('ruta === "/recuperar-contrasena"') &&
+        headerCode.includes('ruta === "/restablecer-contrasena"'),
+      "Header.tsx debe ocultarse en /recuperar-contrasena y /restablecer-contrasena",
+    );
+    assert.ok(
+      footerCode.includes('ruta === "/recuperar-contrasena"') &&
+        footerCode.includes('ruta === "/restablecer-contrasena"'),
+      "Footer.tsx debe ocultarse en /recuperar-contrasena y /restablecer-contrasena",
+    );
+  });
 });
 
 test("Reglas de Negocio y Validación en Recuperación de Contraseña", async (t) => {
