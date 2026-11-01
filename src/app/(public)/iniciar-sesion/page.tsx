@@ -46,7 +46,7 @@ function LoginContent() {
       } else if (esAdministrador(nueva)) {
         router.push("/admin");
       } else {
-        router.push("/");
+        router.push("/viajes");
       }
     } catch (excepcion) {
       // Credenciales inválidas: backend devuelve 500 (debería ser 401) con
@@ -127,6 +127,14 @@ function LoginContent() {
             ocultarAsterisco
             valor={contrasena}
             alCambiar={setContrasena}
+            accionLabel={
+              <Link
+                href="/recuperar-contrasena"
+                className="text-xs font-semibold text-primary transition hover:underline"
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
+            }
           />
 
           {error ? (
@@ -167,13 +175,7 @@ function LoginContent() {
             type="button"
             variante="contorno"
             fullWidth
-            onClick={() => {
-              if (typeof window !== "undefined" && window.history.length > 1) {
-                router.back();
-              } else {
-                router.push(redir || "/");
-              }
-            }}
+            onClick={() => router.push("/")}
           >
             <ArrowLeft size={16} aria-hidden="true" />
             <span>Volver a la página principal</span>

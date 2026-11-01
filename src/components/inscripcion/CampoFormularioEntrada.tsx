@@ -277,7 +277,7 @@ export default function CampoFormularioEntrada({
             {cargandoArchivo ? (
               <span className="inline-flex items-center gap-2 text-primary font-medium">
                 <UploadCloud size={16} className="animate-pulse" />
-                Subiendo a Supabase Storage...
+                Subiendo...
               </span>
             ) : (
               <>

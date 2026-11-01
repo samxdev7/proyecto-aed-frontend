@@ -1,16 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { LogIn } from "lucide-react";
-import { leerPerfilCompleto, obtenerSesion } from "@/lib/auth";
+import { leerPerfilCompleto, obtenerSesion, EVENTO_SESION } from "@/lib/auth";
+import { reservaService } from "@/services/reserva.service";
+import type { HistorialReservaResumen } from "@/types/reserva";
 import Boton from "@/components/ui/Boton";
+import Chip from "@/components/ui/Chip";
 import Modal from "@/components/ui/Modal";
 import CompletarPerfilPopup from "@/components/auth/CompletarPerfilPopup";
 
+const ESTADOS_BLOQUEANTES: HistorialReservaResumen["estado"][] = [
+  "pendiente",
+  "aprobada",
+  "expirada",
+];
+
 /**
  * Botón "Reservar" del detalle de viaje:
+ * - si ya tiene reserva previa → botón "Ver el estado de mi reserva" con estado visual.
  * - no autenticado → modal central invitando a iniciar sesión para reservar.
  * - admin → alerta de que no puede reservar.
  * - perfil incompleto → popup para completarlo.
@@ -21,6 +31,42 @@ export default function BotonReservar({ idViaje }: { idViaje: number }) {
   const [adminBloqueado, setAdminBloqueado] = useState(false);
   const [loginModalAbierto, setLoginModalAbierto] = useState(false);
   const [perfilPopupAbierto, setPerfilPopupAbierto] = useState(false);
+  const [reservaExistente, setReservaExistente] = useState<
+    HistorialReservaResumen | null | undefined
+  >(undefined);
+
+  useEffect(() => {
+    function verificarReserva() {
+      const sesion = obtenerSesion();
+      if (!sesion || sesion.rol === "administrador") {
+        setReservaExistente(null);
+        return;
+      }
+      let activo = true;
+      reservaService
+        .listarMisReservas(0, 50)
+        .then((pagina) => {
+          if (activo) {
+            const match = pagina.content.find(
+              (r) =>
+                r.viaje.idViaje === idViaje &&
+                ESTADOS_BLOQUEANTES.includes(r.estado),
+            );
+            setReservaExistente(match ?? null);
+          }
+        })
+        .catch(() => {
+          if (activo) setReservaExistente(null);
+        });
+      return () => {
+        activo = false;
+      };
+    }
+
+    verificarReserva();
+    window.addEventListener(EVENTO_SESION, verificarReserva);
+    return () => window.removeEventListener(EVENTO_SESION, verificarReserva);
+  }, [idViaje]);
 
   function reservar() {
     const sesion = obtenerSesion();
@@ -35,6 +81,11 @@ export default function BotonReservar({ idViaje }: { idViaje: number }) {
       return;
     }
 
+    if (reservaExistente) {
+      router.push(`/user/reservas/${reservaExistente.idReserva}`);
+      return;
+    }
+
     if (leerPerfilCompleto(sesion.idUsuario) === false) {
       setPerfilPopupAbierto(true);
       return;
@@ -45,9 +96,32 @@ export default function BotonReservar({ idViaje }: { idViaje: number }) {
 
   return (
     <>
-      <Boton type="button" fullWidth onClick={reservar}>
-        Reservar
-      </Boton>
+      {reservaExistente ? (
+        <div className="space-y-sm">
+          <div className="space-y-xs rounded-sm border border-neutral-border bg-surface-alt p-sm">
+            <div className="flex items-center justify-between gap-xs">
+              <span className="text-xs font-semibold text-primary">
+                Ya tienes una reserva
+              </span>
+              <Chip estado={reservaExistente.estado} />
+            </div>
+            <p className="text-xs text-text-muted">
+              Ya cuentas con una inscripción registrada para esta expedición.
+            </p>
+          </div>
+
+          <Boton
+            href={`/user/reservas/${reservaExistente.idReserva}`}
+            fullWidth
+          >
+            Ver el estado de mi reserva
+          </Boton>
+        </div>
+      ) : (
+        <Boton type="button" fullWidth onClick={reservar}>
+          Reservar
+        </Boton>
+      )}
 
       <CompletarPerfilPopup
         abierto={perfilPopupAbierto}

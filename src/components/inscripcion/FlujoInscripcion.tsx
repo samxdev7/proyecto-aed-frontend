@@ -85,6 +85,14 @@ export default function FlujoInscripcion({ viaje }: { viaje: Viaje }) {
         i === indice ? { ...item, [campo]: valor } : item,
       ),
     );
+    const clave = `${indice}-${campo}`;
+    if (errores[clave]) {
+      setErrores((prev) => {
+        const copia = { ...prev };
+        delete copia[clave];
+        return copia;
+      });
+    }
   }
 
   function validarViajeros(): boolean {
@@ -180,10 +188,19 @@ export default function FlujoInscripcion({ viaje }: { viaje: Viaje }) {
           campos={campos}
           respuestas={respuestas}
           errores={errores}
+          setErrores={setErrores}
           alCambiarAcompanante={cambiarAcompanante}
-          alCambiarRespuesta={(idCampo, valor) =>
-            setRespuestas((previas) => ({ ...previas, [idCampo]: valor }))
-          }
+          alCambiarRespuesta={(idCampo, valor) => {
+            setRespuestas((previas) => ({ ...previas, [idCampo]: valor }));
+            const clave = `resp-${idCampo}`;
+            if (errores[clave]) {
+              setErrores((prev) => {
+                const copia = { ...prev };
+                delete copia[clave];
+                return copia;
+              });
+            }
+          }}
           alAtras={() => setPaso(1)}
           alContinuar={continuarAPago}
         />

@@ -79,7 +79,7 @@ export default function AdminLayout({
 
   function salir() {
     cerrarSesion();
-    router.push("/");
+    router.push("/iniciar-sesion");
   }
 
   if (!esAdmin) return null;

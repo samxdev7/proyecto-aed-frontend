@@ -29,7 +29,12 @@ const redes = [
 
 export default function Footer() {
   const ruta = usePathname();
-  if (ruta === "/iniciar-sesion" || ruta === "/registro") {
+  if (
+    ruta === "/iniciar-sesion" ||
+    ruta === "/registro" ||
+    ruta === "/recuperar-contrasena" ||
+    ruta === "/restablecer-contrasena"
+  ) {
     return null;
   }
 

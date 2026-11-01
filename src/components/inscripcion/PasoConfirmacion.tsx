@@ -48,7 +48,7 @@ export default function PasoConfirmacion({
           <dt className="text-xs font-semibold text-ink/60">
             Abono (por persona)
           </dt>
-          <dd className="font-medium text-navy">
+          <dd className="font-medium text-navy whitespace-nowrap">
             {formatoCordobas(reserva.montoReserva)}
           </dd>
         </div>
@@ -56,7 +56,7 @@ export default function PasoConfirmacion({
           <dt className="text-xs font-semibold text-ink/60">
             Total abonado ({personas} {personas === 1 ? "persona" : "personas"})
           </dt>
-          <dd className="font-bold text-navy">
+          <dd className="font-bold text-navy whitespace-nowrap">
             {formatoCordobas(total)}
           </dd>
         </div>

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Logo from "./Logo";
 import NotificacionesDrawer from "@/components/clientes/NotificacionesDrawer";
 import { EVENTO_SESION, cerrarSesion, esAdministrador, obtenerSesion } from "@/lib/auth";
@@ -46,6 +46,7 @@ export default function Header() {
   const [perfilAbierto, setPerfilAbierto] = useState(false);
   const [noLeidas, setNoLeidas] = useState(0);
   const ruta = usePathname();
+  const router = useRouter();
   const refNotis = useRef<HTMLDivElement>(null);
   const refPerfil = useRef<HTMLDivElement>(null);
 
@@ -113,7 +114,12 @@ export default function Header() {
     };
   }, []);
 
-  if (ruta === "/iniciar-sesion" || ruta === "/registro") {
+  if (
+    ruta === "/iniciar-sesion" ||
+    ruta === "/registro" ||
+    ruta === "/recuperar-contrasena" ||
+    ruta === "/restablecer-contrasena"
+  ) {
     return null;
   }
 
@@ -129,6 +135,7 @@ export default function Header() {
     cerrarSesion();
     setPerfilAbierto(false);
     setAbierto(false);
+    router.push("/iniciar-sesion");
   };
 
   const botonCampana = (onclick: () => void, ariaExpanded: boolean) => (

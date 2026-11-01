@@ -1,5 +1,5 @@
 export function formatoCordobas(monto: number): string {
-  return `C$ ${Math.round(monto).toLocaleString("en-US")}`;
+  return `C$\u00A0${Math.round(monto).toLocaleString("en-US")}`;
 }
 
 export function formatoPrecio(monto: number): string {

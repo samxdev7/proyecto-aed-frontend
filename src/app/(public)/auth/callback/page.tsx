@@ -7,7 +7,7 @@ import { AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { authService } from "@/services/auth.service";
 import { userService } from "@/services/user.service";
-import { guardarSesion, perfilEstaCompleto } from "@/lib/auth";
+import { esAdministrador, guardarSesion, perfilEstaCompleto } from "@/lib/auth";
 
 function CallbackContent() {
   const router = useRouter();
@@ -22,10 +22,10 @@ function CallbackContent() {
 
     async function procesarOAuth() {
       try {
-        // 0. El usuario canceló en Google: no hay nada que sincronizar.
+        // 0. El usuario canceló o rechazó en Google: regresar a la página principal.
         const errorOAuth = searchParams.get("error");
         if (errorOAuth) {
-          router.replace("/iniciar-sesion");
+          router.replace("/");
           return;
         }
 
@@ -83,6 +83,11 @@ function CallbackContent() {
         // 3. Sincronizar con el Backend Spring Boot vía POST /auth/google
         const sesionBackend = await authService.loginGoogle(token);
         guardarSesion(sesionBackend);
+
+        if (esAdministrador(sesionBackend)) {
+          router.replace("/admin");
+          return;
+        }
 
         // 4. Evaluar si el usuario tiene su perfil completo (nombre, identificación, nacionalidad)
         const perfil = await userService.getMyProfile();
