@@ -50,10 +50,17 @@ export function sanitizarMensajeError(
 }
 
 export class ApiClient {
-  private static baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+  public static getBaseUrl(): string {
+    const raw = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+    const cleaned = raw.trim().replace(/\/+$/, "");
+    return cleaned.endsWith("/api") ? cleaned : `${cleaned}/api`;
+  }
 
   private static headers(): Record<string, string> {
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      "Accept": "application/json, text/plain, */*",
+    };
     const token = typeof window === "undefined" ? null : obtenerToken();
     if (token) headers.Authorization = `Bearer ${token}`;
     return headers;
@@ -77,10 +84,14 @@ export class ApiClient {
   /** fetch envuelto: backend caído o sin conexión -> ApiError(0) con mensaje amigable. */
   private static async request(endpoint: string, init: RequestInit): Promise<Response> {
     let response: Response;
+    const rutaFinal = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
     try {
-      response = await fetch(`${this.baseUrl}${endpoint}`, {
+      response = await fetch(`${this.getBaseUrl()}${rutaFinal}`, {
         ...init,
-        headers: this.headers(),
+        headers: {
+          ...this.headers(),
+          ...(init.headers || {}),
+        },
       });
     } catch {
       throw new ApiError(
