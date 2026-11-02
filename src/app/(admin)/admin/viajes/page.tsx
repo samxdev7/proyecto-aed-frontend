@@ -26,7 +26,8 @@ import Modal from "@/components/ui/Modal";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import SelectorFechaHora from "@/components/ui/SelectorFechaHora";
-import { ChipDificultad } from "@/components/ui/Chip";
+import { ChipDificultad, ChipEstadoViaje } from "@/components/ui/Chip";
+import { calcularEstadoViaje } from "@/lib/viaje-estado";
 import GaleriaSupabaseModal from "@/components/admin/GaleriaSupabaseModal";
 import ModalViajesArchivados from "@/components/admin/ModalViajesArchivados";
 import MarkdownEditor from "@/components/admin/MarkdownEditor";
@@ -596,19 +597,39 @@ export default function AdminViajes() {
                   </td>
                   <td className="p-md text-sm">{formatoCordobas(viaje.montoTotal)}</td>
                   <td className="p-md">
-                    <div className="flex items-center gap-xs">
-                      <span className={`text-xs font-bold ${viaje.estado === "activo" ? "text-success" : "text-admin-muted"}`}>
-                        {viaje.estado === "activo" ? "Activo" : "Cerrado"}
-                      </span>
-                      <button
-                        onClick={() => alternarEstado(viaje)}
-                        disabled={ocupado === viaje.idViaje}
-                        title={viaje.estado === "activo" ? "Cerrar viaje" : "Reactivar viaje"}
-                        className="p-xs text-admin-muted hover:bg-admin-bg rounded-sm transition-colors disabled:opacity-50"
-                      >
-                        <Power size={14} />
-                      </button>
-                    </div>
+                    {(() => {
+                      const estadoCalc = calcularEstadoViaje(viaje.fechaHoraIda, viaje.estado);
+                      return (
+                        <div className="flex items-center gap-xs">
+                          {estadoCalc.esExpirado ? (
+                            <span
+                              className="inline-flex items-center rounded-xs bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800 border border-amber-300 shadow-xs"
+                              title="Inscripciones expiradas (1 semana antes de la salida)"
+                            >
+                              Expirado
+                            </span>
+                          ) : (
+                            <span
+                              className={`text-xs font-bold ${
+                                viaje.estado === "activo" && !estadoCalc.esCerrado
+                                  ? "text-success"
+                                  : "text-admin-muted"
+                              }`}
+                            >
+                              {viaje.estado === "activo" && !estadoCalc.esCerrado ? "Activo" : "Cerrado"}
+                            </span>
+                          )}
+                          <button
+                            onClick={() => alternarEstado(viaje)}
+                            disabled={ocupado === viaje.idViaje}
+                            title={viaje.estado === "activo" ? "Cerrar viaje" : "Reactivar viaje"}
+                            className="p-xs text-admin-muted hover:bg-admin-bg rounded-sm transition-colors disabled:opacity-50"
+                          >
+                            <Power size={14} />
+                          </button>
+                        </div>
+                      );
+                    })()}
                   </td>
                   <td className="p-md text-right">
                     <div className="flex justify-end gap-xs">
@@ -684,7 +705,7 @@ export default function AdminViajes() {
             <Skeleton className="h-24 w-full rounded-sm" />
           </div>
         ) : (
-          <form onSubmit={guardar} className="grid grid-cols-1 md:grid-cols-2 gap-md pb-12" noValidate>
+          <form onSubmit={guardar} className="grid grid-cols-1 md:grid-cols-2 gap-md pb-36" noValidate>
             <div className="md:col-span-2">
               <Campo
                 label="Título del viaje"
@@ -734,6 +755,7 @@ export default function AdminViajes() {
               min={form.fechaIdaLocal || aValorLocal(new Date().toISOString())}
               error={erroresCampo.fechaVueltaLocal}
               onBlur={() => tocar("fechaVueltaLocal")}
+              alinear="derecha"
             />
             <Campo
               label="Monto total (C$)"

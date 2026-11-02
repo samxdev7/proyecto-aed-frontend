@@ -15,6 +15,7 @@ interface SelectorFechaHoraProps {
   onBlur?: () => void;
   id?: string;
   soloFecha?: boolean;
+  alinear?: "izquierda" | "derecha" | "auto";
 }
 
 const MESES = [
@@ -60,6 +61,7 @@ export default function SelectorFechaHora({
   onBlur,
   id,
   soloFecha = false,
+  alinear = "izquierda",
 }: SelectorFechaHoraProps) {
   const idGenerado = useId();
   const campoId = id ?? idGenerado;
@@ -217,7 +219,10 @@ export default function SelectorFechaHora({
   const textoMostrado = formatearParaMostrar(valor, soloFecha);
 
   return (
-    <div className="relative flex flex-col gap-1" ref={contenedorRef}>
+    <div
+      className={`relative flex flex-col gap-1 ${abierto ? "z-50" : "z-10"}`}
+      ref={contenedorRef}
+    >
       <label htmlFor={campoId} className="text-xs font-semibold text-text-muted">
         {label}
         {required && (
@@ -269,7 +274,9 @@ export default function SelectorFechaHora({
           aria-label={`Selector de fecha ${soloFecha ? "" : "y hora "}para ${label}`}
           className={`absolute ${
             abrirHaciaArriba ? "bottom-full mb-1" : "top-full mt-1"
-          } left-0 z-[80] w-full ${soloFecha ? "sm:w-[280px]" : "sm:w-[350px]"} rounded-lg border border-admin-border bg-white p-3 shadow-xl ring-1 ring-black/5`}
+          } ${
+            alinear === "derecha" ? "sm:right-0 sm:left-auto left-0" : "left-0"
+          } z-[100] w-full ${soloFecha ? "sm:w-[280px]" : "sm:w-[350px]"} rounded-lg border border-admin-border bg-white p-3 shadow-2xl ring-1 ring-black/5`}
         >
           <div className="flex flex-col sm:flex-row gap-3">
             {/* Sección Calendario */}

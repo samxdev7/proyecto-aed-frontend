@@ -16,6 +16,7 @@ import type { Viaje } from "@/types/viaje";
 import { obtenerSesion, EVENTO_SESION } from "@/lib/auth";
 import { reservaService } from "@/services/reserva.service";
 import type { HistorialReservaResumen } from "@/types/reserva";
+import { calcularEstadoViaje } from "@/lib/viaje-estado";
 
 interface ModalFichaProps {
   viaje: Viaje | null;
@@ -63,6 +64,8 @@ export default function ModalFicha({ viaje, onCerrar }: ModalFichaProps) {
 
   if (!viaje) return null;
 
+  const estadoCalc = calcularEstadoViaje(viaje.fechaHoraIda, viaje.estado);
+
   return (
     <Modal
       abierto
@@ -100,8 +103,18 @@ export default function ModalFicha({ viaje, onCerrar }: ModalFichaProps) {
               <path d="M0 140 L220 50 L420 120 L620 36 L800 100 L800 140 Z" />
             </svg>
           )}
-          <span className="absolute left-5 top-5 z-20">
+          <span className="absolute left-5 top-5 z-20 flex items-center gap-2">
             <ChipDificultad dificultad={viaje.dificultad} />
+            {estadoCalc.esExpirado && (
+              <span className="rounded-sm bg-amber-100 border border-amber-300 px-2 py-0.5 text-xs font-bold text-amber-800 shadow-xs">
+                Inscripciones expiradas
+              </span>
+            )}
+            {estadoCalc.esCerrado && (
+              <span className="rounded-sm bg-neutral-100 border border-neutral-300 px-2 py-0.5 text-xs font-semibold text-neutral-600 shadow-xs">
+                Cerrado
+              </span>
+            )}
           </span>
           <button
             type="button"
@@ -174,6 +187,15 @@ export default function ModalFicha({ viaje, onCerrar }: ModalFichaProps) {
                 Ya cuentas con una inscripción registrada para esta expedición.
               </p>
             </div>
+          ) : !estadoCalc.puedeReservar ? (
+            <div className="mt-6 rounded-md border border-amber-300 bg-amber-50 p-sm space-y-1 text-xs">
+              <span className="font-bold text-amber-900">
+                {estadoCalc.esExpirado ? "Inscripciones cerradas" : "Viaje cerrado"}
+              </span>
+              <p className="text-amber-800">
+                {estadoCalc.mensajeDetalle}
+              </p>
+            </div>
           ) : null}
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -183,6 +205,13 @@ export default function ModalFicha({ viaje, onCerrar }: ModalFichaProps) {
                 className="flex-1"
               >
                 Ver el estado de mi reserva
+              </Boton>
+            ) : !estadoCalc.puedeReservar ? (
+              <Boton
+                disabled
+                className="flex-1 opacity-60 cursor-not-allowed"
+              >
+                {estadoCalc.esExpirado ? "Inscripciones expiradas" : "Viaje cerrado"}
               </Boton>
             ) : (
               <Boton
