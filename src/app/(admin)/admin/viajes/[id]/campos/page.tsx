@@ -313,26 +313,26 @@ export default function AdminCampoFormulario() {
         <div className="flex items-center gap-sm">
           <button
             onClick={() => router.back()}
-            className="p-xs border border-admin-border rounded-sm hover:bg-admin-bg transition-colors"
+            className="p-1.5 sm:p-xs border border-admin-border rounded-sm hover:bg-admin-bg transition-colors"
             title="Volver"
           >
             <ArrowLeft size={16} />
           </button>
-          <div className="ml-sm">
+          <div className="ml-1 sm:ml-sm">
             <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-bold text-admin-text">Preguntas Personalizadas</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-admin-text">Preguntas Personalizadas</h2>
               {reordenando && (
                 <span className="inline-flex items-center gap-1 text-xs font-medium text-admin-accent bg-admin-bg px-2 py-0.5 rounded-sm animate-pulse">
                   <Loader2 size={12} className="animate-spin" /> Guardando orden...
                 </span>
               )}
             </div>
-            <p className="text-sm text-admin-muted">Define la información adicional requerida para este viaje.</p>
+            <p className="text-xs sm:text-sm text-admin-muted">Define la información adicional requerida para este viaje.</p>
           </div>
         </div>
         <button
           onClick={abrirCrear}
-          className="bg-admin-accent text-white px-sm py-xs rounded-sm flex items-center gap-sm hover:bg-admin-accent-hover transition-colors text-sm font-medium"
+          className="w-full sm:w-auto bg-admin-accent text-white px-3 py-2 rounded-sm flex items-center justify-center gap-2 hover:bg-admin-accent-hover transition-colors text-xs sm:text-sm font-medium shadow-xs"
         >
           <Plus size={16} /> Agregar Pregunta
         </button>
@@ -520,18 +520,18 @@ export default function AdminCampoFormulario() {
               {errorForm}
             </p>
           )}
-          <div className="flex justify-end gap-sm">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-sm">
             <button
               type="button"
               onClick={cerrarModal}
-              className="px-md py-xs text-admin-muted hover:bg-admin-bg rounded-sm transition-colors text-sm"
+              className="w-full sm:w-auto px-md py-2 sm:py-xs text-center text-admin-muted hover:bg-admin-bg rounded-sm transition-colors text-sm"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={guardando}
-              className="px-md py-xs bg-admin-accent text-white rounded-sm hover:bg-admin-accent-hover transition-colors text-sm font-medium disabled:opacity-50"
+              className="w-full sm:w-auto px-md py-2 sm:py-xs bg-admin-accent text-white rounded-sm hover:bg-admin-accent-hover transition-colors text-sm font-medium disabled:opacity-50 text-center"
             >
               Guardar Pregunta
             </button>

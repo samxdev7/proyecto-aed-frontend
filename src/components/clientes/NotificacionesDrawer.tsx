@@ -106,8 +106,8 @@ export default function NotificacionesDrawer({
 
   return (
     <div
-      className={`fixed inset-0 z-[65] transition ${
-        abierta ? "visible" : "invisible"
+      className={`fixed inset-0 z-[65] overflow-hidden transition ${
+        abierta ? "visible" : "invisible pointer-events-none"
       }`}
       aria-hidden={!abierta}
     >

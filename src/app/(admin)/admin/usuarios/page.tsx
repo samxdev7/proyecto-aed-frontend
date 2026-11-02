@@ -122,19 +122,19 @@ export default function AdminUsuarios() {
     <div className="space-y-md">
       <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Gestión de Usuarios</h2>
-          <p className="text-admin-muted">Administra las cuentas y perfiles de la comunidad.</p>
+          <h2 className="text-xl sm:text-2xl font-bold">Gestión de Usuarios</h2>
+          <p className="text-xs sm:text-sm text-admin-muted">Administra las cuentas y perfiles de la comunidad.</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 w-full sm:w-auto">
           <input
             type="search"
             placeholder="Buscar por nombre o correo"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            className="p-2 border border-admin-border bg-admin-surface rounded-lg text-sm outline-none focus:ring-2 focus:ring-admin-accent"
+            className="w-full sm:w-64 p-2 border border-admin-border bg-admin-surface rounded-lg text-sm outline-none focus:ring-2 focus:ring-admin-accent"
           />
           <select
-            className="p-2 border border-admin-border bg-admin-surface rounded-lg text-sm outline-none focus:ring-2 focus:ring-admin-accent"
+            className="w-full sm:w-auto p-2 border border-admin-border bg-admin-surface rounded-lg text-sm outline-none focus:ring-2 focus:ring-admin-accent"
             value={rolFiltro}
             onChange={(e) => setRolFiltro(e.target.value)}
           >

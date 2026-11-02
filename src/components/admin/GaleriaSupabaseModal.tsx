@@ -293,7 +293,7 @@ export default function GaleriaSupabaseModal({
     >
       <div className="flex flex-col h-[85vh] max-h-[780px]">
         {/* Cabecera del Gestor de Archivos */}
-        <div className="flex items-center justify-between border-b border-admin-border bg-admin-bg px-6 py-4">
+        <div className="flex items-center justify-between border-b border-admin-border bg-admin-bg px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-admin-accent/15 text-admin-accent">
               <HardDrive className="h-5 w-5" />
@@ -315,7 +315,7 @@ export default function GaleriaSupabaseModal({
         </div>
 
         {/* Barra de Herramientas y Migajas de Pan (Breadcrumbs) */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-admin-border px-6 py-3 bg-white">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-admin-border px-4 sm:px-6 py-2.5 sm:py-3 bg-white">
           {/* Breadcrumbs estilo Google Drive */}
           <nav className="flex items-center gap-1.5 text-sm overflow-x-auto py-1">
             <button
@@ -351,7 +351,7 @@ export default function GaleriaSupabaseModal({
           </nav>
 
           {/* Acciones de la barra */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Input oculto para subir archivos */}
             <input
               ref={inputArchivoRef}
@@ -420,7 +420,7 @@ export default function GaleriaSupabaseModal({
         </div>
 
         {/* Barra de Filtro de Búsqueda */}
-        <div className="border-b border-admin-border bg-admin-surface px-6 py-2 flex items-center justify-between gap-4">
+        <div className="border-b border-admin-border bg-admin-surface px-4 sm:px-6 py-2 flex items-center justify-between gap-4">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-admin-muted" />
             <input
@@ -660,7 +660,7 @@ export default function GaleriaSupabaseModal({
                             </div>
 
                             {/* Metadatos inferiores */}
-                            <div className="p-2.5">
+                            <div className="p-2 sm:p-2.5">
                               <p
                                 className="truncate text-xs font-semibold text-admin-text"
                                 title={archivo.nombre}
@@ -670,6 +670,16 @@ export default function GaleriaSupabaseModal({
                               <p className="text-[10px] text-admin-muted mt-0.5">
                                 {formatoBytes(archivo.tamano)}
                               </p>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  onSeleccionarImagen(archivo.urlPublica, archivo);
+                                  onCerrar();
+                                }}
+                                className="sm:hidden mt-2 w-full rounded bg-admin-accent/15 py-1 text-center text-xs font-bold text-admin-accent hover:bg-admin-accent hover:text-white transition-colors"
+                              >
+                                Seleccionar
+                              </button>
                             </div>
                           </div>
                         );
