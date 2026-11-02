@@ -21,6 +21,7 @@ import Modal from "@/components/ui/Modal";
 import EmptyState from "@/components/ui/EmptyState";
 import CompletarPerfilPopup from "@/components/auth/CompletarPerfilPopup";
 import FlujoInscripcion from "@/components/inscripcion/FlujoInscripcion";
+import { calcularEstadoViaje } from "@/lib/viaje-estado";
 
 /** Estados de reserva que bloquean un nuevo intento (rechazada NO bloquea). */
 const ESTADOS_BLOQUEANTES: HistorialReservaResumen["estado"][] = [
@@ -188,6 +189,8 @@ export default function InscripcionPage() {
     );
   }
 
+  const estadoCalc = viaje ? calcularEstadoViaje(viaje.fechaHoraIda, viaje.estado) : null;
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-lg md:px-lg">
       <nav className="text-xs text-text-muted">
@@ -217,8 +220,18 @@ export default function InscripcionPage() {
                   <Mountain size={40} aria-hidden="true" />
                 </div>
               )}
-              <span className="absolute left-sm top-sm">
+              <span className="absolute left-sm top-sm flex items-center gap-1.5">
                 <ChipDificultad dificultad={viaje.dificultad} />
+                {estadoCalc?.esExpirado && (
+                  <span className="rounded-sm bg-amber-100 border border-amber-300 px-2 py-0.5 text-xs font-bold text-amber-800 shadow-xs">
+                    Inscripciones expiradas
+                  </span>
+                )}
+                {estadoCalc?.esCerrado && (
+                  <span className="rounded-sm bg-neutral-100 border border-neutral-300 px-2 py-0.5 text-xs font-semibold text-neutral-600 shadow-xs">
+                    Cerrado
+                  </span>
+                )}
               </span>
             </div>
             <div className="p-md">
@@ -278,6 +291,16 @@ export default function InscripcionPage() {
                   Ver el estado de mi reserva
                 </Boton>
               </div>
+            ) : !estadoCalc?.puedeReservar ? (
+              <EmptyState
+                icono={AlertCircle}
+                titulo={estadoCalc?.esExpirado ? "Inscripciones expiradas" : "Viaje cerrado"}
+                descripcion={
+                  estadoCalc?.mensajeDetalle ??
+                  "Las inscripciones para este viaje no se encuentran disponibles."
+                }
+                accion={{ etiqueta: "Volver al catálogo", href: "/viajes" }}
+              />
             ) : perfil === undefined ? (
               <div className="space-y-md">
                 <Skeleton className="h-5 w-2/3" />

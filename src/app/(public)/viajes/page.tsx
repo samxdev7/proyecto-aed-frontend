@@ -11,6 +11,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import Boton from "@/components/ui/Boton";
 import { ChipDificultad } from "@/components/ui/Chip";
 import ModalFicha from "@/components/viajes/ModalFicha";
+import { calcularEstadoViaje } from "@/lib/viaje-estado";
 import type { Viaje } from "@/types/viaje";
 
 export default function TripCatalog() {
@@ -93,54 +94,64 @@ export default function TripCatalog() {
         />
       ) : (
         <div className="grid grid-cols-1 gap-lg md:grid-cols-2 lg:grid-cols-3">
-          {viajes.map((viaje) => (
-            <div
-              key={viaje.idViaje}
-              className="group relative overflow-hidden rounded-md border border-neutral-border bg-surface transition-all duration-300 hover:shadow-md"
-            >
-              <Link
-                href={`/viajes/${viaje.idViaje}`}
-                aria-label={`Ver detalles de ${viaje.titulo}`}
-                className="absolute inset-0 z-10"
-              />
-              <div className="relative aspect-[16/9] overflow-hidden bg-neutral-900">
-                {viaje.imagenUrl ? (
-                  <>
-                    {/* Capa de fondo difuminada que rellena los extremos laterales o verticales evitando bandas blancas */}
-                    <Image
-                      src={viaje.imagenUrl}
-                      alt=""
-                      fill
-                      aria-hidden="true"
-                      sizes="33vw"
-                      className="object-cover blur-md scale-110 opacity-60 pointer-events-none"
-                    />
-                    {/* Imagen principal nítida y completa (fit) con zoom suave en hover */}
-                    <Image
-                      src={viaje.imagenUrl}
-                      alt={viaje.titulo}
-                      fill
-                      sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-                      className="relative z-10 object-contain transition-transform duration-500 ease-out group-hover:scale-105"
-                    />
-                  </>
-                ) : (
-                  <div className="flex h-full items-center justify-center text-text-muted">
-                    <Mountain size={40} aria-hidden="true" />
+          {viajes.map((viaje) => {
+            const estadoCalc = calcularEstadoViaje(viaje.fechaHoraIda, viaje.estado);
+            return (
+              <div
+                key={viaje.idViaje}
+                className="group relative overflow-hidden rounded-md border border-neutral-border bg-surface transition-all duration-300 hover:shadow-md"
+              >
+                <Link
+                  href={`/viajes/${viaje.idViaje}`}
+                  aria-label={`Ver detalles de ${viaje.titulo}`}
+                  className="absolute inset-0 z-10"
+                />
+                <div className="relative aspect-[16/9] overflow-hidden bg-neutral-900">
+                  {viaje.imagenUrl ? (
+                    <>
+                      {/* Capa de fondo difuminada que rellena los extremos laterales o verticales evitando bandas blancas */}
+                      <Image
+                        src={viaje.imagenUrl}
+                        alt=""
+                        fill
+                        aria-hidden="true"
+                        sizes="33vw"
+                        className="object-cover blur-md scale-110 opacity-60 pointer-events-none"
+                      />
+                      {/* Imagen principal nítida y completa (fit) con zoom suave en hover */}
+                      <Image
+                        src={viaje.imagenUrl}
+                        alt={viaje.titulo}
+                        fill
+                        sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                        className="relative z-10 object-contain transition-transform duration-500 ease-out group-hover:scale-105"
+                      />
+                    </>
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-text-muted">
+                      <Mountain size={40} aria-hidden="true" />
+                    </div>
+                  )}
+                  <div className="absolute left-sm top-sm z-20 flex items-center gap-1.5">
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                      Dificultad:
+                    </span>
+                    <ChipDificultad dificultad={viaje.dificultad} />
                   </div>
-                )}
-                <div className="absolute left-sm top-sm z-20 flex items-center gap-1.5">
-                  <span className="text-[11px] font-semibold uppercase tracking-wide text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-                    Dificultad:
-                  </span>
-                  <ChipDificultad dificultad={viaje.dificultad} />
+                  {estadoCalc.esExpirado ? (
+                    <span className="absolute right-sm top-sm z-20 rounded-sm border border-amber-300 bg-amber-100 px-2 py-1 text-xs font-bold text-amber-800 shadow-xs">
+                      Inscripciones expiradas
+                    </span>
+                  ) : estadoCalc.esCerrado ? (
+                    <span className="absolute right-sm top-sm z-20 rounded-sm border border-neutral-300 bg-neutral-100 px-2 py-1 text-xs font-semibold text-neutral-600 shadow-xs">
+                      Cerrado
+                    </span>
+                  ) : viaje.cuposDisponibles <= 2 ? (
+                    <span className="absolute right-sm top-sm z-20 rounded-sm bg-warning-bg px-2 py-1 text-xs font-medium text-warning-text">
+                      ¡Últimos cupos!
+                    </span>
+                  ) : null}
                 </div>
-                {viaje.cuposDisponibles <= 2 ? (
-                  <span className="absolute right-sm top-sm z-20 rounded-sm bg-warning-bg px-2 py-1 text-xs font-medium text-warning-text">
-                    ¡Últimos cupos!
-                  </span>
-                ) : null}
-              </div>
 
               <div className="space-y-md p-md">
                 <div className="space-y-xs">
@@ -204,7 +215,8 @@ export default function TripCatalog() {
                 </div>
               </div>
             </div>
-          ))}
+          );
+        })}
         </div>
       )}
 

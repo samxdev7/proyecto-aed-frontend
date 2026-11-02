@@ -9,6 +9,7 @@ import Boton from "@/components/ui/Boton";
 import { ChipDificultad } from "@/components/ui/Chip";
 import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
 import { formatoCordobas, formatoFecha, formatoHora } from "@/lib/format";
+import { calcularEstadoViaje } from "@/lib/viaje-estado";
 
 interface ViajeDetallePageProps {
   params: Promise<{ id: string }>;
@@ -19,8 +20,9 @@ export default async function ViajeDetallePage({ params }: ViajeDetallePageProps
   const viaje = await viajesService.obtenerViaje(Number(id));
   if (!viaje) notFound();
 
+  const estadoCalc = calcularEstadoViaje(viaje.fechaHoraIda, viaje.estado);
   const inscripcionAbierta =
-    viaje.estado === "activo" && viaje.cuposDisponibles > 0;
+    estadoCalc.puedeReservar && viaje.cuposDisponibles > 0;
   const ultimosCupos = inscripcionAbierta && viaje.cuposDisponibles <= 2;
 
   return (
@@ -45,6 +47,16 @@ export default async function ViajeDetallePage({ params }: ViajeDetallePageProps
                 {viaje.titulo}
               </h1>
               <ChipDificultad dificultad={viaje.dificultad} />
+              {estadoCalc.esExpirado && (
+                <span className="rounded-sm bg-amber-100 border border-amber-300 px-2 py-1 text-xs font-bold text-amber-800 shadow-xs">
+                  Inscripciones expiradas
+                </span>
+              )}
+              {estadoCalc.esCerrado && (
+                <span className="rounded-sm bg-neutral-100 border border-neutral-300 px-2 py-1 text-xs font-semibold text-neutral-600 shadow-xs">
+                  Cerrado
+                </span>
+              )}
             </div>
             {viaje.descripcion ? (
               <div className="pt-2">
@@ -116,11 +128,20 @@ export default async function ViajeDetallePage({ params }: ViajeDetallePageProps
           {inscripcionAbierta ? (
             <BotonReservar idViaje={viaje.idViaje} />
           ) : (
-            <Boton disabled fullWidth>
-              {viaje.estado === "activo"
-                ? "Sin cupos disponibles"
-                : "Inscripciones cerradas"}
-            </Boton>
+            <div className="space-y-sm">
+              <Boton disabled fullWidth>
+                {estadoCalc.esExpirado
+                  ? "Inscripciones expiradas"
+                  : estadoCalc.esCerrado
+                  ? "Inscripciones cerradas"
+                  : "Sin cupos disponibles"}
+              </Boton>
+              {estadoCalc.esExpirado && (
+                <p className="rounded-sm border border-amber-300 bg-amber-50 p-2.5 text-center text-xs font-medium text-amber-800">
+                  Las inscripciones para este viaje expiraron 1 semana antes de la fecha de salida.
+                </p>
+              )}
+            </div>
           )}
 
           <p className="text-center text-[10px] text-text-muted">

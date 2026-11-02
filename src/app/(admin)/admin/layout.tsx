@@ -19,6 +19,7 @@ import {
   obtenerSesion
 } from "@/lib/auth";
 import { userService } from "@/services/user.service";
+import { adminService } from "@/services/admin.service";
 import NotificacionesDrawer from "@/components/clientes/NotificacionesDrawer";
 
 /* localStorage es un store externo: serverSnapshot=null evita mismatch de
@@ -49,6 +50,7 @@ export default function AdminLayout({
   const sesion = useSyncExternalStore(suscribirSesion, obtenerSesion, () => null);
   const esAdmin = esAdministrador(sesion);
   const [noLeidas, setNoLeidas] = useState(0);
+  const [reservasPendientes, setReservasPendientes] = useState(0);
   const [notisAbierta, setNotisAbierta] = useState(false);
 
   const cargarNoLeidas = useCallback(async () => {
@@ -65,11 +67,25 @@ export default function AdminLayout({
     }
   }, [sesion]);
 
+  const cargarReservasPendientes = useCallback(async () => {
+    if (!sesion || sesion.rol !== "administrador") {
+      setReservasPendientes(0);
+      return;
+    }
+    try {
+      const pagina = await adminService.listarReservas({ estado: "pendiente" }, 0, 1);
+      setReservasPendientes(pagina.totalElements);
+    } catch {
+      // Ignorar error no bloqueante
+    }
+  }, [sesion]);
+
   useEffect(() => {
     if (esAdmin) {
       void cargarNoLeidas();
+      void cargarReservasPendientes();
     }
-  }, [esAdmin, cargarNoLeidas]);
+  }, [esAdmin, cargarNoLeidas, cargarReservasPendientes]);
 
   /* El redirect se decide en el efecto (post-hidratación); mientras no haya
      sesión admin válida no se renderiza nada de /admin. */
@@ -86,8 +102,8 @@ export default function AdminLayout({
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-admin-bg text-admin-text">
-      {/* Sidebar */}
-      <aside className="w-full shrink-0 md:w-64 bg-admin-sidebar text-white flex flex-col">
+      {/* Sidebar fija según viewport independiente del contenido */}
+      <aside className="w-full shrink-0 md:w-64 bg-admin-sidebar text-white flex flex-col md:sticky md:top-0 md:h-screen md:overflow-y-auto z-30">
         <div className="p-6 border-b border-white/10 flex items-center justify-between">
           <span className="text-2xl font-bold">CNM Admin</span>
         </div>
@@ -99,7 +115,17 @@ export default function AdminLayout({
               className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/10 transition-colors"
             >
               <item.icon size={20} />
-              <span>{item.name}</span>
+              <span className="relative inline-flex items-center">
+                <span>{item.name}</span>
+                {item.name === "Reservas" && reservasPendientes > 0 && (
+                  <span
+                    className="absolute -top-1.5 -right-5.5 flex min-w-4 h-4 items-center justify-center rounded-xs bg-error px-1 text-[10px] font-bold leading-none text-white shadow-xs"
+                    title={`${reservasPendientes} reservas pendientes`}
+                  >
+                    {reservasPendientes > 99 ? "99+" : reservasPendientes}
+                  </span>
+                )}
+              </span>
             </Link>
           ))}
         </nav>
