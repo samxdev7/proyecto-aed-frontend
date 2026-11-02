@@ -26,7 +26,7 @@ import Modal from "@/components/ui/Modal";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import SelectorFechaHora from "@/components/ui/SelectorFechaHora";
-import { ChipDificultad, ChipEstadoViaje } from "@/components/ui/Chip";
+import { ChipDificultad } from "@/components/ui/Chip";
 import { calcularEstadoViaje } from "@/lib/viaje-estado";
 import GaleriaSupabaseModal from "@/components/admin/GaleriaSupabaseModal";
 import ModalViajesArchivados from "@/components/admin/ModalViajesArchivados";
@@ -522,23 +522,23 @@ export default function AdminViajes() {
     <div className="space-y-md">
       <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-admin-text">Gestión de Viajes</h2>
-          <p className="text-sm text-admin-muted">Administra las expediciones y rutas disponibles.</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-admin-text">Gestión de Viajes</h2>
+          <p className="text-xs sm:text-sm text-admin-muted">Administra las expediciones y rutas disponibles.</p>
         </div>
-        <div className="flex items-center gap-sm">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
           <button
             onClick={() => setModalArchivadosAbierto(true)}
-            className="border border-admin-border bg-admin-surface text-admin-text px-sm py-xs rounded-md flex items-center gap-sm hover:bg-admin-bg transition-colors text-sm font-medium"
+            className="flex-1 sm:flex-none border border-admin-border bg-admin-surface text-admin-text px-3 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-admin-bg transition-colors text-xs sm:text-sm font-medium"
             title="Ver y restaurar viajes archivados"
           >
-            <Archive size={18} className="text-admin-muted" />
+            <Archive size={16} className="text-admin-muted" />
             Viajes Archivados
           </button>
           <button
             onClick={abrirCrear}
-            className="bg-admin-accent text-white px-sm py-xs rounded-md flex items-center gap-sm hover:bg-admin-accent-hover transition-colors text-sm font-medium"
+            className="flex-1 sm:flex-none bg-admin-accent text-white px-3 py-2 rounded-md flex items-center justify-center gap-2 hover:bg-admin-accent-hover transition-colors text-xs sm:text-sm font-medium shadow-xs"
           >
-            <Plus size={18} /> Nuevo Viaje
+            <Plus size={16} /> Nuevo Viaje
           </button>
         </div>
       </div>
@@ -705,7 +705,7 @@ export default function AdminViajes() {
             <Skeleton className="h-24 w-full rounded-sm" />
           </div>
         ) : (
-          <form onSubmit={guardar} className="grid grid-cols-1 md:grid-cols-2 gap-md pb-36" noValidate>
+          <form onSubmit={guardar} className="grid grid-cols-1 md:grid-cols-2 gap-md pb-6 sm:pb-8" noValidate>
             <div className="md:col-span-2">
               <Campo
                 label="Título del viaje"
@@ -874,22 +874,22 @@ export default function AdminViajes() {
                 {errorForm}
               </p>
             )}
-            <div className="md:col-span-2 flex justify-end items-center gap-sm pt-2">
+            <div className="md:col-span-2 flex flex-col-reverse sm:flex-row sm:justify-end items-stretch sm:items-center gap-2 pt-2">
               <button
                 type="button"
                 onClick={limpiarCampos}
-                className="px-md py-xs border border-admin-border text-admin-muted hover:text-admin-text hover:bg-admin-bg rounded-md transition-colors text-sm font-medium"
+                className="px-md py-2 sm:py-xs border border-admin-border text-admin-muted hover:text-admin-text hover:bg-admin-bg rounded-md transition-colors text-sm font-medium text-center"
                 title="Vaciar los campos del formulario y borrar el borrador"
               >
                 Limpiar campos
               </button>
-              <Boton variante="contorno" onClick={cerrarModal}>
+              <Boton variante="contorno" onClick={cerrarModal} className="w-full sm:w-auto text-center justify-center">
                 Cancelar
               </Boton>
               <button
                 type="submit"
                 disabled={guardando}
-                className="px-md py-xs bg-admin-accent text-white rounded-md hover:bg-admin-accent-hover transition-colors text-sm font-medium disabled:opacity-50"
+                className="px-md py-2 sm:py-xs bg-admin-accent text-white rounded-md hover:bg-admin-accent-hover transition-colors text-sm font-medium disabled:opacity-50 text-center"
               >
                 {guardando ? "Guardando..." : "Guardar Viaje"}
               </button>

@@ -241,19 +241,19 @@ function AdminReservas() {
     <div className="space-y-md">
       <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Bandeja de Reservas</h2>
-          <p className="text-admin-muted">Revisa y gestiona las solicitudes de inscripción.</p>
+          <h2 className="text-xl sm:text-2xl font-bold">Bandeja de Reservas</h2>
+          <p className="text-xs sm:text-sm text-admin-muted">Revisa y gestiona las solicitudes de inscripción.</p>
         </div>
         {/* Filtro segmentado por estado, sincronizado con ?estado= en la URL */}
-        <div className="flex flex-wrap rounded-lg border border-admin-border bg-admin-surface overflow-hidden" role="group" aria-label="Filtrar por estado">
+        <div className="flex overflow-x-auto no-scrollbar rounded-lg border border-admin-border bg-admin-surface p-1 gap-1 max-w-full" role="group" aria-label="Filtrar por estado">
           {FILTROS.map((filtro) => (
             <button
               key={filtro.valor || "todas"}
               onClick={() => cambiarFiltro(filtro.valor)}
-              className={`px-4 py-2 text-sm transition-colors ${
+              className={`shrink-0 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-colors ${
                 estadoFiltro === filtro.valor
-                  ? "bg-admin-accent text-white"
-                  : "text-admin-muted hover:bg-admin-bg"
+                  ? "bg-admin-accent text-white shadow-xs"
+                  : "text-admin-muted hover:bg-admin-bg hover:text-admin-text"
               }`}
             >
               {filtro.etiqueta}
@@ -391,13 +391,13 @@ function AdminReservas() {
             </div>
 
             {/* Paginador / Selector de secciones */}
-            <div className="flex border-b border-admin-border mb-5" role="tablist" aria-label="Secciones de la reserva">
+            <div className="flex border-b border-admin-border mb-5 overflow-x-auto no-scrollbar" role="tablist" aria-label="Secciones de la reserva">
               <button
                 type="button"
                 role="tab"
                 aria-selected={seccionDetalle === 1}
                 onClick={() => setSeccionDetalle(1)}
-                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition-all ${
+                className={`flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap shrink-0 transition-all ${
                   seccionDetalle === 1
                     ? "border-admin-accent text-admin-accent bg-admin-accent/5"
                     : "border-transparent text-admin-muted hover:text-admin-text hover:bg-admin-bg"
@@ -410,7 +410,7 @@ function AdminReservas() {
                 role="tab"
                 aria-selected={seccionDetalle === 2}
                 onClick={() => setSeccionDetalle(2)}
-                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition-all ${
+                className={`flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap shrink-0 transition-all ${
                   seccionDetalle === 2
                     ? "border-admin-accent text-admin-accent bg-admin-accent/5"
                     : "border-transparent text-admin-muted hover:text-admin-text hover:bg-admin-bg"
@@ -663,10 +663,10 @@ function AdminReservas() {
                 </div>
               )}
 
-              <div className="flex justify-end gap-3">
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2.5 sm:gap-3">
                 <button
                   onClick={cerrarModal}
-                  className="px-4 py-2 text-admin-muted hover:bg-admin-bg rounded-lg transition-colors"
+                  className="w-full sm:w-auto px-4 py-2 text-center text-admin-muted hover:bg-admin-bg rounded-lg transition-colors text-sm font-medium"
                 >
                   Cerrar
                 </button>
@@ -675,14 +675,14 @@ function AdminReservas() {
                     <button
                       onClick={rechazar}
                       disabled={procesando}
-                      className="px-4 py-2 bg-error text-white rounded-lg hover:bg-error/90 transition-colors disabled:opacity-50"
+                      className="w-full sm:w-auto px-4 py-2 bg-error text-white rounded-lg hover:bg-error/90 transition-colors disabled:opacity-50 text-sm font-medium text-center"
                     >
                       Rechazar Reserva
                     </button>
                     <button
                       onClick={() => aprobar(detalle.idReserva)}
                       disabled={procesando}
-                      className="px-4 py-2 bg-success text-white rounded-lg hover:bg-success/90 transition-colors disabled:opacity-50"
+                      className="w-full sm:w-auto px-4 py-2 bg-success text-white rounded-lg hover:bg-success/90 transition-colors disabled:opacity-50 text-sm font-medium text-center"
                     >
                       Aprobar Reserva
                     </button>
