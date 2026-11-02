@@ -39,7 +39,7 @@ export default function UserLayout({
     <div className="flex min-h-dvh flex-col">
       <Header />
       <main className="flex-1">
-        <div className="mx-auto max-w-4xl px-lg py-lg">{children}</div>
+        <div className="mx-auto max-w-6xl px-4 py-lg md:px-lg">{children}</div>
       </main>
       <Footer />
     </div>

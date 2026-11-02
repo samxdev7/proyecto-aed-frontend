@@ -140,9 +140,11 @@ export default function AdminDashboard() {
             <div className="space-y-sm">
               {stats.inscritosPorViaje.map((item) => (
                 <div key={item.idViaje} className="space-y-xs">
-                  <div className="flex justify-between text-sm mb-xs">
-                    <span>{item.titulo}</span>
-                    <span className="font-medium">
+                  <div className="flex items-center justify-between gap-3 text-sm mb-xs">
+                    <span className="truncate min-w-0 font-medium text-admin-text" title={item.titulo}>
+                      {item.titulo}
+                    </span>
+                    <span className="font-medium shrink-0 whitespace-nowrap text-admin-muted text-xs">
                       {item.totalInscritos}/{item.cuposMaximos} · {item.porcentajeOcupacion}%
                     </span>
                   </div>
@@ -175,7 +177,9 @@ export default function AdminDashboard() {
                 <tbody className="divide-y divide-admin-border">
                   {stats.rutasMasPopulares.map((ruta) => (
                     <tr key={ruta.idViaje} className="hover:bg-admin-bg transition-colors">
-                      <td className="py-sm font-medium text-sm">{ruta.titulo}</td>
+                      <td className="py-sm font-medium text-sm truncate max-w-[200px]" title={ruta.titulo}>
+                        {ruta.titulo}
+                      </td>
                       <td className="py-sm">
                         <ChipDificultad dificultad={ruta.dificultad} />
                       </td>
