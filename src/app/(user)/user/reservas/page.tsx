@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { Calendar, CalendarX, CheckCircle, Clock, XCircle } from "lucide-react";
+import { ArrowRight, Calendar, CalendarX, CheckCircle, Clock, Mountain, XCircle } from "lucide-react";
 import { reservaService } from "@/services/reserva.service";
 import type { HistorialReservaResumen } from "@/types/reserva";
 import type { Dificultad } from "@/types/viaje";
@@ -10,7 +11,7 @@ import { formatoFechaCorta, formatoPrecio } from "@/lib/format";
 import Boton from "@/components/ui/Boton";
 import Chip, { ChipDificultad } from "@/components/ui/Chip";
 import EmptyState from "@/components/ui/EmptyState";
-import Skeleton from "@/components/ui/Skeleton";
+import { TarjetaViajeSkeleton } from "@/components/ui/Skeleton";
 
 const iconosEstado = {
   aprobada: CheckCircle,
@@ -55,9 +56,19 @@ export default function UserReservas() {
   if (loading) {
     return (
       <div className="space-y-md">
-        {Array.from({ length: 3 }, (_, i) => (
-          <Skeleton key={i} className="h-28 w-full rounded-md" />
-        ))}
+        <div className="flex items-center justify-between gap-sm">
+          <div>
+            <h2 className="text-2xl font-bold text-primary">Mis Reservas</h2>
+            <p className="text-text-muted">
+              Gestiona tus inscripciones a los viajes.
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-lg md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }, (_, i) => (
+            <TarjetaViajeSkeleton key={i} />
+          ))}
+        </div>
       </div>
     );
   }
@@ -73,7 +84,7 @@ export default function UserReservas() {
   }
 
   return (
-    <div className="space-y-md">
+    <div className="space-y-lg">
       <div className="flex items-center justify-between gap-sm">
         <div>
           <h2 className="text-2xl font-bold text-primary">Mis Reservas</h2>
@@ -91,54 +102,105 @@ export default function UserReservas() {
           accion={{ etiqueta: "Explorar viajes", href: "/viajes" }}
         />
       ) : (
-        <div className="grid grid-cols-1 gap-md">
+        <div className="grid grid-cols-1 gap-lg md:grid-cols-2 lg:grid-cols-3">
           {reservas.map((reserva) => {
             const IconoEstado = iconosEstado[reserva.estado];
             return (
               <div
                 key={reserva.idReserva}
-                className="flex flex-col items-center justify-between gap-md rounded-md border border-neutral-border bg-surface p-md shadow-sm md:flex-row"
+                className="group relative flex flex-col justify-between overflow-hidden rounded-md border border-neutral-border bg-surface transition-all duration-300 hover:shadow-md"
               >
-                <div className="flex w-full items-center gap-md md:w-auto">
-                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md bg-sand text-xl font-bold text-primary">
-                    {reserva.viaje.titulo[0]}
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-primary">
-                      {reserva.viaje.titulo}
-                    </h3>
-                    <div className="flex flex-wrap items-center gap-sm text-sm text-text-muted">
-                      <span className="flex items-center gap-1">
-                        <Calendar size={14} aria-hidden="true" />{" "}
-                        {formatoFechaCorta(reserva.viaje.fechaHoraIda)}
+                <Link
+                  href={`/user/reservas/${reserva.idReserva}`}
+                  aria-label={`Ver detalles de mi reserva para ${reserva.viaje.titulo}`}
+                  className="absolute inset-0 z-10"
+                />
+
+                <div>
+                  {/* Banner de imagen superior estilo catálogo */}
+                  <div className="relative aspect-[16/9] overflow-hidden bg-neutral-900">
+                    {reserva.viaje.imagenUrl ? (
+                      <>
+                        <Image
+                          src={reserva.viaje.imagenUrl}
+                          alt=""
+                          fill
+                          aria-hidden="true"
+                          sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                          className="object-cover blur-md scale-110 opacity-60 pointer-events-none"
+                        />
+                        <Image
+                          src={reserva.viaje.imagenUrl}
+                          alt={reserva.viaje.titulo}
+                          fill
+                          sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                          className="relative z-10 object-contain transition-transform duration-500 ease-out group-hover:scale-105"
+                        />
+                      </>
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-text-muted">
+                        <Mountain size={40} aria-hidden="true" />
+                      </div>
+                    )}
+
+                    {/* Dificultad en esquina superior izquierda */}
+                    <div className="absolute left-sm top-sm z-20 flex items-center gap-1.5">
+                      <span className="text-[11px] font-semibold uppercase tracking-wide text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                        Dificultad:
                       </span>
                       <ChipDificultad
                         dificultad={reserva.viaje.dificultad as Dificultad}
                       />
-                      <span>
-                        Abono: {formatoPrecio(reserva.montoReserva)}
-                      </span>
+                    </div>
+
+                    {/* Estado de la reserva en esquina superior derecha */}
+                    <div className="absolute right-sm top-sm z-20">
+                      <Chip
+                        estado={reserva.estado}
+                        icono={IconoEstado}
+                        className="shadow-sm font-bold uppercase text-[11px]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Contenido de la tarjeta */}
+                  <div className="space-y-md p-md">
+                    <div className="space-y-xs">
+                      <h3 className="text-lg font-bold text-primary transition-colors group-hover:text-primary-dark">
+                        {reserva.viaje.titulo}
+                      </h3>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-xs py-sm border-t border-b border-neutral-border/60">
+                      <div className="flex items-center gap-xs text-xs text-text-muted">
+                        <Calendar size={14} className="shrink-0 text-primary" />
+                        <span>Salida: {formatoFechaCorta(reserva.viaje.fechaHoraIda)}</span>
+                      </div>
+                      <div className="flex items-center gap-xs text-xs text-text-muted">
+                        <Clock size={14} className="shrink-0 text-primary" />
+                        <span>Reservada: {formatoFechaCorta(reserva.fechaReserva)}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex w-full items-center justify-between gap-md md:w-auto md:justify-end">
-                  <div className="flex flex-col items-end gap-xs">
-                    <Chip
-                      estado={reserva.estado}
-                      icono={IconoEstado}
-                      className="px-sm py-xs font-bold uppercase"
-                    />
-                    <span className="text-xs text-text-muted">
-                      Reservada el {formatoFechaCorta(reserva.fechaReserva)}
+                {/* Footer con abono y botón Ver Detalle */}
+                <div className="flex items-center justify-between p-md pt-0">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold uppercase text-text-muted">
+                      Abono
+                    </span>
+                    <span className="text-xl font-bold text-text-main">
+                      {formatoPrecio(reserva.montoReserva)}
                     </span>
                   </div>
-                  <Link
+                  <Boton
                     href={`/user/reservas/${reserva.idReserva}`}
-                    className="rounded-md border border-neutral-border px-md py-sm text-sm font-medium transition-colors hover:bg-surface-alt"
+                    tamano="sm"
+                    className="relative z-20"
                   >
-                    Ver Detalle
-                  </Link>
+                    Ver Detalle <ArrowRight size={16} />
+                  </Boton>
                 </div>
               </div>
             );

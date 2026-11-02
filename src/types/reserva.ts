@@ -82,6 +82,7 @@ export interface HistorialReservaResumen {
     titulo: string;
     dificultad: string;
     fechaHoraIda: string;
+    imagenUrl?: string | null;
   };
   estado: EstadoReserva;
   montoReserva: number;
