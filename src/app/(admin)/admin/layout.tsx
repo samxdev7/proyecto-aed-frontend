@@ -114,9 +114,9 @@ export default function AdminLayout({
   if (!esAdmin) return null;
 
   return (
-    <div className="flex min-h-screen bg-admin-bg text-admin-text overflow-x-hidden">
-      {/* Desktop Sidebar: fija, sticky en viewport desktop */}
-      <aside className="hidden md:flex md:w-64 shrink-0 bg-admin-sidebar text-white flex-col md:sticky md:top-0 md:h-screen md:overflow-y-auto z-30">
+    <div className="flex min-h-screen bg-admin-bg text-admin-text">
+      {/* Desktop Sidebar: fija según viewport independiente del contenido */}
+      <aside className="hidden md:flex md:fixed md:top-0 md:bottom-0 md:left-0 md:w-64 bg-admin-sidebar text-white flex-col md:h-screen md:overflow-y-auto z-30">
         <div className="p-6 border-b border-white/10 flex items-center justify-between">
           <span className="text-2xl font-bold tracking-tight">CNM Admin</span>
         </div>
@@ -243,7 +243,7 @@ export default function AdminLayout({
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 min-w-0 flex flex-col">
+      <main className="flex-1 min-w-0 flex flex-col md:pl-64">
         <header className="h-14 sm:h-16 bg-admin-surface border-b border-admin-border flex items-center justify-between px-3 sm:px-6 md:px-8 shadow-xs sticky top-0 z-20">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button

@@ -177,7 +177,7 @@ export default function Header() {
             className="flex min-w-0 items-center gap-2.5"
           >
             <Logo className="h-10 w-auto shrink-0 md:h-12" />
-            <span className="truncate text-sm font-semibold text-sand md:text-base">
+            <span className="ocultar-en-9-16 truncate text-sm font-semibold text-sand md:text-base">
               Club Nicaragüense de Montañismo
             </span>
           </Link>
