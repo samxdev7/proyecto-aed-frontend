@@ -15,7 +15,7 @@ interface BotonGoogleProps {
 
 export default function BotonGoogle({
   redir,
-  texto = "Continuar con Google",
+  texto = "Iniciar sesión con Google",
   className = "",
 }: BotonGoogleProps) {
   const router = useRouter();
@@ -135,7 +135,7 @@ export default function BotonGoogle({
           type: "standard",
           theme: "outline",
           size: "large",
-          text: esRegistro ? "signup_with" : "continue_with",
+          text: esRegistro ? "signup_with" : "signin_with",
           shape: "rectangular",
           logo_alignment: "left",
           width: anchoFinal,
@@ -194,7 +194,7 @@ export default function BotonGoogle({
       {/* Contenedor oficial para el botón de Google Identity Services */}
       <div
         ref={contenedorRef}
-        className={`w-full flex justify-center min-h-[44px] ${
+        className={`w-full min-h-[46px] flex justify-center [&>div]:!w-full [&>div]:!max-w-none [&>div>iframe]:!w-full [&>div>iframe]:!max-w-none [&>div>iframe]:!min-h-[46px] [&>div>iframe]:!h-[46px] ${
           !gisListo || cargando ? "hidden" : ""
         }`}
       />
@@ -205,7 +205,7 @@ export default function BotonGoogle({
           type="button"
           onClick={manejarClickFallback}
           disabled={cargando}
-          className={`inline-flex w-full items-center justify-center gap-sm rounded-sm border border-neutral-border bg-surface px-md py-sm text-sm font-semibold text-text-main shadow-xs transition hover:bg-surface-alt hover:border-neutral-focus disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
+          className={`inline-flex w-full min-h-[46px] items-center justify-center gap-2 rounded-md border border-neutral-border bg-surface px-6 py-3 text-sm font-medium text-text-main shadow-xs transition hover:bg-surface-alt hover:border-neutral-400 disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
         >
           {cargando ? (
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />

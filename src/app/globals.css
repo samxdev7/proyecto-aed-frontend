@@ -119,3 +119,11 @@
 .animacion-fade-up {
   animation: fade-up 0.35s ease-out both;
 }
+
+/* Ocultar elementos solo en disposición 9:16 y relaciones de aspecto de smartphone vertical */
+@media (aspect-ratio: 9/16), (max-aspect-ratio: 9/16), (aspect-ratio <= 9/16) {
+  .ocultar-en-9-16 {
+    display: none !important;
+  }
+}
+
