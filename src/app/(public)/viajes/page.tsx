@@ -1,18 +1,51 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Calendar, Eye, MapPin, Mountain, Users } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowUpDown,
+  Calendar,
+  Eye,
+  MapPin,
+  Mountain,
+  Search,
+  Users,
+  X,
+} from "lucide-react";
 import { viajesService } from "@/services/viajes.service";
 import { formatoFechaCorta, formatoPrecio } from "@/lib/format";
+import { quicksortHoare } from "@/lib/quicksort";
 import { TarjetaViajeSkeleton } from "@/components/ui/Skeleton";
 import EmptyState from "@/components/ui/EmptyState";
 import Boton from "@/components/ui/Boton";
 import { ChipDificultad } from "@/components/ui/Chip";
 import ModalFicha from "@/components/viajes/ModalFicha";
 import { calcularEstadoViaje } from "@/lib/viaje-estado";
-import type { Viaje } from "@/types/viaje";
+import type { Dificultad, Viaje } from "@/types/viaje";
+
+type DificultadFiltro = Dificultad | "Todas";
+type CriterioOrden =
+  | "predeterminado"
+  | "cupos_menor"
+  | "fecha_cercana"
+  | "fecha_lejana";
+
+const FILTROS_DIFICULTAD: Array<{ valor: DificultadFiltro; etiqueta: string }> = [
+  { valor: "Todas", etiqueta: "Todas" },
+  { valor: "Baja", etiqueta: "Baja" },
+  { valor: "Media", etiqueta: "Media" },
+  { valor: "Alta", etiqueta: "Alta" },
+  { valor: "Extrema", etiqueta: "Extrema" },
+];
+
+function normalizar(texto: string): string {
+  return texto
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
 
 export default function TripCatalog() {
   const [viajes, setViajes] = useState<Viaje[]>([]);
@@ -20,6 +53,11 @@ export default function TripCatalog() {
   const [error, setError] = useState(false);
   const [reintentos, setReintentos] = useState(0);
   const [seleccionado, setSeleccionado] = useState<Viaje | null>(null);
+
+  // Estados de filtrado y ordenamiento
+  const [busqueda, setBusqueda] = useState("");
+  const [dificultad, setDificultad] = useState<DificultadFiltro>("Todas");
+  const [orden, setOrden] = useState<CriterioOrden>("predeterminado");
 
   useEffect(() => {
     let activo = true;
@@ -48,6 +86,55 @@ export default function TripCatalog() {
     setReintentos((n) => n + 1);
   }
 
+  function limpiarFiltros() {
+    setBusqueda("");
+    setDificultad("Todas");
+    setOrden("predeterminado");
+  }
+
+  // Filtrado y ordenamiento mediante Quicksort Hoare
+  const viajesProcesados = useMemo(() => {
+    const consulta = normalizar(busqueda.trim());
+
+    // 1. Filtrar por dificultad y por título estrictamente
+    const filtrados = viajes.filter((viaje) => {
+      if (dificultad !== "Todas" && viaje.dificultad !== dificultad) {
+        return false;
+      }
+      if (consulta && !normalizar(viaje.titulo).includes(consulta)) {
+        return false;
+      }
+      return true;
+    });
+
+    // 2. Ordenar con Quicksort Hoare según el criterio solicitado
+    switch (orden) {
+      case "cupos_menor":
+        // Viajes a punto de terminar cupos disponibles (ascendente)
+        return quicksortHoare(
+          filtrados,
+          (a, b) => a.cuposDisponibles - b.cuposDisponibles
+        );
+      case "fecha_cercana":
+        // Viajes más cerca de ejecutarse (fecha ascendente)
+        return quicksortHoare(
+          filtrados,
+          (a, b) =>
+            new Date(a.fechaHoraIda).getTime() - new Date(b.fechaHoraIda).getTime()
+        );
+      case "fecha_lejana":
+        // Viajes más lejos de ejecutarse (fecha descendente)
+        return quicksortHoare(
+          filtrados,
+          (a, b) =>
+            new Date(b.fechaHoraIda).getTime() - new Date(a.fechaHoraIda).getTime()
+        );
+      case "predeterminado":
+      default:
+        return filtrados;
+    }
+  }, [viajes, busqueda, dificultad, orden]);
+
   if (loading) {
     return (
       <div className="mx-auto max-w-7xl px-lg py-lg">
@@ -73,10 +160,15 @@ export default function TripCatalog() {
     );
   }
 
+  const hayFiltrosActivos =
+    busqueda.trim() !== "" ||
+    dificultad !== "Todas" ||
+    orden !== "predeterminado";
+
   return (
-    <div className="mx-auto max-w-7xl space-y-lg px-lg py-lg">
-      <div className="mb-xl space-y-sm text-center">
-        <h1 className="text-3xl font-bold tracking-tight text-primary">
+    <div className="mx-auto max-w-7xl space-y-lg px-4 sm:px-6 md:px-lg py-lg">
+      <div className="mb-lg sm:mb-xl space-y-sm text-center">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-primary">
           Expediciones Disponibles
         </h1>
         <p className="mx-auto max-w-lg text-sm text-text-muted">
@@ -85,6 +177,113 @@ export default function TripCatalog() {
         </p>
       </div>
 
+      {/* Controles de Búsqueda, Filtros de Dificultad y Ordenamiento (Responsivo Móvil) */}
+      {viajes.length > 0 && (
+        <div className="space-y-3.5 rounded-lg border border-neutral-border bg-surface p-3.5 sm:p-5 shadow-xs">
+          {/* Fila 1: Buscador por título + Selector de Ordenamiento */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            {/* Buscador (solo por título) */}
+            <div className="relative flex-1">
+              <Search
+                size={18}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
+                aria-hidden="true"
+              />
+              <input
+                type="search"
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                placeholder="Buscar expedición por título..."
+                className="w-full rounded-md border border-neutral-border bg-bg-main/30 py-2.5 pl-9.5 pr-8 text-sm text-text-main placeholder:text-text-muted transition-colors focus:border-primary focus:bg-surface focus:outline-none focus:ring-1 focus:ring-primary"
+                aria-label="Buscar viaje por título"
+              />
+              {busqueda ? (
+                <button
+                  type="button"
+                  onClick={() => setBusqueda("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-1 text-text-muted hover:text-text-main transition-colors"
+                  aria-label="Limpiar búsqueda"
+                  title="Limpiar búsqueda"
+                >
+                  <X size={15} />
+                </button>
+              ) : null}
+            </div>
+
+            {/* Selector de ordenamiento Quicksort Hoare */}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <label
+                htmlFor="orden-viajes"
+                className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-text-muted shrink-0"
+              >
+                <ArrowUpDown size={14} className="text-primary" aria-hidden="true" />
+                <span>Ordenar:</span>
+              </label>
+              <select
+                id="orden-viajes"
+                value={orden}
+                onChange={(e) => setOrden(e.target.value as CriterioOrden)}
+                className="w-full sm:w-auto min-w-0 sm:min-w-[210px] rounded-md border border-neutral-border bg-surface py-2 px-3 text-sm font-medium text-text-main transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+              >
+                <option value="predeterminado">Predeterminado</option>
+                <option value="cupos_menor">Cupos por agotarse</option>
+                <option value="fecha_cercana">Más cerca de ejecutarse</option>
+                <option value="fecha_lejana">Más lejos de ejecutarse</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Fila 2: Filtros por Dificultad (Adaptable a celulares) */}
+          <div className="flex flex-col gap-2 pt-2 border-t border-neutral-border/70 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-text-muted mr-1">
+                Dificultad:
+              </span>
+              <div
+                role="group"
+                aria-label="Filtrar por dificultad"
+                className="flex flex-wrap gap-1.5"
+              >
+                {FILTROS_DIFICULTAD.map((filtro) => {
+                  const activa = dificultad === filtro.valor;
+                  return (
+                    <button
+                      key={filtro.valor}
+                      type="button"
+                      onClick={() => setDificultad(filtro.valor)}
+                      className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
+                        activa
+                          ? "bg-primary text-sand font-semibold shadow-xs"
+                          : "border border-neutral-border bg-surface text-text-muted hover:bg-surface-alt hover:text-text-main"
+                      }`}
+                    >
+                      {filtro.etiqueta}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Contador y opción de restablecer */}
+            <div className="flex items-center justify-between sm:justify-end gap-3 text-xs text-text-muted pt-1 sm:pt-0">
+              <span>
+                {viajesProcesados.length}{" "}
+                {viajesProcesados.length === 1 ? "expedición" : "expediciones"}
+              </span>
+              {hayFiltrosActivos ? (
+                <button
+                  type="button"
+                  onClick={limpiarFiltros}
+                  className="font-medium text-clay hover:underline"
+                >
+                  Restablecer filtros
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
+
       {viajes.length === 0 ? (
         <EmptyState
           icono={Mountain}
@@ -92,9 +291,20 @@ export default function TripCatalog() {
           descripcion="Aún no hay viajes publicados. Vuelve pronto para descubrir la próxima ruta."
           accion={{ etiqueta: "Volver al inicio", href: "/" }}
         />
+      ) : viajesProcesados.length === 0 ? (
+        <EmptyState
+          icono={Search}
+          titulo="No encontramos expediciones"
+          descripcion={
+            busqueda
+              ? `No hay expediciones cuyo título coincida con "${busqueda}".`
+              : "No hay viajes que coincidan con la dificultad seleccionada."
+          }
+          accion={{ etiqueta: "Restablecer filtros", onClick: limpiarFiltros }}
+        />
       ) : (
         <div className="grid grid-cols-1 gap-lg md:grid-cols-2 lg:grid-cols-3">
-          {viajes.map((viaje) => {
+          {viajesProcesados.map((viaje) => {
             const estadoCalc = calcularEstadoViaje(viaje.fechaHoraIda, viaje.estado);
             return (
               <div
