@@ -117,34 +117,30 @@ export default function UserReservas() {
                 />
 
                 <div>
-                  {/* Banner de imagen superior estilo catálogo */}
-                  <div className="relative aspect-[16/9] overflow-hidden bg-neutral-900">
+                  {/* Banner de imagen superior estilo catálogo: siempre 1:1 */}
+                  <div className="relative aspect-square overflow-hidden bg-neutral-900">
                     {reserva.viaje.imagenUrl ? (
-                      <>
-                        <Image
-                          src={reserva.viaje.imagenUrl}
-                          alt=""
-                          fill
-                          aria-hidden="true"
-                          sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-                          className="object-cover blur-md scale-110 opacity-60 pointer-events-none"
-                        />
-                        <Image
-                          src={reserva.viaje.imagenUrl}
-                          alt={reserva.viaje.titulo}
-                          fill
-                          sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-                          className="relative z-10 object-contain transition-transform duration-500 ease-out group-hover:scale-105"
-                        />
-                      </>
+                      <Image
+                        src={reserva.viaje.imagenUrl}
+                        alt={reserva.viaje.titulo}
+                        fill
+                        sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                        className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                      />
                     ) : (
                       <div className="flex h-full items-center justify-center text-text-muted">
                         <Mountain size={40} aria-hidden="true" />
                       </div>
                     )}
 
-                    {/* Dificultad en esquina superior izquierda */}
-                    <div className="absolute left-sm top-sm z-20 flex items-center gap-1.5">
+                    {/* Velo inferior para que la dificultad se lea sobre cualquier foto */}
+                    <div
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-20 bg-gradient-to-t from-black/60 to-transparent"
+                    />
+
+                    {/* Dificultad abajo (los títulos/encuadres de la foto van arriba) */}
+                    <div className="absolute bottom-xs left-xs z-20 flex items-center gap-1.5 sm:bottom-sm sm:left-sm">
                       <span className="text-[11px] font-semibold uppercase tracking-wide text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
                         Dificultad:
                       </span>

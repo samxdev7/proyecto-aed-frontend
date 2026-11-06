@@ -24,6 +24,7 @@
 
   /* Semánticos complementarios (PRD) */
   --color-clay-dark: #a9582f; /* clay oscurecido: hover de botones CTA */
+  --color-ochre-dark: #8a6a12; /* ochre oscurecido: fondos con texto blanco (chip dificultad, contraste AA) */
   --color-neutral-border: #e5e7eb; /* borde por defecto de superficies (tarjetas, paneles, inputs) */
   --color-text-muted: #6b7280; /* texto secundario / ayuda / metadatos */
   --color-warning: #d97706; /* alerta intermedia (ámbar) */

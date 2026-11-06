@@ -74,25 +74,43 @@ export default function ModalFicha({ viaje, onCerrar }: ModalFichaProps) {
       className="max-w-2xl"
     >
       <div>
-        <div className="relative h-44 overflow-hidden rounded-t-lg bg-neutral-900 md:h-52">
-          {viaje.imagenUrl ? (
-            <>
-              <Image
-                src={viaje.imagenUrl}
-                alt=""
-                fill
-                aria-hidden="true"
-                className="object-cover blur-md scale-110 opacity-50 pointer-events-none"
-              />
+        {/* Portada siempre 1:1: foto cuadrada centrada, limitada al alto del
+            modal para que el panel no se dispare en escritorio. */}
+        <div className="relative overflow-hidden rounded-t-lg bg-neutral-900">
+          <div className="relative mx-auto aspect-square w-full sm:max-h-[50vh] sm:max-w-[50vh]">
+            {viaje.imagenUrl ? (
               <Image
                 src={viaje.imagenUrl}
                 alt={viaje.titulo}
                 fill
-                sizes="(min-width: 640px) 50vw, 100vw"
-                className="relative z-10 object-contain"
+                sizes="(min-width: 640px) 672px, 100vw"
+                className="object-cover"
               />
-            </>
-          ) : (
+            ) : null}
+            {/* Velo inferior para legibilidad de badges */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-16 bg-gradient-to-t from-black/65 to-transparent"
+            />
+            {/* Dificultad: abajo a la izquierda */}
+            <span className="absolute bottom-3 left-3 z-20">
+              <ChipDificultad dificultad={viaje.dificultad} />
+            </span>
+            {/* Estado del viaje: abajo a la derecha */}
+            <span className="absolute bottom-3 right-3 z-20 flex items-center gap-2">
+              {estadoCalc.esExpirado && (
+                <span className="rounded-sm bg-amber-100 border border-amber-300 px-2 py-0.5 text-[10px] font-bold text-amber-800 shadow-xs">
+                  Inscripciones expiradas
+                </span>
+              )}
+              {estadoCalc.esCerrado && (
+                <span className="rounded-sm bg-neutral-100 border border-neutral-300 px-2 py-0.5 text-[10px] font-semibold text-neutral-600 shadow-xs">
+                  Cerrado
+                </span>
+              )}
+            </span>
+          </div>
+          {!viaje.imagenUrl && (
             <svg
               className="absolute bottom-0 left-0 h-28 w-full text-deep/50"
               viewBox="0 0 800 140"
@@ -103,19 +121,6 @@ export default function ModalFicha({ viaje, onCerrar }: ModalFichaProps) {
               <path d="M0 140 L220 50 L420 120 L620 36 L800 100 L800 140 Z" />
             </svg>
           )}
-          <span className="absolute left-5 top-5 z-20 flex items-center gap-2">
-            <ChipDificultad dificultad={viaje.dificultad} />
-            {estadoCalc.esExpirado && (
-              <span className="rounded-sm bg-amber-100 border border-amber-300 px-2 py-0.5 text-xs font-bold text-amber-800 shadow-xs">
-                Inscripciones expiradas
-              </span>
-            )}
-            {estadoCalc.esCerrado && (
-              <span className="rounded-sm bg-neutral-100 border border-neutral-300 px-2 py-0.5 text-xs font-semibold text-neutral-600 shadow-xs">
-                Cerrado
-              </span>
-            )}
-          </span>
           <button
             type="button"
             onClick={onCerrar}

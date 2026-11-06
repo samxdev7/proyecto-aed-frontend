@@ -441,7 +441,7 @@ export default function GaleriaSupabaseModal({
         <div className="border-b border-admin-border bg-admin-bg/80 px-6 py-1.5 text-xs text-admin-muted flex items-center gap-2">
           <Info className="h-3.5 w-3.5 text-admin-accent shrink-0" />
           <span>
-            Resolución sugerida 1920 × 1080 px (16:9). Evita fotos verticales para que no se recorten.
+            Resolución sugerida 1080 × 1080 px (1:1). Las portadas se muestran cuadradas; otras relaciones se recortan al centro.
           </span>
         </div>
 
@@ -491,7 +491,7 @@ export default function GaleriaSupabaseModal({
               <Upload className="h-12 w-12 mb-2 animate-bounce" />
               <p className="text-base">Suelta tus imágenes aquí para subirlas a la carpeta actual</p>
               <p className="text-xs text-admin-muted mt-1 font-mono">{rutaActual}</p>
-              <p className="text-xs text-admin-accent/90 mt-1 font-medium">Recomendado: fotos horizontales 16:9 (1920 × 1080 px)</p>
+              <p className="text-xs text-admin-accent/90 mt-1 font-medium">Recomendado: fotos cuadradas 1:1 (1080 × 1080 px)</p>
             </div>
           )}
 
@@ -596,8 +596,8 @@ export default function GaleriaSupabaseModal({
                                 : "border-admin-border hover:border-admin-accent/70 hover:shadow-md"
                             }`}
                           >
-                            {/* Miniatura de imagen */}
-                            <div className="relative aspect-[16/9] w-full bg-admin-bg overflow-hidden">
+                            {/* Miniatura de imagen (siempre 1:1, igual que la portada) */}
+                            <div className="relative aspect-square w-full bg-admin-bg overflow-hidden">
                               <Image
                                 src={archivo.urlPublica}
                                 alt={archivo.nombre}

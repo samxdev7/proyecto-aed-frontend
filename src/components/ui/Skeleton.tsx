@@ -6,11 +6,11 @@ export default function Skeleton({ className = "" }: SkeletonProps) {
   return <div className={`animate-pulse rounded bg-surface-alt ${className}`} />;
 }
 
-/** Esqueleto de tarjeta de viaje: imagen aspect 4/3 + líneas de texto. */
+/** Esqueleto de tarjeta de viaje: imagen 1:1 + líneas de texto. */
 export function TarjetaViajeSkeleton() {
   return (
     <div className="overflow-hidden rounded-md border border-neutral-border bg-surface">
-      <Skeleton className="aspect-[16/9] rounded-none" />
+      <Skeleton className="aspect-square rounded-none" />
       <div className="space-y-sm p-md">
         <Skeleton className="h-5 w-3/4" />
         <Skeleton className="h-4 w-full" />
@@ -55,7 +55,7 @@ export function DetalleShowcaseSkeleton() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
         <div className="space-y-md lg:col-span-2">
           <Skeleton className="h-10 w-2/3" />
-          <Skeleton className="aspect-[16/9] w-full" />
+          <Skeleton className="aspect-square w-full" />
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-5/6" />
         </div>
