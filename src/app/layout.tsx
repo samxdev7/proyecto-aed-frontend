@@ -3,6 +3,7 @@ import { Inter, Merriweather } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { MensajesProvider } from "@/contexts/MensajesContext";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -48,6 +49,7 @@ export default function RootLayout({
       <body className="min-h-dvh flex flex-col">
         <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" />
         <MensajesProvider>{children}</MensajesProvider>
+        <Analytics />
       </body>
     </html>
   );
