@@ -573,13 +573,13 @@ export default function AdminViajes() {
                       <Image
                         src={viaje.imagenUrl}
                         alt=""
-                        width={48}
+                        width={36}
                         height={36}
                         unoptimized
-                        className="h-9 w-12 rounded-sm object-cover"
+                        className="h-9 w-9 rounded-sm object-cover"
                       />
                     ) : (
-                      <div className="flex h-9 w-12 items-center justify-center rounded-sm bg-admin-bg text-admin-muted">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-sm bg-admin-bg text-admin-muted">
                         <ImageIcon size={16} />
                       </div>
                     )}
@@ -813,26 +813,26 @@ export default function AdminViajes() {
               <div className="flex items-center gap-2 rounded-md border border-admin-border bg-admin-bg px-3 py-1.5 text-xs text-admin-muted">
                 <Info className="h-3.5 w-3.5 shrink-0 text-admin-accent" />
                 <span>
-                  Resolución sugerida 1920 × 1080 px. Evita fotos verticales para que no se recorten.
+                  Resolución sugerida 1080 × 1080 px (1:1). Las portadas se muestran cuadradas; otras relaciones se recortan al centro.
                 </span>
               </div>
 
               {/* Widget visual de portada con integracion a Supabase Storage */}
               <div className="flex flex-col sm:flex-row items-center gap-4 rounded-lg border border-admin-border bg-admin-bg p-3">
                 {form.imagenUrl ? (
-                  <div className="relative aspect-[16/9] w-48 shrink-0 overflow-hidden rounded-md border border-admin-border bg-white shadow-xs">
+                  <div className="relative aspect-square w-48 shrink-0 overflow-hidden rounded-md border border-admin-border bg-white shadow-xs">
                     <Image
                       src={form.imagenUrl}
                       alt="Portada del viaje"
                       fill
                       unoptimized
-                      className="object-contain"
+                      className="object-cover"
                     />
                   </div>
                 ) : (
-                  <div className="flex aspect-[16/9] w-48 shrink-0 flex-col items-center justify-center rounded-md border border-dashed border-admin-border bg-white text-admin-muted">
+                  <div className="flex aspect-square w-48 shrink-0 flex-col items-center justify-center rounded-md border border-dashed border-admin-border bg-white text-admin-muted">
                     <ImageIcon className="h-8 w-8 mb-1 text-admin-muted/40" />
-                    <span className="text-[11px]">Sin portada (16:9)</span>
+                    <span className="text-[11px]">Sin portada (1:1)</span>
                   </div>
                 )}
 

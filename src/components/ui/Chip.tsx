@@ -17,12 +17,15 @@ const estilosEstado: Record<EstadoReserva, string> = {
   expirada: "bg-surface-alt text-text-muted",
 };
 
+/* Dificultad: rampa semáforo verde → ámbar → naranja → rojo.
+   Comunica peligro progresivo de forma universal e intuitiva.
+   text-white en todos los niveles para consistencia de lectura. */
 const estilosDificultad: Record<Dificultad, string> = {
-  Baja: "bg-ochre text-navy",
-  Media: "bg-steel text-sand",
-  Alta: "bg-clay text-white",
-  Extrema: "bg-navy text-white",
-};;
+  Baja:    "bg-[#15803d] text-white",   /* green-700  — seguro/natural   */
+  Media:   "bg-[#b45309] text-white",   /* amber-700  — precaución       */
+  Alta:    "bg-[#c2410c] text-white",   /* orange-700 — peligro moderado */
+  Extrema: "bg-[#991b1b] text-white",   /* red-800    — peligro extremo  */
+};
 
 export default function Chip({
   estado,

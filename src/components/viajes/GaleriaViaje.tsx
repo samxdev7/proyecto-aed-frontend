@@ -14,7 +14,7 @@ interface GaleriaViajeProps {
 export default function GaleriaViaje({ imagenes, titulo }: GaleriaViajeProps) {
   if (imagenes.length === 0) {
     return (
-      <div className="flex aspect-[16/9] items-center justify-center rounded-lg border border-neutral-border bg-sand text-text-muted">
+      <div className="flex aspect-square items-center justify-center rounded-lg border border-neutral-border bg-sand text-text-muted">
         <Mountain size={56} aria-hidden="true" />
       </div>
     );
@@ -24,23 +24,17 @@ export default function GaleriaViaje({ imagenes, titulo }: GaleriaViajeProps) {
 
   return (
     <div className="space-y-sm">
-      <div className="relative aspect-[16/9] overflow-hidden rounded-lg border border-neutral-border bg-neutral-900">
-        <Image
-          src={principal}
-          alt=""
-          fill
-          aria-hidden="true"
-          className="object-cover blur-md scale-110 opacity-50 pointer-events-none"
-        />
+      {/* Portada siempre 1:1: recorta al centro si la foto subida no es cuadrada */}
+      <div className="relative aspect-square overflow-hidden rounded-lg border border-neutral-border bg-neutral-900">
         <Image
           src={principal}
           alt={titulo}
           fill
-          sizes="100vw"
+          sizes="(min-width: 1024px) 66vw, 100vw"
           priority
           placeholder="blur"
           blurDataURL={BLUR_DATA_URL}
-          className="relative z-10 object-contain"
+          className="object-cover"
         />
       </div>
       {secundarias.length > 0 ? (
@@ -48,7 +42,7 @@ export default function GaleriaViaje({ imagenes, titulo }: GaleriaViajeProps) {
           {secundarias.map((imagen, indice) => (
             <div
               key={imagen}
-              className="relative aspect-[4/3] overflow-hidden rounded-md border border-neutral-border bg-sand"
+              className="relative aspect-square overflow-hidden rounded-md border border-neutral-border bg-sand"
             >
               <Image
                 src={imagen}

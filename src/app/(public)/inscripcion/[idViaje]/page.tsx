@@ -206,7 +206,8 @@ export default function InscripcionPage() {
       <div className="mt-md grid grid-cols-1 gap-lg lg:grid-cols-12">
         <div className="lg:col-span-5">
           <div className="overflow-hidden rounded-md border border-neutral-border bg-surface shadow-sm sticky top-24">
-            <div className="relative h-44 overflow-hidden bg-surface-alt md:h-52">
+            {/* Portada siempre 1:1 */}
+            <div className="relative aspect-square overflow-hidden bg-surface-alt">
               {viaje.imagenUrl ? (
                 <Image
                   src={viaje.imagenUrl}
@@ -220,8 +221,11 @@ export default function InscripcionPage() {
                   <Mountain size={40} aria-hidden="true" />
                 </div>
               )}
-              <span className="absolute left-sm top-sm flex items-center gap-1.5">
+              {/* Dificultad abajo (los títulos/encuadres de la foto van arriba) */}
+              <span className="absolute bottom-xs left-xs flex items-center gap-1.5">
                 <ChipDificultad dificultad={viaje.dificultad} />
+              </span>
+              <span className="absolute left-sm top-sm flex items-center gap-1.5">
                 {estadoCalc?.esExpirado && (
                   <span className="rounded-sm bg-amber-100 border border-amber-300 px-2 py-0.5 text-xs font-bold text-amber-800 shadow-xs">
                     Inscripciones expiradas

@@ -210,13 +210,13 @@ function ModalViajesArchivadosContent({
                           <Image
                             src={viaje.imagenUrl}
                             alt=""
-                            width={48}
+                            width={36}
                             height={36}
                             unoptimized
-                            className="h-9 w-12 rounded-sm object-cover opacity-80"
+                            className="h-9 w-9 rounded-sm object-cover opacity-80"
                           />
                         ) : (
-                          <div className="flex h-9 w-12 items-center justify-center rounded-sm bg-admin-bg text-admin-muted">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-sm bg-admin-bg text-admin-muted">
                             <ImageIcon size={16} />
                           </div>
                         )}
